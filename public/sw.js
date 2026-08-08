@@ -1,4 +1,4 @@
-const CACHE_NAME = 'avimetrica-pro-v5';
+const CACHE_NAME = 'avimetrica-pro-v6';
 const OFFLINE_URLS = [
   '/',
   '/logo-avimetrica.png',
@@ -7,6 +7,9 @@ const OFFLINE_URLS = [
 
 // Extensions that should always be fetched from network first (code updates)
 const NETWORK_FIRST_EXTENSIONS = ['.js', '.mjs', '.css', '.ts', '.tsx'];
+
+// Límite de espera de la red al navegar antes de recurrir a la caché.
+const NAVIGATION_TIMEOUT_MS = 3000;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -46,6 +49,45 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
+  // Network-first for page navigations.
+  //
+  // Antes se atendían con cache-first y eso servía un shell HTML viejo tras
+  // cada despliegue: el HTML en caché apuntaba a chunks que ya no existían,
+  // la página no hidrataba y solo se arreglaba recargando por segunda vez.
+  // Ahora la red manda y la caché es solo el respaldo sin conexión.
+  //
+  // El tiempo límite existe porque la app se usa en galera con wifi flojo:
+  // sin él, una conexión que no responde deja la página colgada en blanco.
+  // 3 s es holgado para la red local (una carga real toma ~120 ms) y corto
+  // frente a una conexión muerta.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('timeout')), NAVIGATION_TIMEOUT_MS);
+        fetch(event.request).then(
+          (response) => { clearTimeout(timeout); resolve(response); },
+          (error) => { clearTimeout(timeout); reject(error); }
+        );
+      })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Sin red: la propia página si se visitó antes (ignorando la query,
+          // que no cambia el HTML servido), y si no, el índice precargado.
+          return caches.match(event.request, { ignoreSearch: true })
+            .then((cached) => cached || caches.match('/'));
+        })
+    );
+    return;
+  }
+
   // Network-first for JS/CSS bundles (ensures code updates are always fresh)
   const isCodeAsset = NETWORK_FIRST_EXTENSIONS.some(ext => url.pathname.endsWith(ext)) ||
     url.pathname.includes('/_next/') ||
@@ -70,7 +112,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets (images, fonts, etc.)
+  // Cache-first for static assets (images, fonts, etc.) — aquí ya no llegan
+  // navegaciones ni código: las atienden las dos ramas de arriba.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -95,10 +138,6 @@ self.addEventListener('fetch', (event) => {
         });
         return networkResponse;
       }).catch(() => {
-        // If offline and requesting a page, return the cached index
-        if (event.request.mode === 'navigate') {
-          return caches.match('/');
-        }
         return new Response('Offline', { status: 503, statusText: 'Offline' });
       });
     })
