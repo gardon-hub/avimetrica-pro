@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import {
   TailMode,
@@ -26,11 +27,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 type DistChoice = 'lote' | 'normal-manual' | 'normal-estandar' | 't';
 type DefineBy = 'probability' | 'x';
 
-const TAIL_LABELS: Record<TailMode, string> = {
-  right: 'Cola derecha',
-  left: 'Cola izquierda',
-  both: 'Ambas colas',
-  center: 'Región central',
+/** Clave del catálogo para cada modo de cola. */
+const TAIL_KEYS: Record<TailMode, 'tailRight' | 'tailLeft' | 'tailBoth' | 'tailCenter'> = {
+  right: 'tailRight',
+  left: 'tailLeft',
+  both: 'tailBoth',
+  center: 'tailCenter',
 };
 
 function fmtNum(v: number, dec = 4): string {
@@ -40,6 +42,7 @@ function fmtNum(v: number, dec = 4): string {
 
 export function ProbabilityCalculator() {
   const { pesos, stats } = useUniformidadStore();
+  const t = useTranslations('probability');
   const hasLote = pesos.length >= 2 && stats.desvEst > 0;
 
   const [dist, setDist] = useState<DistChoice>(hasLote ? 'lote' : 'normal-estandar');
@@ -115,46 +118,55 @@ export function ProbabilityCalculator() {
   const explanation = useMemo(() => {
     if (!result) return '';
     const [a, b] = result.bounds;
-    const p = result.probability;
-    const pct = (p * 100).toFixed(2);
+    const pct = (result.probability * 100).toFixed(2);
     const vUnit = unit === 'g' ? ' g' : '';
-    const name = isT ? `t de Student (gl=${df})` : dist === 'normal-estandar' ? 'normal estándar' : `normal (μ=${fmtNum(mu, 1)}, σ=${fmtNum(sigma, 1)})`;
+    const dec = unit === 'g' ? 1 : 4;
+    const nombre = isT
+      ? t('nameT', { df })
+      : dist === 'normal-estandar'
+        ? t('nameStandard')
+        : t('nameNormal', { mu: fmtNum(mu, 1), sigma: fmtNum(sigma, 1) });
+    const esLote = dist === 'lote';
     switch (tail) {
       case 'right':
-        return `Bajo la distribución ${name}, el ${pct}% del área queda a la derecha de ${fmtNum(a, unit === 'g' ? 1 : 4)}${vUnit}. ${dist === 'lote' ? `Es decir, teóricamente ~${pct}% de las aves pesaría más de ${fmtNum(a, 1)} g.` : ''}`;
+        return `${t('explainRight', { nombre, pct, valor: fmtNum(a, dec), unidad: vUnit })}${esLote ? ' ' + t('flockRight', { pct, valor: fmtNum(a, 1) }) : ''}`;
       case 'left':
-        return `Bajo la distribución ${name}, el ${pct}% del área queda a la izquierda de ${fmtNum(b, unit === 'g' ? 1 : 4)}${vUnit}. ${dist === 'lote' ? `Es decir, teóricamente ~${pct}% de las aves pesaría menos de ${fmtNum(b, 1)} g.` : ''}`;
+        return `${t('explainLeft', { nombre, pct, valor: fmtNum(b, dec), unidad: vUnit })}${esLote ? ' ' + t('flockLeft', { pct, valor: fmtNum(b, 1) }) : ''}`;
       case 'both':
-        return `Bajo la distribución ${name}, el ${pct}% del área queda repartido en las dos colas: por debajo de ${fmtNum(a, unit === 'g' ? 1 : 4)}${vUnit} y por encima de ${fmtNum(b, unit === 'g' ? 1 : 4)}${vUnit}.`;
+        return t('explainBoth', { nombre, pct, a: fmtNum(a, dec), b: fmtNum(b, dec), unidad: vUnit });
       case 'center':
-        return `Bajo la distribución ${name}, el ${pct}% del área queda entre ${fmtNum(a, unit === 'g' ? 1 : 4)} y ${fmtNum(b, unit === 'g' ? 1 : 4)}${vUnit}. ${dist === 'lote' ? `Es decir, teóricamente ~${pct}% de las aves pesaría en ese rango.` : ''}`;
+        return `${t('explainCenter', { nombre, pct, a: fmtNum(a, dec), b: fmtNum(b, dec), unidad: vUnit })}${esLote ? ' ' + t('flockCenter', { pct }) : ''}`;
     }
-  }, [result, tail, unit, isT, df, dist, mu, sigma]);
+  }, [result, tail, unit, isT, df, dist, mu, sigma, t]);
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Distribución</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('distribution')}</Label>
           <Select value={dist} onValueChange={(v) => setDist(v as DistChoice)}>
             <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="lote" disabled={!hasLote}>
-                Normal del lote {hasLote ? `(μ=${stats.promedio.toFixed(1)}, σ=${stats.desvEst.toFixed(1)})` : '(sin datos suficientes)'}
+                {t('distFlock', {
+                  params: hasLote
+                    ? t('distFlockParams', { mu: stats.promedio.toFixed(1), sigma: stats.desvEst.toFixed(1) })
+                    : t('distFlockEmpty'),
+                })}
               </SelectItem>
-              <SelectItem value="normal-manual">Normal con parámetros manuales</SelectItem>
-              <SelectItem value="normal-estandar">Normal estándar (μ=0, σ=1)</SelectItem>
-              <SelectItem value="t">t de Student</SelectItem>
+              <SelectItem value="normal-manual">{t('distManual')}</SelectItem>
+              <SelectItem value="normal-estandar">{t('distStandard')}</SelectItem>
+              <SelectItem value="t">{t('distT')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col gap-1">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Área sombreada</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('shadedArea')}</Label>
           <Select value={tail} onValueChange={(v) => setTail(v as TailMode)}>
             <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {(Object.keys(TAIL_LABELS) as TailMode[]).map((k) => (
-                <SelectItem key={k} value={k}>{TAIL_LABELS[k]}</SelectItem>
+              {(Object.keys(TAIL_KEYS) as TailMode[]).map((k) => (
+                <SelectItem key={k} value={k}>{t(TAIL_KEYS[k])}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -164,18 +176,18 @@ export function ProbabilityCalculator() {
       {dist === 'normal-manual' && (
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Media (g)</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('meanG')}</Label>
             <Input type="number" value={muInput} onChange={(e) => setMuInput(e.target.value)} className="h-9 text-xs" />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Desv. estándar (g)</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('sdG')}</Label>
             <Input type="number" min={0.001} value={sigmaInput} onChange={(e) => setSigmaInput(e.target.value)} className="h-9 text-xs" />
           </div>
         </div>
       )}
       {dist === 't' && (
         <div className="flex flex-col gap-1 max-w-40">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Grados de libertad</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('df')}</Label>
           <Input type="number" min={1} value={dfInput} onChange={(e) => setDfInput(e.target.value)} className="h-9 text-xs" />
         </div>
       )}
@@ -187,28 +199,28 @@ export function ProbabilityCalculator() {
       >
         <div className="flex items-center gap-1.5">
           <RadioGroupItem value="probability" id="by-prob" />
-          <Label htmlFor="by-prob" className="text-xs cursor-pointer">Definir por probabilidad</Label>
+          <Label htmlFor="by-prob" className="text-xs cursor-pointer">{t('byProbability')}</Label>
         </div>
         <div className="flex items-center gap-1.5">
           <RadioGroupItem value="x" id="by-x" />
-          <Label htmlFor="by-x" className="text-xs cursor-pointer">Definir por valor {unit === 'g' ? 'X (g)' : unit}</Label>
+          <Label htmlFor="by-x" className="text-xs cursor-pointer">{t('byValue', { unidad: unit === 'g' ? 'X (g)' : unit })}</Label>
         </div>
       </RadioGroup>
 
       {defineBy === 'probability' ? (
         <div className="flex flex-col gap-1 max-w-40">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Probabilidad (0–1)</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('probabilityLabel')}</Label>
           <Input type="number" min={0.0001} max={0.9999} step={0.01} value={pInput} onChange={(e) => setPInput(e.target.value)} className="h-9 text-xs" />
         </div>
       ) : (
         <div className="flex gap-3">
           <div className="flex flex-col gap-1 max-w-40">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{tail === 'center' ? 'Valor X₁' : 'Valor X'}</Label>
-            <Input type="number" value={x1Input} onChange={(e) => setX1Input(e.target.value)} className="h-9 text-xs" placeholder={unit === 'g' ? 'p.ej. 1350' : 'p.ej. 1.645'} />
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t(tail === 'center' ? 'valueX1' : 'valueX')}</Label>
+            <Input type="number" value={x1Input} onChange={(e) => setX1Input(e.target.value)} className="h-9 text-xs" placeholder={t(unit === 'g' ? 'placeholderG' : 'placeholderZ')} />
           </div>
           {tail === 'center' && (
             <div className="flex flex-col gap-1 max-w-40">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Valor X₂</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('valueX2')}</Label>
               <Input type="number" value={x2Input} onChange={(e) => setX2Input(e.target.value)} className="h-9 text-xs" />
             </div>
           )}
@@ -219,14 +231,17 @@ export function ProbabilityCalculator() {
         <>
           <div className="bg-muted/50 rounded-md p-3 text-sm space-y-1">
             <div>
-              Probabilidad del área sombreada: <b className="tabular-nums">{fmtNum(result.probability, 5)}</b>{' '}
-              ({(result.probability * 100).toFixed(2)}%)
+              {t.rich('shadedProbability', {
+                p: fmtNum(result.probability, 5),
+                pct: (result.probability * 100).toFixed(2),
+                b: (c) => <b className="tabular-nums">{c}</b>,
+              })}
             </div>
             <div className="tabular-nums text-xs text-muted-foreground">
-              {tail === 'right' && <>Valor crítico: <b>{fmtNum(result.bounds[0], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>}
-              {tail === 'left' && <>Valor crítico: <b>{fmtNum(result.bounds[1], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>}
+              {tail === 'right' && <>{t('criticalValue')} <b>{fmtNum(result.bounds[0], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>}
+              {tail === 'left' && <>{t('criticalValue')} <b>{fmtNum(result.bounds[1], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>}
               {(tail === 'both' || tail === 'center') && (
-                <>Límites: <b>{fmtNum(result.bounds[0], unit === 'g' ? 2 : 5)}</b> y <b>{fmtNum(result.bounds[1], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>
+                <>{t('bounds')} <b>{fmtNum(result.bounds[0], unit === 'g' ? 2 : 5)}</b> · <b>{fmtNum(result.bounds[1], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>
               )}
             </div>
             <p className="text-xs leading-snug">{explanation}</p>
@@ -250,12 +265,12 @@ export function ProbabilityCalculator() {
                     },
                   ]
             }
-            xLabel={unit === 'g' ? 'Peso (g)' : unit === 'Z' ? 'Z' : `t (gl=${df})`}
+            xLabel={unit === 'g' ? t('xLabelWeight') : unit === 'Z' ? 'Z' : t('xLabelT', { df })}
             ariaLabel={explanation}
           />
         </>
       ) : (
-        <p className="text-xs text-muted-foreground">Completa los parámetros para calcular.</p>
+        <p className="text-xs text-muted-foreground">{t('completeParams')}</p>
       )}
     </div>
   );
