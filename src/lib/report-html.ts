@@ -8,6 +8,8 @@
 
 import { ReportData, ReportVariant, muestreoLabel } from '@/lib/report-data';
 import { uniformityCurveSvg, histogramSvg, svgToDataUri } from '@/lib/report-charts';
+import { categoriasBarSvg, mediaVsObjetivoSvg } from '@/lib/dataset-report-charts';
+import { classify } from '@/lib/classification';
 import { OUTLIER_METHOD_LABELS } from '@/lib/statistics/outliers';
 
 function esc(s: string): string {
@@ -261,18 +263,80 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant): string {
   const curve = svgToDataUri(uniformityCurveSvg(d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup, d.stats.uniformidad, d.criterioPct));
   const hist = svgToDataUri(histogramSvg(d.pesos, d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup));
 
+  // Barras de la banda de uniformidad. Se obtienen del MISMO motor de
+  // clasificación que usan huevos y estadística: la prueba de equivalencia
+  // garantiza que reproduce exactamente los conteos de calculateStats.
+  const clasif = classify(d.pesos, {
+    type: 'relative-band',
+    pct: d.criterioPct,
+    labels: {
+      below: `Bajo −${d.criterioPct}%`,
+      within: `Dentro de ±${d.criterioPct}%`,
+      above: `Sobre +${d.criterioPct}%`,
+    },
+  });
+  const COLORES_BANDA = ['#e53935', '#4CAF50', '#1d4ed8'];
+  const barras = svgToDataUri(
+    categoriasBarSvg(
+      clasif.bins.map((b, i) => ({ ...b, color: COLORES_BANDA[i] })),
+      clasif.unclassified,
+      clasif.n,
+    ),
+  );
+
+  // Media observada frente al objetivo de la línea genética (si hay edad y
+  // referencia disponible).
+  const vsObjetivo = d.target
+    ? svgToDataUri(
+        mediaVsObjetivoSvg(
+          d.stats.promedio,
+          d.ci95,
+          d.target.pesoOptimo,
+          'Objetivo de la línea',
+          'g',
+          1,
+        ),
+      )
+    : '';
+
   let body = headerHtml(d, variantLabel) + metaHtml(d) + kpisHtml(d);
+
+  const bloqueBanda = `
+<h2>Distribución respecto a la banda de uniformidad</h2>
+<div class="chart"><img src="${barras}" alt="Gráfico de barras del porcentaje de aves por debajo, dentro y por encima de la banda de uniformidad"/></div>
+<table>
+  <tr><th>Categoría</th><th class="num">Aves</th><th class="num">%</th></tr>
+  ${clasif.bins.map((b) => `<tr><td>${esc(b.label)}</td><td class="num">${b.count}</td><td class="num">${b.pct.toFixed(1)}</td></tr>`).join('')}
+</table>
+<p class="note">
+  Banda de ${d.criterioPct}% alrededor de la media observada (${fmt(d.stats.limiteInf, 1)} – ${fmt(d.stats.limiteSup, 1)} g).
+  Es una banda descriptiva de la dispersión del lote, <b>no</b> un intervalo de confianza.
+</p>`;
+
+  const bloqueObjetivo = vsObjetivo
+    ? `<h2>Peso promedio frente al objetivo de la línea</h2>
+<div class="chart"><img src="${vsObjetivo}" alt="Gráfico de barras del peso promedio del lote con su intervalo de confianza, frente a la línea del peso objetivo"/></div>
+<p class="note">
+  La barra de error es el IC 95 % de la media observada. El objetivo se traza como línea de referencia
+  porque es un valor de guía genética, no una medición con incertidumbre propia. Si la línea queda
+  fuera del intervalo, la diferencia respecto al objetivo es estadísticamente apreciable; la prueba t
+  siguiente lo cuantifica. La escala no arranca en cero.
+</p>`
+    : '';
 
   if (variant === 'resumido') {
     body += `<div class="chart"><img src="${curve}" alt="Curva de distribución con banda de uniformidad"/></div>`;
+    body += bloqueBanda;
     body += diagnosticoHtml(d, false);
     body += limitacionesHtml(d);
   } else {
     body += `<div class="chart"><img src="${curve}" alt="Curva de distribución con banda de uniformidad"/></div>`;
+    body += bloqueBanda;
     body += descriptivaHtml(d);
     body += `<div class="chart"><img src="${hist}" alt="Histograma con curva normal superpuesta"/></div>`;
     body += normalidadHtml(d);
     body += atipicosHtml(d);
+    body += bloqueObjetivo;
     body += tTestHtml(d);
     body += diagnosticoHtml(d, true);
     body += limitacionesHtml(d);

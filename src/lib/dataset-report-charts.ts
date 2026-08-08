@@ -190,6 +190,74 @@ export function mediasComparadasSvg(
   `);
 }
 
+/**
+ * Media observada (con su IC 95 %) frente a un valor objetivo de referencia.
+ *
+ * DECISIÓN DE REPRESENTACIÓN: el objetivo se dibuja como LÍNEA, no como una
+ * segunda barra. Un peso objetivo de guía genética no es una muestra: no tiene
+ * incertidumbre ni n, y darle el mismo peso visual que a la media observada
+ * insinuaría una comparación entre dos mediciones que no existe.
+ */
+export function mediaVsObjetivoSvg(
+  media: number,
+  ci: { lower: number; upper: number } | null,
+  objetivo: number,
+  etiquetaObjetivo: string,
+  unidad: string,
+  decimales: number,
+): string {
+  const W = 620, H = 200, padL = 58, padR = 120, padT = 20, padB = 40;
+  const chartH = H - padT - padB;
+
+  const vals = [media, objetivo, ci?.lower, ci?.upper].filter(
+    (v): v is number => typeof v === 'number' && Number.isFinite(v),
+  );
+  let minY = Math.min(...vals);
+  let maxY = Math.max(...vals);
+  const margen = (maxY - minY) * 0.35 || Math.abs(maxY) * 0.05 || 1;
+  minY -= margen;
+  maxY += margen;
+
+  const toY = (v: number) => padT + chartH * (1 - (v - minY) / (maxY - minY));
+  const f = (v: number) => v.toFixed(decimales);
+
+  const rejilla = Array.from({ length: 5 }, (_, i) => {
+    const v = minY + ((maxY - minY) * i) / 4;
+    const y = toY(v);
+    return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${padL - 5}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#6b7280">${f(v)}</text>`;
+  }).join('');
+
+  const cx = padL + (W - padR - padL) / 2;
+  const barW = 110;
+  const yObj = toY(objetivo);
+  const diff = media - objetivo;
+  const colorBarra = Math.abs(diff / objetivo) <= 0.05 ? '#16a34a' : Math.abs(diff / objetivo) <= 0.10 ? '#f59e0b' : '#dc2626';
+
+  const bigote = ci
+    ? `<g stroke="#111827" stroke-width="1.6">
+         <line x1="${cx}" y1="${toY(ci.lower).toFixed(1)}" x2="${cx}" y2="${toY(ci.upper).toFixed(1)}"/>
+         <line x1="${cx - 10}" y1="${toY(ci.lower).toFixed(1)}" x2="${cx + 10}" y2="${toY(ci.lower).toFixed(1)}"/>
+         <line x1="${cx - 10}" y1="${toY(ci.upper).toFixed(1)}" x2="${cx + 10}" y2="${toY(ci.upper).toFixed(1)}"/>
+       </g>`
+    : '';
+
+  return envolver(W, H, `
+    <rect width="${W}" height="${H}" fill="white" rx="8"/>
+    ${rejilla}
+    <rect x="${cx - barW / 2}" y="${toY(media).toFixed(1)}" width="${barW}" height="${Math.max(toY(minY) - toY(media), 0).toFixed(1)}" fill="${colorBarra}" opacity="0.85" rx="3"/>
+    ${bigote}
+    <line x1="${padL}" y1="${yObj.toFixed(1)}" x2="${W - padR}" y2="${yObj.toFixed(1)}" stroke="#1d4ed8" stroke-width="2" stroke-dasharray="7,4"/>
+    <text x="${W - padR + 6}" y="${(yObj + 3).toFixed(1)}" font-size="9" font-weight="bold" fill="#1d4ed8">${esc(etiquetaObjetivo)}</text>
+    <text x="${W - padR + 6}" y="${(yObj + 15).toFixed(1)}" font-size="9" fill="#1d4ed8">${f(objetivo)} ${esc(unidad)}</text>
+    <text x="${cx}" y="${(toY(ci ? ci.upper : media) - 7).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="bold" fill="#111827">${f(media)} ${esc(unidad)}</text>
+    <text x="${cx}" y="${(toY(minY) + 14).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#6b7280">Media observada del lote</text>
+    <line x1="${padL}" y1="${toY(minY).toFixed(1)}" x2="${W - padR}" y2="${toY(minY).toFixed(1)}" stroke="#9ca3af" stroke-width="1.5"/>
+    <text x="10" y="${padT - 6}" font-size="9" fill="#6b7280">${esc(unidad)}</text>
+    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">Barra de error: IC 95 % · escala sin origen en cero</text>
+  `);
+}
+
 /** Genera los cortes efectivos legibles para el pie de un gráfico. */
 export function describeBins(bins: Bin[], unidad: string, dec: number): string {
   return bins
