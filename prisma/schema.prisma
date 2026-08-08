@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Modelo legado (v0.2) ─────────────────────────────────────────
+// Se conserva intacto para compatibilidad con las sesiones ya guardadas.
+// Las funciones nuevas usan Lote/WeighSession/BirdWeight.
+
+model FlockSession {
+  id           String   @id @default(cuid())
+  lineaGenetica String  @default("Broiler - Cobb")
+  edadSemanas  Int?
+  pesos        String   @default("[]") // JSON array of numbers
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ─── Modelo v0.4: lotes con historial de pesajes ──────────────────
+// Decisión de diseño (Fase 5): granja y galpón se registran como texto en el
+// lote (no como tablas propias) para mantener la app simple en uso local
+// mono-usuario. Si más adelante se necesita administrar catálogos de granjas,
+// la migración es directa.
+
+model Lote {
+  id             String   @id @default(cuid())
+  codigo         String                    // nombre o código del lote
+  granja         String?
+  galpon         String?
+  tipoAve        String   @default("broiler") // broiler | pollita | ponedora | reproductora
+  lineaGenetica  String   @default("Broiler - Cobb")
+  sexo           String   @default("mixto")   // hembras | machos | mixto | na
+  tamanoEstimado Int?                       // aves totales del lote
+  observaciones  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  pesajes        WeighSession[]
+}
+
+model WeighSession {
+  id              String   @id @default(cuid())
+  lote            Lote     @relation(fields: [loteId], references: [id], onDelete: Cascade)
+  loteId          String
+  fecha           DateTime
+  edadSemanas     Float?                    // semanas (puede ser fraccionaria)
+  edadDias        Int?                      // días exactos si se conocen (broilers)
+  unidadOriginal  String   @default("g")    // unidad en la que se digitó
+  metodoMuestreo  String?                   // aleatorio | sistematico | zonas | conveniencia | ns
+  numSectores     Int?
+  responsable     String?
+  observaciones   String?
+  criterioPct     Float    @default(10)     // criterio de uniformidad usado al guardar
+  appVersion      String?
+  refDataVersion  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  pesos           BirdWeight[]
+}
+
+model BirdWeight {
+  id         String  @id @default(cuid())
+  session    WeighSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  String
+  orden      Int                            // número de ave dentro del pesaje (1-based)
+  gramos     Float                          // siempre en gramos
+  sector     String?
+  excluido   Boolean @default(false)        // exclusión documentada (no borra el dato)
+  motivoExcl String?
+
+  @@index([sessionId])
+}
