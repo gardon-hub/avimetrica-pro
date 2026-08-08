@@ -23,7 +23,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Library, Save, Upload, Trash2 } from 'lucide-react';
 
-interface DatasetListItem {
+export interface DatasetListItem {
   id: string;
   nombre: string;
   descripcion: string | null;
@@ -35,7 +35,16 @@ interface DatasetListItem {
   updatedAt: string;
 }
 
-export function DatasetLibrary({ store }: { store: DatasetStore }) {
+interface Props {
+  store: DatasetStore;
+  /** Dominio propietario: cada módulo ve y guarda solo sus conjuntos. */
+  dominio: 'huevos' | 'generico';
+  titulo?: string;
+  /** Se invoca tras guardar o borrar, para refrescar vistas dependientes. */
+  onCambio?: () => void;
+}
+
+export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
   const s = store();
   const [lista, setLista] = useState<DatasetListItem[]>([]);
   const [guardarAbierto, setGuardarAbierto] = useState(false);
@@ -47,12 +56,12 @@ export function DatasetLibrary({ store }: { store: DatasetStore }) {
   /** Recarga tras guardar o borrar (acciones del usuario, no del montaje). */
   const refrescar = useCallback(async () => {
     try {
-      const res = await fetch('/api/datasets');
+      const res = await fetch(`/api/datasets?dominio=${dominio}`);
       if (res.ok) setLista(await res.json());
     } catch {
       /* la biblioteca es opcional: si falla, el análisis en pantalla sigue */
     }
-  }, []);
+  }, [dominio]);
 
   // Carga inicial: el setState ocurre en el callback del await, no en el
   // cuerpo del efecto, y se descarta si el componente se desmonta antes de
@@ -61,14 +70,14 @@ export function DatasetLibrary({ store }: { store: DatasetStore }) {
     let cancelado = false;
     (async () => {
       try {
-        const res = await fetch('/api/datasets');
+        const res = await fetch(`/api/datasets?dominio=${dominio}`);
         if (!cancelado && res.ok) setLista(await res.json());
       } catch {
         /* biblioteca opcional */
       }
     })();
     return () => { cancelado = true; };
-  }, []);
+  }, [dominio]);
 
   const guardar = async () => {
     if (!nombre.trim()) {
@@ -81,6 +90,7 @@ export function DatasetLibrary({ store }: { store: DatasetStore }) {
       body: JSON.stringify({
         nombre,
         descripcion,
+        dominio,
         variableLabel: s.variable.label,
         variableUnit: s.variable.unit,
         decimales: s.variable.decimals,
@@ -100,6 +110,7 @@ export function DatasetLibrary({ store }: { store: DatasetStore }) {
       setNombre('');
       setDescripcion('');
       refrescar();
+      onCambio?.();
     } else {
       toast({ title: 'Error', description: 'No se pudo guardar.', variant: 'destructive' });
     }
@@ -141,6 +152,7 @@ export function DatasetLibrary({ store }: { store: DatasetStore }) {
     if (res.ok) {
       toast({ title: 'Conjunto eliminado' });
       refrescar();
+      onCambio?.();
     }
     setBorrar(null);
   };
@@ -149,7 +161,7 @@ export function DatasetLibrary({ store }: { store: DatasetStore }) {
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-          <Library className="h-4 w-4" /> Conjuntos guardados
+          <Library className="h-4 w-4" /> {titulo ?? 'Conjuntos guardados'}
         </h2>
         <Button
           size="sm"

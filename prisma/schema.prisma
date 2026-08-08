@@ -89,6 +89,10 @@ model Dataset {
   nombre        String
   descripcion   String?
 
+  // Dominio al que pertenece: separa los muestreos de granja (huevos) de los
+  // conjuntos de docencia (generico) para que cada módulo vea solo los suyos.
+  dominio       String    @default("generico")
+
   // Definición de la variable (la declara el usuario en cada conjunto)
   variableLabel String    @default("Variable")
   variableUnit  String    @default("")

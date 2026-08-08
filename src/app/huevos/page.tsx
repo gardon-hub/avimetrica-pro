@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { LogoHeader } from '@/components/uniformidad/logo-header';
 import { ModuleNav } from '@/components/shell/module-nav';
 import { Credits } from '@/components/uniformidad/credits';
@@ -7,11 +8,17 @@ import { ValueInput } from '@/components/dataset/value-input';
 import { DescriptivePanel } from '@/components/dataset/descriptive-panel';
 import { ClassificationPanel } from '@/components/dataset/classification-panel';
 import { DatasetContextForm } from '@/components/dataset/context-form';
+import { DatasetLibrary } from '@/components/dataset/dataset-library';
+import { DatasetComparison } from '@/components/dataset/dataset-comparison';
+import { DatasetReportPanel } from '@/components/dataset/dataset-report-panel';
 import { useHuevosStore } from '@/lib/stores/huevos';
 import { DOMINIO_HUEVOS } from '@/lib/domains';
 
 export default function HuevosPage() {
   const { valores, variable } = useHuevosStore();
+  // Cambia al guardar o borrar un muestreo, para que la comparación recargue
+  // su lista sin necesidad de refrescar la página.
+  const [token, setToken] = useState(0);
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/40">
@@ -32,6 +39,14 @@ export default function HuevosPage() {
         <ValueInput store={useHuevosStore} domain={DOMINIO_HUEVOS} />
         <ClassificationPanel store={useHuevosStore} domain={DOMINIO_HUEVOS} />
         <DescriptivePanel valores={valores} variable={variable} />
+        <DatasetReportPanel store={useHuevosStore} domain={DOMINIO_HUEVOS} />
+        <DatasetLibrary
+          store={useHuevosStore}
+          dominio="huevos"
+          titulo="Muestreos guardados"
+          onCambio={() => setToken((t) => t + 1)}
+        />
+        <DatasetComparison dominio="huevos" refrescarToken={token} />
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">

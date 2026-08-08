@@ -24,7 +24,8 @@ function fmtP(p: number): string {
   return p < 0.0001 ? '&lt; 0.0001' : p.toFixed(4);
 }
 
-const CSS = `
+/** Hoja de estilos compartida por todos los reportes de la aplicación. */
+export const REPORT_CSS = `
 @page { size: letter; margin: 14mm 12mm; }
 * { box-sizing: border-box; }
 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333; margin: 0 auto; max-width: 760px; padding: 16px; font-size: 12px; line-height: 1.45; }
@@ -283,5 +284,5 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant): string {
   }
   body += footerHtml();
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Reporte de Uniformidad — ${esc(variantLabel)}</title><style>${CSS}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Reporte de Uniformidad — ${esc(variantLabel)}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

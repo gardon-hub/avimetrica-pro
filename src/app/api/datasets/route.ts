@@ -18,11 +18,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(ds);
     }
 
-    // Listado ligero: sin los valores, que pueden ser largos
+    // Listado ligero: sin los valores, que pueden ser largos.
+    // Filtrado por dominio para que cada módulo vea solo sus conjuntos.
+    const dominio = searchParams.get('dominio');
     const datasets = await db.dataset.findMany({
+      where: dominio ? { dominio } : undefined,
       orderBy: { updatedAt: 'desc' },
       select: {
-        id: true, nombre: true, descripcion: true,
+        id: true, nombre: true, descripcion: true, dominio: true,
         variableLabel: true, variableUnit: true, decimales: true,
         origen: true, responsable: true, fecha: true,
         createdAt: true, updatedAt: true,
@@ -39,7 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      nombre, descripcion, variableLabel, variableUnit, decimales,
+      nombre, descripcion, dominio, variableLabel, variableUnit, decimales,
       valores, presetId, scheme, origen, responsable, fecha,
       observaciones, muHipotetica,
     } = body;
@@ -56,6 +59,7 @@ export async function POST(request: NextRequest) {
       data: {
         nombre: nombre.trim(),
         descripcion: descripcion?.trim() || null,
+        dominio: dominio === 'huevos' || dominio === 'aves' ? dominio : 'generico',
         variableLabel: variableLabel?.trim() || 'Variable',
         variableUnit: variableUnit?.trim() || '',
         decimales: Number.isFinite(parseInt(decimales, 10)) ? parseInt(decimales, 10) : 2,

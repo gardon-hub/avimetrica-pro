@@ -10,11 +10,15 @@ import { ClassificationPanel } from '@/components/dataset/classification-panel';
 import { InferencePanel } from '@/components/dataset/inference-panel';
 import { DatasetContextForm } from '@/components/dataset/context-form';
 import { DatasetLibrary } from '@/components/dataset/dataset-library';
+import { DatasetComparison } from '@/components/dataset/dataset-comparison';
+import { DatasetReportPanel } from '@/components/dataset/dataset-report-panel';
 import { useEstadisticaStore } from '@/lib/stores/estadistica';
 import { DOMINIO_GENERICO } from '@/lib/domains';
+import { useState } from 'react';
 
 export default function EstadisticaPage() {
   const { valores, variable } = useEstadisticaStore();
+  const [token, setToken] = useState(0);
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/40">
@@ -39,7 +43,13 @@ export default function EstadisticaPage() {
         <DescriptivePanel valores={valores} variable={variable} />
         <InferencePanel store={useEstadisticaStore} />
         <ClassificationPanel store={useEstadisticaStore} domain={DOMINIO_GENERICO} />
-        <DatasetLibrary store={useEstadisticaStore} />
+        <DatasetReportPanel store={useEstadisticaStore} domain={DOMINIO_GENERICO} />
+        <DatasetLibrary
+          store={useEstadisticaStore}
+          dominio="generico"
+          onCambio={() => setToken((t) => t + 1)}
+        />
+        <DatasetComparison dominio="generico" refrescarToken={token} />
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">
