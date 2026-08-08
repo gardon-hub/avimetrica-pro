@@ -127,7 +127,7 @@ export function WeightList() {
                     variant="ghost"
                     size="sm"
                     onClick={() => startEdit(index)}
-                    className="h-7 w-7 p-0 text-muted-foreground/50 hover:text-amber-500 shrink-0"
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 active:text-amber-600 dark:hover:text-amber-400 dark:active:text-amber-400 shrink-0"
                     title="Editar peso"
                   >
                     <Pencil className="h-3 w-3 pointer-coarse:h-4.5 pointer-coarse:w-4.5" />
@@ -138,7 +138,7 @@ export function WeightList() {
                   variant="ghost"
                   size="sm"
                   onClick={() => removePeso(index)}
-                  className="h-7 w-7 p-0 text-muted-foreground/50 hover:text-red-500 shrink-0"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 active:text-red-600 dark:hover:text-red-400 dark:active:text-red-400 shrink-0"
                   title="Eliminar peso"
                 >
                   <X className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
