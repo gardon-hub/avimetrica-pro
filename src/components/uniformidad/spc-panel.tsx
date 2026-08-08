@@ -14,6 +14,7 @@
  */
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { PesajeFull } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { getTargetWeight } from '@/lib/diagnostic-engine';
@@ -32,6 +33,7 @@ interface SeriesDef {
 }
 
 function ControlChartSVG({ chart, def, violations }: { chart: IMRChart; def: SeriesDef; violations: NelsonViolation[] }) {
+  const t = useTranslations('spc');
   const width = 560;
   const height = 250;
   const padL = 46;
@@ -63,16 +65,19 @@ function ControlChartSVG({ chart, def, violations }: { chart: IMRChart; def: Ser
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" role="img"
-      aria-label={`Carta de control de ${def.title}: ${violations.length} señal(es) de las reglas de Nelson`}>
+      aria-label={t('chartAlt', { serie: def.title, n: violations.length })}>
       <rect width={width} height={height} fill="white" rx={8} />
-      {refLine(chart.ucl, '#dc2626', 'LCS')}
-      {refLine(chart.center, '#555', 'LC', '2,3')}
-      {refLine(chart.lcl, '#dc2626', 'LCI')}
+      {refLine(chart.ucl, '#dc2626', t('ucl'))}
+      {refLine(chart.center, '#555', t('center'), '2,3')}
+      {refLine(chart.lcl, '#dc2626', t('lcl'))}
       <path d={path} fill="none" stroke="#2E7D32" strokeWidth={1.8} strokeLinejoin="round" />
       {chart.points.map((v, i) => (
         <circle key={i} cx={toX(i)} cy={toY(v)} r={badIdx.has(i) ? 4.5 : 3.2}
           fill={badIdx.has(i) ? '#dc2626' : '#2E7D32'}>
-          <title>{`${def.labels[i]}: ${v.toFixed(2)} ${def.unit}${badIdx.has(i) ? ' — señal de control' : ''}`}</title>
+          <title>
+            {t('pointTooltip', { fecha: def.labels[i], valor: v.toFixed(2), unidad: def.unit })}
+            {badIdx.has(i) ? t('pointSignal') : ''}
+          </title>
         </circle>
       ))}
       {def.labels.map((l, i) => (
@@ -80,13 +85,15 @@ function ControlChartSVG({ chart, def, violations }: { chart: IMRChart; def: Ser
           fill="#666" transform={`rotate(-30 ${toX(i)} ${height - padB + 13})`}>{l}</text>
       ))}
       <text x={width / 2} y={height - 4} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444">
-        {def.title} ({def.unit}) — carta de individuales, límites ±2.66·MR̄
+        {t('chartCaption', { serie: def.title, unidad: def.unit })}
       </text>
     </svg>
   );
 }
 
 export function SpcPanel({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; lineaGenetica: string }) {
+  const t = useTranslations('spc');
+
   const series = useMemo((): SeriesDef[] => {
     const valid = pesajes
       .filter((p) => p.pesos.filter((w) => !w.excluido).length >= 2)
@@ -95,8 +102,8 @@ export function SpcPanel({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; li
     const stats = valid.map((p) => calculateStats(p.pesos.filter((w) => !w.excluido).map((w) => w.gramos), p.criterioPct));
 
     const out: SeriesDef[] = [
-      { key: 'cv', title: 'Coeficiente de variación', unit: '%', values: stats.map((s) => s.cv), labels },
-      { key: 'unif', title: 'Uniformidad', unit: '%', values: stats.map((s) => s.uniformidad), labels },
+      { key: 'cv', title: t('seriesCv'), unit: '%', values: stats.map((s) => s.cv), labels },
+      { key: 'unif', title: t('seriesUniformity'), unit: '%', values: stats.map((s) => s.uniformidad), labels },
     ];
 
     // Desviación % vs. objetivo solo si TODOS los pesajes tienen edad y referencia
@@ -104,14 +111,14 @@ export function SpcPanel({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; li
     if (targets.every((t) => t !== null)) {
       out.push({
         key: 'target',
-        title: 'Desviación vs. objetivo de la línea',
+        title: t('seriesTarget'),
         unit: '%',
         values: stats.map((s, i) => ((s.promedio - targets[i]!.pesoOptimo) / targets[i]!.pesoOptimo) * 100),
         labels,
       });
     }
     return out;
-  }, [pesajes, lineaGenetica]);
+  }, [pesajes, lineaGenetica, t]);
 
   const nValid = series[0]?.values.length ?? 0;
 
@@ -120,16 +127,9 @@ export function SpcPanel({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; li
       <Alert className="border-blue-200 bg-blue-50">
         <Info className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-xs text-blue-900 leading-relaxed space-y-1">
-          <p><b>La carta de control aún no es apropiada para este lote.</b></p>
-          <p>
-            Hay {nValid} pesaje(s) válido(s) y se requieren al menos {MIN_SUBGROUPS} para estimar límites de
-            control mínimamente confiables (idealmente 20+). Con pocos subgrupos, los límites quedan tan
-            inciertos que producirían falsas alarmas o darían falsa seguridad.
-          </p>
-          <p>
-            Mientras tanto, la pestaña <b>Evolución</b> muestra la tendencia del peso, CV y uniformidad,
-            que es la lectura correcta con pocos pesajes.
-          </p>
+          <p><b>{t('notYetTitle')}</b></p>
+          <p>{t('notYetBody', { n: nValid, min: MIN_SUBGROUPS })}</p>
+          <p>{t.rich('notYetHint', { b: (c) => <b>{c}</b> })}</p>
         </AlertDescription>
       </Alert>
     );
@@ -140,10 +140,7 @@ export function SpcPanel({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; li
       <Alert className="border-blue-200 bg-blue-50">
         <Info className="h-4 w-4 text-blue-600" />
         <AlertDescription className="text-[11px] text-blue-900 leading-snug">
-          No se grafica el peso promedio crudo: en aves en crecimiento la media sube de forma natural y una
-          carta X̄ marcaría esa tendencia como &quot;fuera de control&quot;. Se controlan magnitudes
-          aproximadamente estables entre pesajes: CV, uniformidad y desviación % contra el objetivo de la línea.
-          Cada pesaje se trata como una observación individual (carta I-MR).
+          {t('whyNotXbar')}
         </AlertDescription>
       </Alert>
 
@@ -159,18 +156,20 @@ export function SpcPanel({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; li
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-[11px] text-amber-900 space-y-0.5">
                   {violations.map((v, i) => (
-                    <div key={i}>• Regla de Nelson {v.rule}: {v.description}</div>
+                    <div key={i}>
+                      {v.rule === 1
+                        ? t('rule1', { punto: v.index + 1, valor: (v.value ?? 0).toFixed(2) })
+                        : v.rule === 2
+                          ? t(v.side === 'above' ? 'rule2Above' : 'rule2Below', { punto: v.index + 1 })
+                          : t(v.direction === 'up' ? 'rule3Up' : 'rule3Down', { punto: v.index + 1 })}
+                    </div>
                   ))}
-                  <div className="pt-0.5">
-                    Una señal indica variación no aleatoria que conviene investigar (alimentación, ambiente,
-                    salud, error de pesaje); no es por sí sola un diagnóstico.
-                  </div>
+                  <div className="pt-0.5">{t('signalNote')}</div>
                 </AlertDescription>
               </Alert>
             ) : (
               <p className="text-[11px] text-muted-foreground">
-                Sin señales de las reglas de Nelson 1-3: la variación de {def.title.toLowerCase()} entre
-                pesajes es compatible con variación aleatoria.
+                {t('noSignals', { serie: def.title.toLowerCase() })}
               </p>
             )}
           </div>

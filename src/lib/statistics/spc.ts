@@ -106,7 +106,18 @@ export function imrChart(values: number[]): IMRChart | null {
 export interface NelsonViolation {
   rule: 1 | 2 | 3;
   index: number; // índice del punto que completa la señal
+  /**
+   * Descripción en español. La interfaz NO la usa: compone el texto desde el
+   * catálogo de idiomas con los campos estructurados de abajo. Sobrevive
+   * porque los generadores de reportes aún no están traducidos.
+   */
   description: string;
+  /** Valor del punto que disparó la regla 1. */
+  value?: number;
+  /** Regla 2: 'above' | 'below' de la línea central. */
+  side?: 'above' | 'below';
+  /** Regla 3: 'up' | 'down' de la racha sostenida. */
+  direction?: 'up' | 'down';
 }
 
 /**
@@ -120,7 +131,12 @@ export function nelsonRules(points: number[], center: number, ucl: number, lcl: 
 
   points.forEach((p, i) => {
     if (p > ucl || p < lcl) {
-      out.push({ rule: 1, index: i, description: `Punto ${i + 1} fuera de los límites de control (${p.toFixed(2)}).` });
+      out.push({
+        rule: 1,
+        index: i,
+        value: p,
+        description: `Punto ${i + 1} fuera de los límites de control (${p.toFixed(2)}).`,
+      });
     }
   });
 
@@ -131,7 +147,12 @@ export function nelsonRules(points: number[], center: number, ucl: number, lcl: 
     if (s !== 0 && s === side) run++;
     else { side = s; run = s === 0 ? 0 : 1; }
     if (run === 9) {
-      out.push({ rule: 2, index: i, description: `Nueve puntos consecutivos ${side > 0 ? 'sobre' : 'bajo'} la línea central (hasta el punto ${i + 1}).` });
+      out.push({
+        rule: 2,
+        index: i,
+        side: side > 0 ? 'above' : 'below',
+        description: `Nueve puntos consecutivos ${side > 0 ? 'sobre' : 'bajo'} la línea central (hasta el punto ${i + 1}).`,
+      });
     }
   });
 
@@ -142,7 +163,12 @@ export function nelsonRules(points: number[], center: number, ucl: number, lcl: 
     if (s !== 0 && s === trend) trendRun++;
     else { trend = s; trendRun = s === 0 ? 1 : 2; }
     if (trendRun === 6) {
-      out.push({ rule: 3, index: i, description: `Seis puntos consecutivos en ${trend > 0 ? 'ascenso' : 'descenso'} sostenido (hasta el punto ${i + 1}).` });
+      out.push({
+        rule: 3,
+        index: i,
+        direction: trend > 0 ? 'up' : 'down',
+        description: `Seis puntos consecutivos en ${trend > 0 ? 'ascenso' : 'descenso'} sostenido (hasta el punto ${i + 1}).`,
+      });
     }
   }
 
