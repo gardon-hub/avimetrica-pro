@@ -42,9 +42,9 @@ function SectionBlock({
           {title}
         </span>
         {open ? (
-          <ChevronUp className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-muted-foreground" />
+          <ChevronUp className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
         ) : (
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground/60 group-hover:text-muted-foreground" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />
         )}
       </button>
       {open && <div className="pl-5 pb-1.5">{children}</div>}
@@ -95,17 +95,21 @@ export function DiagnosticPanel() {
         ? 'border-l-amber-500'
         : 'border-l-red-600';
 
+  // Las variantes dark: no son cosmética: sin ellas el panel conservaba fondo
+  // claro en modo oscuro mientras sus textos usan tokens del tema, y el título
+  // (text-foreground) quedaba blanco sobre verde claro, es decir invisible.
+  // Se sigue la convención que ya usa la lista de pesos: tinte -950 con alfa.
   const bgColor =
     diagnostic.level === 'excellent'
-      ? 'bg-green-50'
+      ? 'bg-green-50 dark:bg-green-950/40'
       : diagnostic.level === 'regular'
-        ? 'bg-amber-50'
-        : 'bg-red-50';
+        ? 'bg-amber-50 dark:bg-amber-950/40'
+        : 'bg-red-50 dark:bg-red-950/40';
 
   return (
     <div className={`rounded-lg border border-l-4 ${borderColor} ${bgColor} py-3 px-4 mb-4`}>
       {/* Header */}
-      <div className="flex items-center gap-2 text-blue-600 text-sm font-bold mb-2">
+      <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-bold mb-2">
         <BookOpen className="h-4 w-4" />
         Diagnóstico Didáctico
         <span className="ml-auto text-[9px] font-normal text-muted-foreground/60" title="Versión de datos de referencia">v{REFERENCE_DATA_VERSION}</span>
