@@ -10,12 +10,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { PesajeConLote } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { median } from '@/lib/statistics/descriptive';
-import { twoSampleTTest, pairedTTest } from '@/lib/statistics/inference';
+import { twoSampleTTest, pairedTTest, meanConfidenceInterval } from '@/lib/statistics/inference';
+import { buildPesajesComparisonReportHtml } from '@/lib/pesajes-comparison-report';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Printer } from 'lucide-react';
 
 type Design = 'independientes' | 'pareadas' | 'repeticiones' | 'ns';
 
@@ -35,7 +37,20 @@ function pesajeLabel(p: PesajeConLote, withLote: boolean): string {
  * (cuando incluyen su campo `lote`); en ese caso, si los pesajes elegidos
  * pertenecen a lotes diferentes solo cabe el diseño "independientes".
  */
-export function ComparisonPanel({ pesajes, showLote = false }: { pesajes: PesajeConLote[]; showLote?: boolean }) {
+export function ComparisonPanel({
+  pesajes,
+  showLote = false,
+  loteActual,
+}: {
+  pesajes: PesajeConLote[];
+  showLote?: boolean;
+  /**
+   * Lote seleccionado en el historial. Al comparar dentro de un mismo lote los
+   * pesajes llegan SIN la relación `lote` (solo la trae el endpoint ?all=1),
+   * así que sin este respaldo el reporte mostraría «—» en lote y línea.
+   */
+  loteActual?: { codigo: string; lineaGenetica: string };
+}) {
   const [idA, setIdA] = useState<string>('');
   const [idB, setIdB] = useState<string>('');
   const [design, setDesign] = useState<Design | ''>('');
@@ -69,6 +84,8 @@ export function ComparisonPanel({ pesajes, showLote = false }: { pesajes: Pesaje
       medianB: median(b),
       statsA,
       statsB,
+      ciA: meanConfidenceInterval(a, 0.95),
+      ciB: meanConfidenceInterval(b, 0.95),
     };
 
     if (design === 'pareadas') {
@@ -81,6 +98,37 @@ export function ComparisonPanel({ pesajes, showLote = false }: { pesajes: Pesaje
     // advierte que la independencia entre mediciones puede no cumplirse.
     return { descr, error: null, test: twoSampleTTest(a, b, 'two-sided', 0.95), paired: false as const };
   }, [pesajeA, pesajeB, design]);
+
+  const imprimir = () => {
+    if (!pesajeA || !pesajeB || !result || !design || design === 'ns') return;
+    const resumen = (p: PesajeConLote, stats: typeof result.descr.statsA, mediana: number, ci: { lower: number; upper: number } | null) => ({
+      etiqueta: pesajeLabel(p, showLote),
+      fecha: new Date(p.fecha).toLocaleDateString(),
+      edadSemanas: p.edadSemanas,
+      lote: p.lote?.codigo ?? loteActual?.codigo ?? '—',
+      stats,
+      mediana,
+      ci,
+    });
+    const html = buildPesajesComparisonReportHtml({
+      lineaGenetica: pesajeA.lote?.lineaGenetica ?? loteActual?.lineaGenetica ?? '—',
+      a: resumen(pesajeA, result.descr.statsA, result.descr.medianA, result.descr.ciA),
+      b: resumen(pesajeB, result.descr.statsB, result.descr.medianB, result.descr.ciB),
+      test: result.test,
+      pareada: result.paired,
+      diseno: design,
+      entreLotes: crossLote,
+      lineasDistintas:
+        pesajeA.lote && pesajeB.lote && pesajeA.lote.lineaGenetica !== pesajeB.lote.lineaGenetica
+          ? `Las líneas genéticas difieren (${pesajeA.lote.lineaGenetica} vs. ${pesajeB.lote.lineaGenetica}).`
+          : undefined,
+    });
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 400);
+  };
 
   if (pesajes.length < 2) {
     return <p className="text-xs text-muted-foreground">Se necesitan al menos 2 pesajes para comparar.</p>;
@@ -238,6 +286,10 @@ export function ComparisonPanel({ pesajes, showLote = false }: { pesajes: Pesaje
           ) : (
             <p className="text-xs text-muted-foreground">Ambos pesajes necesitan al menos 2 pesos con variabilidad.</p>
           )}
+
+          <Button onClick={imprimir} className="w-full h-10 text-sm bg-gray-800 hover:bg-gray-900 text-white">
+            <Printer className="h-4 w-4 mr-1.5" /> Imprimir comparación / PDF
+          </Button>
         </>
       )}
     </div>

@@ -359,6 +359,10 @@ export function HistorialPanel() {
                   <ComparisonPanel
                     pesajes={compareAllLotes ? allPesajes : pesajes}
                     showLote={compareAllLotes}
+                    loteActual={{
+                      codigo: selectedLote.codigo,
+                      lineaGenetica: selectedLote.lineaGenetica,
+                    }}
                   />
                 </TabsContent>
 
