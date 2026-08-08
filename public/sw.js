@@ -1,4 +1,4 @@
-const CACHE_NAME = 'avimetrica-pro-v4';
+const CACHE_NAME = 'avimetrica-pro-v5';
 const OFFLINE_URLS = [
   '/',
   '/logo-avimetrica.png',

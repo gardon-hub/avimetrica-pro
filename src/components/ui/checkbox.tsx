@@ -15,6 +15,10 @@ function Checkbox({
       data-slot="checkbox"
       className={cn(
         "peer border-input dark:bg-input/30 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground dark:data-[state=checked]:bg-primary data-[state=checked]:border-primary focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive size-4 shrink-0 rounded-[4px] border shadow-xs transition-shadow outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50",
+        // La casilla mide 16 px a propósito; en táctil se amplía solo el área
+        // sensible (16 + 14×2 = 44 px) con un pseudo-elemento, sin agrandar el
+        // dibujo ni mover el texto de la etiqueta.
+        "relative pointer-coarse:after:absolute pointer-coarse:after:-inset-3.5 pointer-coarse:after:content-['']",
         className
       )}
       {...props}

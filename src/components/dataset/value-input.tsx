@@ -154,10 +154,10 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
                 <span className="text-[10px] text-muted-foreground shrink-0">{variable.unit}</span>
                 <button
                   onClick={() => removeValor(i)}
-                  className="text-red-300 hover:text-red-600 shrink-0"
+                  className="text-red-300 hover:text-red-600 shrink-0 flex items-center justify-center pointer-coarse:min-h-11 pointer-coarse:min-w-11"
                   aria-label={`Eliminar el valor ${i + 1}`}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                 </button>
               </div>
             ))}

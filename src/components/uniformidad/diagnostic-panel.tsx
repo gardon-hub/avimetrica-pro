@@ -35,7 +35,7 @@ function SectionBlock({
     <div className="mb-2 last:mb-0">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 w-full text-left py-1 group"
+        className="flex items-center gap-1.5 w-full text-left py-1 group pointer-coarse:min-h-11"
       >
         <span className={iconColor}>{icon}</span>
         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide flex-1">

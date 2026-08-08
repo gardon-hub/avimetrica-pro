@@ -202,16 +202,16 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
                       onClick={() => cargar(item)}
                       disabled={cargando}
                       title="Cargar en el análisis"
-                      className="text-blue-600 hover:text-blue-800 mr-2 disabled:opacity-40"
+                      className="text-blue-600 hover:text-blue-800 mr-2 disabled:opacity-40 inline-flex items-center justify-center align-middle pointer-coarse:min-h-11 pointer-coarse:min-w-11"
                     >
-                      <Upload className="h-3.5 w-3.5 inline" />
+                      <Upload className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                     </button>
                     <button
                       onClick={() => setBorrar(item)}
                       title="Eliminar conjunto"
-                      className="text-red-400 hover:text-red-600"
+                      className="text-red-400 hover:text-red-600 inline-flex items-center justify-center align-middle pointer-coarse:min-h-11 pointer-coarse:min-w-11"
                     >
-                      <Trash2 className="h-3.5 w-3.5 inline" />
+                      <Trash2 className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                     </button>
                   </td>
                 </tr>

@@ -31,7 +31,7 @@ export function ModuleNav() {
                 href={d.route}
                 aria-current={activo ? 'page' : undefined}
                 title={d.description}
-                className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold transition-colors ${
+                className={`flex items-center justify-center gap-1.5 rounded-md px-2 py-2 text-xs font-semibold transition-colors pointer-coarse:min-h-11 pointer-coarse:text-sm ${
                   activo
                     ? 'bg-background text-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground hover:bg-background/50'

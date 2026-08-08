@@ -68,7 +68,7 @@ export function VariableForm({ store }: { store: DatasetStore }) {
           <button
             key={e.label}
             onClick={() => setVariable(e)}
-            className="text-[10px] px-2 py-0.5 rounded-full border border-border hover:bg-muted transition-colors"
+            className="text-[10px] px-2 py-0.5 rounded-full border border-border hover:bg-muted transition-colors pointer-coarse:min-h-11 pointer-coarse:px-3 pointer-coarse:text-xs"
           >
             {e.label} ({e.unit})
           </button>

@@ -120,7 +120,7 @@ export function WeightList() {
                     className="h-7 w-7 p-0 text-green-600 hover:text-green-800 shrink-0"
                     title="Confirmar"
                   >
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                   </Button>
                 ) : (
                   <Button
@@ -130,7 +130,7 @@ export function WeightList() {
                     className="h-7 w-7 p-0 text-muted-foreground/50 hover:text-amber-500 shrink-0"
                     title="Editar peso"
                   >
-                    <Pencil className="h-3 w-3" />
+                    <Pencil className="h-3 w-3 pointer-coarse:h-4.5 pointer-coarse:w-4.5" />
                   </Button>
                 )}
 
@@ -141,7 +141,7 @@ export function WeightList() {
                   className="h-7 w-7 p-0 text-muted-foreground/50 hover:text-red-500 shrink-0"
                   title="Eliminar peso"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                 </Button>
               </div>
             );
