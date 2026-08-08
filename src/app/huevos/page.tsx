@@ -13,9 +13,11 @@ import { DatasetComparison } from '@/components/dataset/dataset-comparison';
 import { DatasetReportPanel } from '@/components/dataset/dataset-report-panel';
 import { useHuevosStore } from '@/lib/stores/huevos';
 import { DOMINIO_HUEVOS } from '@/lib/domains';
+import { useTranslations } from 'next-intl';
 
 export default function HuevosPage() {
   const { valores, variable } = useHuevosStore();
+  const t = useTranslations();
   // Cambia al guardar o borrar un muestreo, para que la comparación recargue
   // su lista sin necesidad de refrescar la página.
   const [token, setToken] = useState(0);
@@ -28,10 +30,10 @@ export default function HuevosPage() {
 
         <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
           <h1 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            {DOMINIO_HUEVOS.label}
+            {t('nav.huevos.long')}
           </h1>
           <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-            {DOMINIO_HUEVOS.description}
+            {t('nav.huevos.description')}
           </p>
         </div>
 
@@ -43,14 +45,14 @@ export default function HuevosPage() {
         <DatasetLibrary
           store={useHuevosStore}
           dominio="huevos"
-          titulo="Muestreos guardados"
+          titulo={t('library.savedSamplings')}
           onCambio={() => setToken((t) => t + 1)}
         />
         <DatasetComparison dominio="huevos" refrescarToken={token} />
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">
-        Avimétrica Pro — Universidad Nacional de Agricultura, Honduras
+        {t('footer.line')}
       </footer>
     </div>
   );

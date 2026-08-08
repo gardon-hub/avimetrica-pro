@@ -15,10 +15,12 @@ import { DatasetReportPanel } from '@/components/dataset/dataset-report-panel';
 import { useEstadisticaStore } from '@/lib/stores/estadistica';
 import { DOMINIO_GENERICO } from '@/lib/domains';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 export default function EstadisticaPage() {
   const { valores, variable } = useEstadisticaStore();
   const [token, setToken] = useState(0);
+  const t = useTranslations();
 
   return (
     <div className="min-h-screen flex flex-col bg-muted/40">
@@ -28,12 +30,10 @@ export default function EstadisticaPage() {
 
         <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
           <h1 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-            {DOMINIO_GENERICO.label}
+            {t('nav.generico.long')}
           </h1>
           <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
-            {DOMINIO_GENERICO.description} Usa el mismo motor estadístico verificado que los módulos
-            de aves y huevos, de modo que un ejercicio de clase y un análisis de producción se resuelven
-            con las mismas herramientas.
+            {t('nav.generico.description')} {t('nav.generico.sameEngine')}
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export default function EstadisticaPage() {
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">
-        Avimétrica Pro — Universidad Nacional de Agricultura, Honduras
+        {t('footer.line')}
       </footer>
     </div>
   );

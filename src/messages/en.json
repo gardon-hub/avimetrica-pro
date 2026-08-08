@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "Avimétrica Pro",
+    "tagline": "Poultry weight, uniformity and performance analytics",
+    "logoAlt": "Avimétrica Pro — Poultry weight, uniformity and performance analytics"
+  },
+  "language": {
+    "label": "Language",
+    "change": "Change language"
+  },
+  "theme": {
+    "toDark": "Switch to dark mode",
+    "toLight": "Switch to light mode",
+    "toggle": "Switch theme"
+  },
+  "nav": {
+    "ariaLabel": "Analysis modules",
+    "aves": {
+      "short": "Birds",
+      "long": "Body weight and flock uniformity",
+      "description": "Individual bird weighing, flock uniformity and comparison against breed standard targets."
+    },
+    "huevos": {
+      "short": "Eggs",
+      "long": "Egg weight and size grading",
+      "description": "Egg weight sampling, distribution analysis and automatic grading into size categories."
+    },
+    "generico": {
+      "short": "Statistics",
+      "long": "Statistics Mode",
+      "description": "Statistical analysis of any quantitative variable, with real or experimental data, for teaching and practice.",
+      "sameEngine": "It uses the same verified statistical engine as the bird and egg modules, so a classroom exercise and a production analysis are solved with the same tools."
+    }
+  },
+  "library": {
+    "savedSamplings": "Saved samplings"
+  },
+  "footer": {
+    "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
+  },
+  "credits": {
+    "author": "Gustavo Alonso Ardón",
+    "role": "Research Professor in Poultry Science",
+    "institution": "Universidad Nacional de Agricultura (National University of Agriculture), Honduras"
+  }
+}

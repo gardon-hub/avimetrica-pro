@@ -19,8 +19,11 @@ import { DiagnosticPanel } from '@/components/uniformidad/diagnostic-panel';
 import { ReportPanel } from '@/components/uniformidad/report-panel';
 import { SessionManager } from '@/components/uniformidad/session-manager';
 import { Credits } from '@/components/uniformidad/credits';
+import { useTranslations } from 'next-intl';
 
 export default function AvesPage() {
+  const t = useTranslations('footer');
+
   return (
     <div className="min-h-screen flex flex-col bg-muted/40">
       <main className="flex-1 w-full max-w-2xl mx-auto px-3 sm:px-4 py-4">
@@ -45,7 +48,7 @@ export default function AvesPage() {
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">
-        Avimétrica Pro — Universidad Nacional de Agricultura, Honduras
+        {t('line')}
       </footer>
     </div>
   );

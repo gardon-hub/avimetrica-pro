@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegistrar } from "@/components/uniformidad/sw-registrar";
@@ -40,21 +42,28 @@ export const viewport: Viewport = {
   // La app está llena de tablas de cifras y gráficos SVG que se leen ampliando.
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // El idioma sale de la cookie que lee src/i18n/request.ts; `lang` del <html>
+  // debe seguirlo para que lectores de pantalla y correctores acierten.
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-          <ServiceWorkerRegistrar />
-          <Toaster />
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+            <ServiceWorkerRegistrar />
+            <Toaster />
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

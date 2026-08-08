@@ -1,0 +1,46 @@
+{
+  "app": {
+    "name": "Avimétrica Pro",
+    "tagline": "Analítica de peso, uniformidad y desempeño avícola",
+    "logoAlt": "Avimétrica Pro — Analítica de peso, uniformidad y desempeño avícola"
+  },
+  "language": {
+    "label": "Idioma",
+    "change": "Cambiar idioma"
+  },
+  "theme": {
+    "toDark": "Cambiar a modo oscuro",
+    "toLight": "Cambiar a modo claro",
+    "toggle": "Cambiar tema"
+  },
+  "nav": {
+    "ariaLabel": "Módulos de análisis",
+    "aves": {
+      "short": "Aves",
+      "long": "Peso corporal y uniformidad del lote",
+      "description": "Pesaje individual de aves, uniformidad del lote y comparación con los objetivos de la línea genética."
+    },
+    "huevos": {
+      "short": "Huevos",
+      "long": "Peso y clasificación de huevo",
+      "description": "Muestreo de peso de huevos, análisis de su distribución y clasificación automática por categorías de tamaño."
+    },
+    "generico": {
+      "short": "Estadística",
+      "long": "Modo Estadística",
+      "description": "Análisis estadístico de cualquier variable cuantitativa, con datos reales o experimentales, para enseñanza y práctica.",
+      "sameEngine": "Usa el mismo motor estadístico verificado que los módulos de aves y huevos, de modo que un ejercicio de clase y un análisis de producción se resuelven con las mismas herramientas."
+    }
+  },
+  "library": {
+    "savedSamplings": "Muestreos guardados"
+  },
+  "footer": {
+    "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
+  },
+  "credits": {
+    "author": "Gustavo Alonso Ardón",
+    "role": "Profesor Investigador en Ciencias Avícolas",
+    "institution": "Universidad Nacional de Agricultura, Honduras"
+  }
+}

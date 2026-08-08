@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
+import { useTranslations } from 'next-intl';
 import { Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 /** Botón de alternancia claro/oscuro (evita el parpadeo de hidratación). */
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
+  const t = useTranslations('theme');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="sm"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      aria-label={mounted ? (isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro') : 'Cambiar tema'}
+      aria-label={mounted ? (isDark ? t('toLight') : t('toDark')) : t('toggle')}
       className="h-9 w-9 p-0"
     >
       {mounted ? (
