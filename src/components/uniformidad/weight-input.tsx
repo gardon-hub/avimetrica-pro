@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Plus } from 'lucide-react';
 
 export function WeightInput() {
   const { addPeso } = useUniformidadStore();
+  const t = useTranslations('weightInput');
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -32,7 +34,8 @@ export function WeightInput() {
       <Input
         ref={inputRef}
         type="number"
-        placeholder="Peso en gramos"
+        placeholder={t('placeholder')}
+        aria-label={t('placeholder')}
         step={1}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -41,6 +44,7 @@ export function WeightInput() {
       />
       <Button
         onClick={handleAdd}
+        aria-label={t('add')}
         className="h-12 px-6 text-xl font-bold bg-green-600 hover:bg-green-700 text-white shadow-md active:scale-95 transition-transform"
       >
         <Plus className="h-6 w-6" />

@@ -35,6 +35,89 @@
   "library": {
     "savedSamplings": "Amostragens guardadas"
   },
+  "flock": {
+    "line": "Linhagem genética",
+    "linePlaceholder": "Selecionar linhagem",
+    "age": "Idade (semanas)",
+    "agePlaceholder": "Ex.: 22"
+  },
+  "weightInput": {
+    "placeholder": "Peso em gramas",
+    "add": "Adicionar peso"
+  },
+  "stats": {
+    "birds": "Aves",
+    "mean": "Média",
+    "sd": "Desv. padrão (n−1)",
+    "meanMinus": "Média −{pct}%",
+    "meanPlus": "Média +{pct}%",
+    "cv": "CV (%)",
+    "below": "Abaixo",
+    "above": "Acima",
+    "inRange": "Na faixa",
+    "uniformity": "Uniformidade"
+  },
+  "criterion": {
+    "label": "Critério de uniformidade (faixa em torno da média)",
+    "preset5": "Média ±5%",
+    "preset75": "Média ±7,5%",
+    "preset10": "Média ±10% (tradicional)",
+    "preset15": "Média ±15%",
+    "custom": "Personalizado…",
+    "customPct": "Porcentagem personalizada",
+    "note": "A uniformidade é a % de aves dentro de média ±{pct}%. É uma faixa descritiva, <b>não</b> um intervalo de confiança."
+  },
+  "units": {
+    "g": "gramas (g)",
+    "kg": "quilogramas (kg)",
+    "lb": "libras (lb)"
+  },
+  "reset": {
+    "confirm": "Tem certeza de que deseja apagar todos os dados e iniciar um novo teste?",
+    "button": "Iniciar novo teste"
+  },
+  "bulkImport": {
+    "trigger": "Colagem em massa (Excel / lista de texto)",
+    "unitLabel": "Unidade dos dados colados",
+    "placeholder": "Cole aqui os pesos separados por espaços, vírgulas, ponto e vírgula ou quebras de linha.\nEx.:\n1450\n1502.5\n1387",
+    "valid": "<b>{n}</b> valores válidos",
+    "willConvert": "(serão convertidos para gramas)",
+    "discarded": "{n} descartados (não numéricos ou ≤ 0): {list}",
+    "suspicious": "{n} valores fora da faixa típica avícola (10–8000 g) — serão importados, mas verifique a unidade e a digitação: {list}",
+    "import": "Importar {n} pesos",
+    "toastTitle": "{n} pesos importados",
+    "toastSomeInvalid": "{n} valores não numéricos foram descartados.",
+    "toastAllValid": "Todos os valores eram válidos."
+  },
+  "fileImport": {
+    "trigger": "Importar arquivo (CSV / XLSX)",
+    "file": "Arquivo",
+    "filePicker": "Selecionar arquivo CSV ou XLSX",
+    "unitLabel": "Unidade dos dados",
+    "column": "Coluna com os pesos",
+    "columnOption": "{header} — {n} valores (ex.: {sample})",
+    "genericColumn": "Coluna {letra}",
+    "ready": "<b>{n}</b> valores prontos para importar",
+    "willConvert": "(serão convertidos para gramas)",
+    "suspicious": "{n} fora da faixa típica avícola (10–8000 g): verifique a unidade e a digitação.",
+    "import": "Importar {n} pesos",
+    "importedFrom": "De {archivo}",
+    "toastTitle": "{n} pesos importados",
+    "noNumericTitle": "Sem dados numéricos",
+    "noNumericBody": "Não foram encontradas colunas com valores numéricos.",
+    "noDataTitle": "Sem dados",
+    "noDataBody": "Não foram encontrados valores numéricos no arquivo.",
+    "readError": "Erro ao ler o arquivo"
+  },
+  "weightList": {
+    "title": "Lista de pesos",
+    "count": "{n} aves",
+    "empty": "Insira pesos para começar...",
+    "inRange": "✓ Na faixa",
+    "edit": "Editar peso",
+    "delete": "Excluir peso",
+    "confirm": "Confirmar"
+  },
   "footer": {
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },

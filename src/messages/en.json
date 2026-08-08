@@ -35,6 +35,89 @@
   "library": {
     "savedSamplings": "Saved samplings"
   },
+  "flock": {
+    "line": "Genetic line",
+    "linePlaceholder": "Select a line",
+    "age": "Age (weeks)",
+    "agePlaceholder": "e.g. 22"
+  },
+  "weightInput": {
+    "placeholder": "Weight in grams",
+    "add": "Add weight"
+  },
+  "stats": {
+    "birds": "Birds",
+    "mean": "Mean",
+    "sd": "Std. dev. (n−1)",
+    "meanMinus": "Mean −{pct}%",
+    "meanPlus": "Mean +{pct}%",
+    "cv": "CV (%)",
+    "below": "Below",
+    "above": "Above",
+    "inRange": "In range",
+    "uniformity": "Uniformity"
+  },
+  "criterion": {
+    "label": "Uniformity criterion (band around the mean)",
+    "preset5": "Mean ±5%",
+    "preset75": "Mean ±7.5%",
+    "preset10": "Mean ±10% (traditional)",
+    "preset15": "Mean ±15%",
+    "custom": "Custom…",
+    "customPct": "Custom percentage",
+    "note": "Uniformity is the % of birds within mean ±{pct}%. It is a descriptive band, <b>not</b> a confidence interval."
+  },
+  "units": {
+    "g": "grams (g)",
+    "kg": "kilograms (kg)",
+    "lb": "pounds (lb)"
+  },
+  "reset": {
+    "confirm": "Are you sure you want to delete all data and start a new test?",
+    "button": "Start new test"
+  },
+  "bulkImport": {
+    "trigger": "Bulk paste (Excel / text list)",
+    "unitLabel": "Unit of the pasted data",
+    "placeholder": "Paste the weights here, separated by spaces, commas, semicolons or line breaks.\ne.g.\n1450\n1502.5\n1387",
+    "valid": "<b>{n}</b> valid values",
+    "willConvert": "(they will be converted to grams)",
+    "discarded": "{n} discarded (non-numeric or ≤ 0): {list}",
+    "suspicious": "{n} values outside the typical poultry range (10–8000 g) — they will be imported, but check the unit and for typing errors: {list}",
+    "import": "Import {n} weights",
+    "toastTitle": "{n} weights imported",
+    "toastSomeInvalid": "{n} non-numeric values were discarded.",
+    "toastAllValid": "All values were valid."
+  },
+  "fileImport": {
+    "trigger": "Import file (CSV / XLSX)",
+    "file": "File",
+    "filePicker": "Select a CSV or XLSX file",
+    "unitLabel": "Unit of the data",
+    "column": "Column holding the weights",
+    "columnOption": "{header} — {n} values (e.g. {sample})",
+    "genericColumn": "Column {letra}",
+    "ready": "<b>{n}</b> values ready to import",
+    "willConvert": "(they will be converted to grams)",
+    "suspicious": "{n} outside the typical poultry range (10–8000 g): check the unit and for typing errors.",
+    "import": "Import {n} weights",
+    "importedFrom": "From {archivo}",
+    "toastTitle": "{n} weights imported",
+    "noNumericTitle": "No numeric data",
+    "noNumericBody": "No columns with numeric values were found.",
+    "noDataTitle": "No data",
+    "noDataBody": "No numeric values were found in the file.",
+    "readError": "Error reading the file"
+  },
+  "weightList": {
+    "title": "Weight list",
+    "count": "{n} birds",
+    "empty": "Enter weights to begin...",
+    "inRange": "✓ In range",
+    "edit": "Edit weight",
+    "delete": "Delete weight",
+    "confirm": "Confirm"
+  },
   "footer": {
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },

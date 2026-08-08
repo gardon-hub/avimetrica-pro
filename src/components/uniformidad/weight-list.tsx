@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +9,7 @@ import { X, Pencil, Check } from 'lucide-react';
 
 export function WeightList() {
   const { pesos, stats, removePeso, updatePeso } = useUniformidadStore();
+  const t = useTranslations('weightList');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +54,7 @@ export function WeightList() {
   if (pesos.length === 0) {
     return (
       <div className="bg-card rounded-lg shadow-sm border py-4 px-5 text-center text-muted-foreground mb-4 text-sm">
-        Ingresa pesos para empezar...
+        {t('empty')}
       </div>
     );
   }
@@ -61,8 +63,8 @@ export function WeightList() {
     <div className="bg-card rounded-lg shadow-sm border mb-4 overflow-hidden">
       {/* Fixed header */}
       <div className="px-4 py-2 bg-green-700 text-white text-sm font-bold flex items-center justify-between">
-        <span>Lista de Pesos</span>
-        <span className="bg-white/20 px-2 py-0.5 rounded text-xs">{pesos.length} aves</span>
+        <span>{t('title')}</span>
+        <span className="bg-white/20 px-2 py-0.5 rounded text-xs">{t('count', { n: pesos.length })}</span>
       </div>
       {/* Scrollable body with comfortable height */}
       <div
@@ -73,7 +75,7 @@ export function WeightList() {
           {pesos.map((p, index) => {
             const desviacion = p - stats.promedio;
             let claseDesviacion = 'text-muted-foreground text-xs';
-            let textoDesv = '✓ En rango';
+            let textoDesv = t('inRange');
             let bgClass = 'bg-card hover:bg-muted/50';
 
             if (p < stats.limiteInf) {
@@ -118,7 +120,7 @@ export function WeightList() {
                     size="sm"
                     onClick={confirmEdit}
                     className="h-7 w-7 p-0 text-green-600 hover:text-green-800 shrink-0"
-                    title="Confirmar"
+                    title={t('confirm')}
                   >
                     <Check className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                   </Button>
@@ -128,7 +130,7 @@ export function WeightList() {
                     size="sm"
                     onClick={() => startEdit(index)}
                     className="h-7 w-7 p-0 text-muted-foreground hover:text-amber-600 active:text-amber-600 dark:hover:text-amber-400 dark:active:text-amber-400 shrink-0"
-                    title="Editar peso"
+                    title={t('edit')}
                   >
                     <Pencil className="h-3 w-3 pointer-coarse:h-4.5 pointer-coarse:w-4.5" />
                   </Button>
@@ -139,7 +141,7 @@ export function WeightList() {
                   size="sm"
                   onClick={() => removePeso(index)}
                   className="h-7 w-7 p-0 text-muted-foreground hover:text-red-600 active:text-red-600 dark:hover:text-red-400 dark:active:text-red-400 shrink-0"
-                  title="Eliminar peso"
+                  title={t('delete')}
                 >
                   <X className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                 </Button>

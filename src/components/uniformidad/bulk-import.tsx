@@ -7,8 +7,9 @@
  */
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
-import { toGrams, WeightUnit, UNIT_LABELS } from '@/lib/units';
+import { toGrams, WeightUnit, GRAMS_PER } from '@/lib/units';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -49,6 +50,8 @@ function parseWeights(text: string, unit: WeightUnit): ParseResult {
 
 export function BulkImport() {
   const { addPesos } = useUniformidadStore();
+  const t = useTranslations('bulkImport');
+  const tUnidades = useTranslations('units');
   const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [unit, setUnit] = useState<WeightUnit>('g');
@@ -59,11 +62,11 @@ export function BulkImport() {
     if (!preview || preview.valid.length === 0) return;
     addPesos(preview.valid.map((v) => Math.round(v * 10) / 10));
     toast({
-      title: `${preview.valid.length} pesos importados`,
+      title: t('toastTitle', { n: preview.valid.length }),
       description:
         preview.invalid.length > 0
-          ? `${preview.invalid.length} valores no numéricos fueron descartados.`
-          : 'Todos los valores eran válidos.',
+          ? t('toastSomeInvalid', { n: preview.invalid.length })
+          : t('toastAllValid'),
     });
     setText('');
     setOpen(false);
@@ -74,18 +77,18 @@ export function BulkImport() {
       <CollapsibleTrigger asChild>
         <Button variant="outline" className="w-full h-10 text-sm font-semibold border-dashed">
           <ClipboardPaste className="h-4 w-4 mr-2" />
-          Pegado masivo (Excel / lista de texto)
+          {t('trigger')}
           <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-3 space-y-3">
         <div className="flex flex-col gap-1">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Unidad de los datos pegados</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('unitLabel')}</Label>
           <Select value={unit} onValueChange={(v) => setUnit(v as WeightUnit)}>
             <SelectTrigger className="h-9 w-56 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {(Object.keys(UNIT_LABELS) as WeightUnit[]).map((u) => (
-                <SelectItem key={u} value={u}>{UNIT_LABELS[u]}</SelectItem>
+              {(Object.keys(GRAMS_PER) as WeightUnit[]).map((u) => (
+                <SelectItem key={u} value={u}>{tUnidades(u)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -93,24 +96,29 @@ export function BulkImport() {
         <Textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={'Pega aquí los pesos separados por espacios, comas, punto y coma o saltos de línea.\nEj:\n1450\n1502.5\n1387'}
+          placeholder={t('placeholder')}
           className="min-h-28 text-sm font-mono"
         />
         {preview && (
           <div className="text-xs bg-muted/50 rounded-md p-2.5 space-y-1">
             <div>
-              ✅ <b>{preview.valid.length}</b> valores válidos
-              {preview.valid.length > 0 && unit !== 'g' && <> (se convertirán a gramos)</>}
+              ✅ {t.rich('valid', { n: preview.valid.length, b: (c) => <b>{c}</b> })}
+              {preview.valid.length > 0 && unit !== 'g' && <> {t('willConvert')}</>}
             </div>
             {preview.invalid.length > 0 && (
               <div className="text-red-700">
-                ❌ {preview.invalid.length} descartados (no numéricos o ≤ 0): {preview.invalid.slice(0, 8).join(', ')}{preview.invalid.length > 8 && '…'}
+                ❌ {t('discarded', {
+                  n: preview.invalid.length,
+                  list: preview.invalid.slice(0, 8).join(', ') + (preview.invalid.length > 8 ? '…' : ''),
+                })}
               </div>
             )}
             {preview.suspicious.length > 0 && (
               <div className="text-amber-700">
-                ⚠️ {preview.suspicious.length} valores fuera del rango típico avícola (10–8000 g) — se importarán,
-                pero revisa unidad y digitación: {preview.suspicious.slice(0, 5).map((v) => v.toFixed(0)).join(', ')}{preview.suspicious.length > 5 && '…'}
+                ⚠️ {t('suspicious', {
+                  n: preview.suspicious.length,
+                  list: preview.suspicious.slice(0, 5).map((v) => v.toFixed(0)).join(', ') + (preview.suspicious.length > 5 ? '…' : ''),
+                })}
               </div>
             )}
           </div>
@@ -120,7 +128,7 @@ export function BulkImport() {
           disabled={!preview || preview.valid.length === 0}
           className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold"
         >
-          Importar {preview?.valid.length ?? 0} pesos
+          {t('import', { n: preview?.valid.length ?? 0 })}
         </Button>
       </CollapsibleContent>
     </Collapsible>

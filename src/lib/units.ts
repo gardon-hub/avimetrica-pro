@@ -8,11 +8,8 @@ export const GRAMS_PER: Record<WeightUnit, number> = {
   lb: 453.59237, // libra avoirdupois exacta
 };
 
-export const UNIT_LABELS: Record<WeightUnit, string> = {
-  g: 'gramos (g)',
-  kg: 'kilogramos (kg)',
-  lb: 'libras (lb)',
-};
+// Los rótulos de unidad viven en los catálogos de idioma (clave `units`), no
+// aquí: este módulo es de conversión y no debe cargar texto de interfaz.
 
 export function toGrams(value: number, unit: WeightUnit): number {
   return value * GRAMS_PER[unit];

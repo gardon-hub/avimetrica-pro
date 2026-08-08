@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 const PRESETS = [5, 7.5, 10, 15];
 
@@ -14,6 +15,7 @@ const PRESETS = [5, 7.5, 10, 15];
  */
 export function UniformityCriterion() {
   const { uniformityPct, setUniformityPct } = useUniformidadStore();
+  const t = useTranslations('criterion');
   const isPreset = PRESETS.includes(uniformityPct);
   const [custom, setCustom] = useState(isPreset ? '' : String(uniformityPct));
 
@@ -22,7 +24,7 @@ export function UniformityCriterion() {
   return (
     <div className="flex flex-col gap-1.5 mb-4">
       <Label className="text-xs uppercase font-bold text-muted-foreground tracking-wide">
-        Criterio de uniformidad (banda alrededor de la media)
+        {t('label')}
       </Label>
       <div className="flex gap-2 items-center">
         <Select
@@ -36,11 +38,11 @@ export function UniformityCriterion() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="5">Media ±5%</SelectItem>
-            <SelectItem value="7.5">Media ±7.5%</SelectItem>
-            <SelectItem value="10">Media ±10% (tradicional)</SelectItem>
-            <SelectItem value="15">Media ±15%</SelectItem>
-            <SelectItem value="custom">Personalizado…</SelectItem>
+            <SelectItem value="5">{t('preset5')}</SelectItem>
+            <SelectItem value="7.5">{t('preset75')}</SelectItem>
+            <SelectItem value="10">{t('preset10')}</SelectItem>
+            <SelectItem value="15">{t('preset15')}</SelectItem>
+            <SelectItem value="custom">{t('custom')}</SelectItem>
           </SelectContent>
         </Select>
         {selectValue === 'custom' && (
@@ -58,15 +60,17 @@ export function UniformityCriterion() {
                 if (Number.isFinite(v) && v > 0 && v <= 50) setUniformityPct(v);
               }}
               className="h-10 w-20"
-              aria-label="Porcentaje personalizado"
+              aria-label={t('customPct')}
             />
             <span className="text-sm text-muted-foreground">%</span>
           </div>
         )}
       </div>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        La uniformidad es el % de aves dentro de media ±{uniformityPct}%. Es una banda
-        descriptiva, <b>no</b> un intervalo de confianza.
+        {t.rich('note', {
+          pct: uniformityPct,
+          b: (chunks) => <b>{chunks}</b>,
+        })}
       </p>
     </div>
   );

@@ -10,7 +10,8 @@
 import { useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { useUniformidadStore } from '@/lib/store';
-import { toGrams, WeightUnit, UNIT_LABELS } from '@/lib/units';
+import { useTranslations } from 'next-intl';
+import { toGrams, WeightUnit, GRAMS_PER } from '@/lib/units';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -57,6 +58,8 @@ function parseTextNumbers(text: string): number[] {
 
 export function FileImport() {
   const { addPesos } = useUniformidadStore();
+  const t = useTranslations('fileImport');
+  const tUnidades = useTranslations('units');
   const [open, setOpen] = useState(false);
   const [unit, setUnit] = useState<WeightUnit>('g');
   const [file, setFile] = useState<FileState | null>(null);
@@ -72,7 +75,7 @@ export function FileImport() {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1 }) as unknown[][];
         if (rows.length === 0) {
-          toast({ title: 'Archivo vacío', variant: 'destructive' });
+          toast({ title: t('noDataTitle'), description: t('noDataBody'), variant: 'destructive' });
           return;
         }
         // Detectar columnas candidatas (con ≥2 valores numéricos)
@@ -89,14 +92,16 @@ export function FileImport() {
           if (values.length >= 2) {
             candidates.push({
               index: c,
-              header: isHeaderText ? String(headerCell) : `Columna ${XLSX.utils.encode_col(c)}`,
+              header: isHeaderText
+                ? String(headerCell)
+                : t('genericColumn', { letra: XLSX.utils.encode_col(c) }),
               numericCount: values.length,
               sample: values.slice(0, 4),
             });
           }
         }
         if (candidates.length === 0) {
-          toast({ title: 'Sin datos numéricos', description: 'No se encontraron columnas con valores numéricos.', variant: 'destructive' });
+          toast({ title: t('noNumericTitle'), description: t('noNumericBody'), variant: 'destructive' });
           return;
         }
         // Preseleccionar: primero por encabezado tipo "peso", luego por cantidad de datos
@@ -108,7 +113,7 @@ export function FileImport() {
         const text = await f.text();
         const values = parseTextNumbers(text);
         if (values.length === 0) {
-          toast({ title: 'Sin datos', description: 'No se encontraron valores numéricos en el archivo.', variant: 'destructive' });
+          toast({ title: t('noDataTitle'), description: t('noDataBody'), variant: 'destructive' });
           return;
         }
         setFile({ filename: f.name, columns: [], values, rows: [] });
@@ -116,7 +121,7 @@ export function FileImport() {
       }
     } catch (err) {
       console.error(err);
-      toast({ title: 'Error al leer el archivo', variant: 'destructive' });
+      toast({ title: t('readError'), variant: 'destructive' });
     }
   };
 
@@ -138,7 +143,10 @@ export function FileImport() {
   const handleImport = () => {
     if (grams.length === 0) return;
     addPesos(grams.map((v) => Math.round(v * 10) / 10));
-    toast({ title: `${grams.length} pesos importados`, description: `Desde ${file?.filename}` });
+    toast({
+      title: t('toastTitle', { n: grams.length }),
+      description: t('importedFrom', { archivo: file?.filename ?? '' }),
+    });
     setFile(null);
     setSelectedCol('');
     if (inputRef.current) inputRef.current.value = '';
@@ -150,14 +158,14 @@ export function FileImport() {
       <CollapsibleTrigger asChild>
         <Button variant="outline" className="w-full h-10 text-sm font-semibold border-dashed">
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Importar archivo (CSV / XLSX)
+          {t('trigger')}
           <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${open ? 'rotate-180' : ''}`} />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-3 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Archivo</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('file')}</Label>
             <input
               ref={inputRef}
               type="file"
@@ -167,16 +175,16 @@ export function FileImport() {
                 if (f) handleFile(f);
               }}
               className="text-xs file:mr-2 file:rounded-md file:border-0 file:bg-green-600 file:text-white file:px-3 file:py-1.5 file:text-xs file:font-semibold hover:file:bg-green-700"
-              aria-label="Seleccionar archivo CSV o XLSX"
+              aria-label={t('filePicker')}
             />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Unidad de los datos</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('unitLabel')}</Label>
             <Select value={unit} onValueChange={(v) => setUnit(v as WeightUnit)}>
               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(UNIT_LABELS) as WeightUnit[]).map((u) => (
-                  <SelectItem key={u} value={u}>{UNIT_LABELS[u]}</SelectItem>
+                {(Object.keys(GRAMS_PER) as WeightUnit[]).map((u) => (
+                  <SelectItem key={u} value={u}>{tUnidades(u)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -185,13 +193,17 @@ export function FileImport() {
 
         {file && file.columns.length > 0 && (
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Columna con los pesos</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('column')}</Label>
             <Select value={selectedCol} onValueChange={setSelectedCol}>
               <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {file.columns.map((c) => (
                   <SelectItem key={c.index} value={String(c.index)}>
-                    {c.header} — {c.numericCount} valores (ej: {c.sample.map((s) => s.toFixed(0)).join(', ')})
+                    {t('columnOption', {
+                      header: c.header,
+                      n: c.numericCount,
+                      sample: c.sample.map((s) => s.toFixed(0)).join(', '),
+                    })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -202,10 +214,13 @@ export function FileImport() {
         {file && (
           <div className="text-xs bg-muted/50 rounded-md p-2.5 space-y-1">
             <div>📄 {file.filename}</div>
-            <div>✅ <b>{grams.length}</b> valores listos para importar{unit !== 'g' && ' (se convertirán a gramos)'}</div>
+            <div>
+              ✅ {t.rich('ready', { n: grams.length, b: (c) => <b>{c}</b> })}
+              {unit !== 'g' && ` ${t('willConvert')}`}
+            </div>
             {suspicious.length > 0 && (
               <div className="text-amber-700">
-                ⚠️ {suspicious.length} fuera del rango típico avícola (10–8000 g): revisa unidad y digitación.
+                ⚠️ {t('suspicious', { n: suspicious.length })}
               </div>
             )}
           </div>
@@ -216,7 +231,7 @@ export function FileImport() {
           disabled={grams.length === 0}
           className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold"
         >
-          Importar {grams.length} pesos
+          {t('import', { n: grams.length })}
         </Button>
       </CollapsibleContent>
     </Collapsible>
