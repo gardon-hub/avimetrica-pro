@@ -680,3 +680,35 @@ suite('dominio huevos: norma USDA (Fase 9)', () => {
     expect(otros.every((p) => p.official === false)).toBe(true);
   });
 });
+
+suite('dominio genérico: Modo Estadística (Fase 10)', () => {
+  it('el preset "sin clasificación" agrupa todo en una sola categoría', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const { DOMINIO_GENERICO } = await import('../src/lib/domains/generico');
+    const p = DOMINIO_GENERICO.classificationPresets.find((x) => x.id === 'ninguna')!;
+    const r = classify([1, 50, 1000, -20], p.scheme);
+    expect(r.bins.length).toBe(1);
+    expect(r.bins[0].count).toBe(4);
+    expect(r.unclassified).toBe(0);
+    expect(DOMINIO_GENERICO.defaultPresetId).toBe('ninguna');
+  });
+
+  it('ningún preset del dominio genérico se declara norma oficial', async () => {
+    const { DOMINIO_GENERICO } = await import('../src/lib/domains/generico');
+    expect(DOMINIO_GENERICO.classificationPresets.every((p) => p.official === false)).toBe(true);
+  });
+
+  it('los tres dominios tienen rutas e ids únicos y un preset por defecto válido', async () => {
+    const { DOMINIOS, defaultPreset } = await import('../src/lib/domains');
+    expect(DOMINIOS.length).toBe(3);
+    const ids = DOMINIOS.map((d) => d.id);
+    const rutas = DOMINIOS.map((d) => d.route);
+    expect(new Set(ids).size).toBe(3);
+    expect(new Set(rutas).size).toBe(3);
+    for (const d of DOMINIOS) {
+      // El preset por defecto debe existir dentro del propio dominio
+      expect(d.classificationPresets.some((p) => p.id === d.defaultPresetId)).toBe(true);
+      expect(defaultPreset(d)).toBeTruthy();
+    }
+  });
+});

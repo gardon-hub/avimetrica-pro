@@ -37,6 +37,11 @@ export interface DatasetState {
   /** Esquema activo; puede ser un preset o una edición del usuario. */
   scheme: ClassificationScheme;
   contexto: DatasetContext;
+  /**
+   * Valor hipotético μ₀ contra el que contrastar la media (prueba t de una
+   * muestra). En aves lo aporta la línea genética; aquí lo define el usuario.
+   */
+  muHipotetica: number | null;
 
   // Derivado
   clasificacion: ClassificationResult;
@@ -51,6 +56,9 @@ export interface DatasetState {
   setPreset: (presetId: string) => void;
   setScheme: (scheme: ClassificationScheme) => void;
   setContexto: (c: Partial<DatasetContext>) => void;
+  setMuHipotetica: (mu: number | null) => void;
+  /** Carga un conjunto completo (p. ej. desde la base de datos). */
+  cargar: (d: Partial<DatasetState>) => void;
   reset: () => void;
 }
 
@@ -83,6 +91,7 @@ export function createDatasetStore(domain: Domain, storageKey: string): DatasetS
           presetId: preset.id,
           scheme: preset.scheme,
           contexto: { ...emptyContext },
+          muHipotetica: null,
           clasificacion: classify([], preset.scheme),
 
           addValor: (v) => set(recalc([...get().valores, v], get().scheme)),
@@ -115,6 +124,17 @@ export function createDatasetStore(domain: Domain, storageKey: string): DatasetS
 
           setContexto: (c) => set({ contexto: { ...get().contexto, ...c } }),
 
+          setMuHipotetica: (mu) => set({ muHipotetica: mu }),
+
+          cargar: (d) => {
+            const valores = d.valores ?? get().valores;
+            const scheme = d.scheme ?? get().scheme;
+            set({
+              ...d,
+              ...recalc(valores, scheme),
+            });
+          },
+
           reset: () =>
             set({
               variable: { ...domain.variable },
@@ -134,6 +154,7 @@ export function createDatasetStore(domain: Domain, storageKey: string): DatasetS
           presetId: s.presetId,
           scheme: s.scheme,
           contexto: s.contexto,
+          muHipotetica: s.muHipotetica,
         }) as unknown as DatasetState,
         onRehydrateStorage: () => (state) => {
           if (state) {

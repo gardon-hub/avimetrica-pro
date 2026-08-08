@@ -73,3 +73,42 @@ model BirdWeight {
 
   @@index([sessionId])
 }
+
+// ─── Modo Estadística (Fase 10) ───────────────────────────────────
+// Conjuntos de datos de cualquier variable cuantitativa, para docencia.
+//
+// DECISIÓN DE DISEÑO: aquí los valores SÍ se guardan como arreglo JSON, al
+// contrario que los pesajes de aves (BirdWeight es una tabla propia). El
+// motivo es el caso de uso: un conjunto de clase se edita como un todo y no
+// necesita auditoría por observación individual, exclusión documentada ni
+// histórico por dato. Si en el futuro se requiere eso, la migración es la
+// misma que se hizo para los pesajes.
+
+model Dataset {
+  id            String    @id @default(cuid())
+  nombre        String
+  descripcion   String?
+
+  // Definición de la variable (la declara el usuario en cada conjunto)
+  variableLabel String    @default("Variable")
+  variableUnit  String    @default("")
+  decimales     Int       @default(2)
+
+  valores       String    @default("[]")   // JSON: number[]
+
+  // Criterio de clasificación activo al guardar
+  presetId      String?
+  scheme        String?                    // JSON del ClassificationScheme
+
+  // Contexto del muestreo o del ejercicio
+  origen        String?
+  responsable   String?
+  fecha         DateTime?
+  observaciones String?
+
+  // Referencia para inferencia: valor hipotético μ₀ del ejercicio
+  muHipotetica  Float?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
