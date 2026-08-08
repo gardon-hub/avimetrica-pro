@@ -13,7 +13,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ClassificationScheme } from '@/lib/classification';
 import { classify } from '@/lib/classification';
 import { describe } from '@/lib/statistics/descriptive';
-import { twoSampleTTest, pairedTTest } from '@/lib/statistics/inference';
+import { twoSampleTTest, pairedTTest, meanConfidenceInterval } from '@/lib/statistics/inference';
+import { CategoriasBarChart, MediasBarChart } from './comparison-charts';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -101,6 +102,15 @@ export function DatasetComparison({
     }
     return { dA, dB, test: twoSampleTTest(a.valores, b.valores, 'two-sided', 0.95), paired: false as const, error: null };
   }, [a, b, design]);
+
+  /** IC 95 % de cada media, para las barras de error del gráfico. */
+  const intervalos = useMemo(
+    () => ({
+      a: a ? meanConfidenceInterval(a.valores, 0.95) : null,
+      b: b ? meanConfidenceInterval(b.valores, 0.95) : null,
+    }),
+    [a, b],
+  );
 
   /** Distribución por categorías de ambos, usando el esquema del muestreo A. */
   const categorias = useMemo(() => {
@@ -221,10 +231,42 @@ export function DatasetComparison({
             </table>
           </div>
 
+          {a && b && (
+            <div className="mb-3">
+              <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
+                Medias comparadas
+              </div>
+              <MediasBarChart
+                mediaA={resultado.dA.mean}
+                mediaB={resultado.dB.mean}
+                ciA={intervalos.a}
+                ciB={intervalos.b}
+                nombreA={a.nombre}
+                nombreB={b.nombre}
+                unidad={u}
+                decimales={dec}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
+                Si las barras de error se solapan ampliamente, la diferencia entre medias es dudosa;
+                el valor p de la prueba es el criterio formal. La escala no arranca en cero para no
+                aplanar diferencias pequeñas.
+              </p>
+            </div>
+          )}
+
+          {categorias && a && b && (
+            <div className="mb-3">
+              <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
+                Distribución por categorías (criterio del muestreo A)
+              </div>
+              <CategoriasBarChart categorias={categorias} nombreA={a.nombre} nombreB={b.nombre} />
+            </div>
+          )}
+
           {categorias && (
             <div className="overflow-x-auto mb-3">
               <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
-                Distribución por categorías (criterio del muestreo A)
+                Detalle por categoría
               </div>
               <table className="w-full text-[11px] border-collapse">
                 <thead>
