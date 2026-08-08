@@ -112,7 +112,7 @@ export function DiagnosticPanel() {
       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-bold mb-2">
         <BookOpen className="h-4 w-4" />
         Diagnóstico Didáctico
-        <span className="ml-auto text-[9px] font-normal text-muted-foreground/60" title="Versión de datos de referencia">v{REFERENCE_DATA_VERSION}</span>
+        <span className="ml-auto text-[9px] font-normal text-muted-foreground" title="Versión de datos de referencia">v{REFERENCE_DATA_VERSION}</span>
       </div>
 
       {/* Title + Badge */}
