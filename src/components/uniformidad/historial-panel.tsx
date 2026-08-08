@@ -331,7 +331,15 @@ export function HistorialPanel() {
                 </TabsContent>
 
                 <TabsContent value="evolucion" className="pt-3">
-                  <EvolutionCharts pesajes={pesajes} lineaGenetica={selectedLote.lineaGenetica} />
+                  <EvolutionCharts
+                    pesajes={pesajes}
+                    lineaGenetica={selectedLote.lineaGenetica}
+                    lote={{
+                      codigo: selectedLote.codigo,
+                      granja: selectedLote.granja,
+                      galpon: selectedLote.galpon,
+                    }}
+                  />
                 </TabsContent>
 
                 <TabsContent value="comparar" className="pt-3 space-y-3">

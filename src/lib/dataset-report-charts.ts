@@ -420,6 +420,143 @@ export function bandaVsIcSvg(
   `);
 }
 
+export interface SerieLinea {
+  label: string;
+  color: string;
+  /** null = sin dato en esa fecha; el trazo se interrumpe. */
+  valores: Array<number | null>;
+  discontinua?: boolean;
+}
+
+/**
+ * Gráfico de líneas para series temporales (evolución de un lote).
+ *
+ * La escala vertical NO arranca en cero: en seguimiento de un lote interesa
+ * la forma de la curva y su distancia al objetivo, no la magnitud absoluta.
+ * Se advierte en el pie.
+ */
+export function lineasEvolucionSvg(
+  etiquetas: string[],
+  series: SerieLinea[],
+  unidad: string,
+  decimales: number,
+  titulo: string,
+): string {
+  const puntos = series.flatMap((s) => s.valores).filter((v): v is number => v !== null && Number.isFinite(v));
+  if (puntos.length === 0 || etiquetas.length === 0) return '';
+
+  const W = 620, H = 270, padL = 52, padR = 16, padT = 30, padB = 58;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  let minY = Math.min(...puntos);
+  let maxY = Math.max(...puntos);
+  const todosNoNegativos = minY >= 0;
+  if (minY === maxY) { minY -= 1; maxY += 1; }
+  const margen = (maxY - minY) * 0.12;
+  minY -= margen;
+  maxY += margen;
+  // El margen inferior no puede llevar el eje por debajo de cero cuando la
+  // magnitud no admite negativos (porcentajes, pesos): un eje que muestra
+  // «−11 %» de uniformidad no significa nada.
+  if (todosNoNegativos && minY < 0) minY = 0;
+
+  const n = etiquetas.length;
+  const toX = (i: number) => padL + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
+  const toY = (v: number) => padT + chartH * (1 - (v - minY) / (maxY - minY));
+  const f = (v: number) => v.toFixed(decimales);
+
+  const rejilla = Array.from({ length: 5 }, (_, i) => {
+    const v = minY + ((maxY - minY) * i) / 4;
+    const y = toY(v);
+    return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${padL - 5}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#6b7280">${f(v)}</text>`;
+  }).join('');
+
+  const trazos = series.map((s) => {
+    const pares = s.valores
+      .map((v, i) => ({ i, v }))
+      .filter((p): p is { i: number; v: number } => p.v !== null && Number.isFinite(p.v as number));
+    if (pares.length === 0) return '';
+    const d = pares.map((p, k) => `${k === 0 ? 'M' : 'L'}${toX(p.i).toFixed(1)},${toY(p.v).toFixed(1)}`).join(' ');
+    const circulos = pares
+      .map((p) => `<circle cx="${toX(p.i).toFixed(1)}" cy="${toY(p.v).toFixed(1)}" r="3" fill="${s.color}"/>`)
+      .join('');
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round"${s.discontinua ? ' stroke-dasharray="6,4"' : ''}/>${circulos}`;
+  }).join('');
+
+  const ejeX = etiquetas.map((l, i) =>
+    `<text x="${toX(i).toFixed(1)}" y="${(toY(minY) + 14).toFixed(1)}" text-anchor="end" font-size="8" fill="#6b7280" transform="rotate(-35 ${toX(i).toFixed(1)} ${(toY(minY) + 14).toFixed(1)})">${esc(corta(l, 12))}</text>`,
+  ).join('');
+
+  const leyenda = series.map((s, i) =>
+    `<line x1="${padL + i * 170}" y1="12" x2="${padL + i * 170 + 18}" y2="12" stroke="${s.color}" stroke-width="2.5"${s.discontinua ? ' stroke-dasharray="6,4"' : ''}/>
+     <text x="${padL + i * 170 + 22}" y="15" font-size="9.5" fill="#374151">${esc(corta(s.label, 24))}</text>`,
+  ).join('');
+
+  return envolver(W, H, `
+    <rect width="${W}" height="${H}" fill="white" rx="8"/>
+    ${rejilla}
+    ${trazos}
+    <line x1="${padL}" y1="${toY(minY).toFixed(1)}" x2="${W - padR}" y2="${toY(minY).toFixed(1)}" stroke="#9ca3af" stroke-width="1.2"/>
+    ${ejeX}
+    ${leyenda}
+    <text x="10" y="${padT - 12}" font-size="9" fill="#6b7280">${esc(unidad)}</text>
+    <text x="${W - padR}" y="${H - 5}" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(titulo)} · escala sin origen en cero</text>
+  `);
+}
+
+/** Barras de la ganancia diaria entre pesajes consecutivos. */
+export function gananciaDiariaBarSvg(
+  periodos: Array<{ label: string; gDia: number | null }>,
+  unidad: string,
+): string {
+  const datos = periodos.filter((p): p is { label: string; gDia: number } => p.gDia !== null && Number.isFinite(p.gDia));
+  if (datos.length === 0) return '';
+
+  const W = 620, H = 230, padL = 46, padR = 14, padT = 18, padB = 62;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const vals = datos.map((d) => d.gDia);
+  const maxAbs = Math.max(...vals.map(Math.abs), 1);
+  const hayNegativos = vals.some((v) => v < 0);
+  const tope = Math.ceil(maxAbs / 5) * 5;
+  const minY = hayNegativos ? -tope : 0;
+  const maxY = tope;
+
+  const toY = (v: number) => padT + chartH * (1 - (v - minY) / (maxY - minY));
+  const grupoW = chartW / datos.length;
+  const barW = Math.min(46, grupoW - 10);
+  const yCero = toY(0);
+
+  const rejilla = Array.from({ length: 5 }, (_, i) => {
+    const v = minY + ((maxY - minY) * i) / 4;
+    const y = toY(v);
+    return `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${padL - 5}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#6b7280">${v.toFixed(0)}</text>`;
+  }).join('');
+
+  const barras = datos.map((d, i) => {
+    const centro = padL + i * grupoW + grupoW / 2;
+    const x = centro - barW / 2;
+    const y = d.gDia >= 0 ? toY(d.gDia) : yCero;
+    const alto = Math.abs(toY(d.gDia) - yCero);
+    const color = d.gDia >= 0 ? '#2E7D32' : '#dc2626';
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(alto, 1).toFixed(1)}" fill="${color}" rx="2"/>
+      <text x="${centro.toFixed(1)}" y="${(d.gDia >= 0 ? y - 4 : y + alto + 11).toFixed(1)}" text-anchor="middle" font-size="9" font-weight="bold" fill="#374151">${d.gDia.toFixed(1)}</text>
+      <text x="${centro.toFixed(1)}" y="${(yCero + (hayNegativos ? chartH * 0.5 : 0) + 16).toFixed(1)}" text-anchor="end" font-size="8" fill="#6b7280" transform="rotate(-35 ${centro.toFixed(1)} ${(yCero + (hayNegativos ? chartH * 0.5 : 0) + 16).toFixed(1)})">${esc(corta(d.label, 16))}</text>`;
+  }).join('');
+
+  return envolver(W, H, `
+    <rect width="${W}" height="${H}" fill="white" rx="8"/>
+    ${rejilla}
+    ${barras}
+    <line x1="${padL}" y1="${yCero.toFixed(1)}" x2="${W - padR}" y2="${yCero.toFixed(1)}" stroke="#9ca3af" stroke-width="1.5"/>
+    <text x="10" y="${padT - 4}" font-size="9" fill="#6b7280">${esc(unidad)}/día</text>
+  `);
+}
+
 /** Genera los cortes efectivos legibles para el pie de un gráfico. */
 export function describeBins(bins: Bin[], unidad: string, dec: number): string {
   return bins

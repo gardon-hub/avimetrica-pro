@@ -9,6 +9,9 @@ import { useMemo } from 'react';
 import { PesajeFull } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { getTargetWeight } from '@/lib/diagnostic-engine';
+import { buildEvolucionReportHtml } from '@/lib/evolucion-report';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 
 interface SeriesPoint {
   fecha: Date;
@@ -121,7 +124,16 @@ function LineChartSVG({
   );
 }
 
-export function EvolutionCharts({ pesajes, lineaGenetica }: { pesajes: PesajeFull[]; lineaGenetica: string }) {
+export function EvolutionCharts({
+  pesajes,
+  lineaGenetica,
+  lote,
+}: {
+  pesajes: PesajeFull[];
+  lineaGenetica: string;
+  /** Datos del lote para el encabezado del reporte imprimible. */
+  lote?: { codigo: string; granja: string | null; galpon: string | null };
+}) {
   const serie = useMemo(() => buildSeries(pesajes, lineaGenetica), [pesajes, lineaGenetica]);
 
   const gains = useMemo(() => {
@@ -149,6 +161,31 @@ export function EvolutionCharts({ pesajes, lineaGenetica }: { pesajes: PesajeFul
   }
 
   const hasObjetivo = serie.some((p) => p.objetivo !== null);
+
+  const imprimir = () => {
+    const html = buildEvolucionReportHtml({
+      lote: lote?.codigo ?? '—',
+      granja: lote?.granja ?? '',
+      galpon: lote?.galpon ?? '',
+      lineaGenetica,
+      criterioPct: pesajes[0]?.criterioPct ?? 10,
+      serie: serie.map((p) => ({
+        label: p.label,
+        edadSemanas: p.edadSemanas,
+        n: p.n,
+        media: p.media,
+        cv: p.cv,
+        uniformidad: p.uniformidad,
+        objetivo: p.objetivo,
+      })),
+      ganancias: gains,
+    });
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 400);
+  };
 
   return (
     <div className="space-y-4">
@@ -205,6 +242,10 @@ export function EvolutionCharts({ pesajes, lineaGenetica }: { pesajes: PesajeFul
           </p>
         </div>
       )}
+
+      <Button onClick={imprimir} className="w-full h-10 text-sm bg-gray-800 hover:bg-gray-900 text-white">
+        <Printer className="h-4 w-4 mr-1.5" /> Imprimir evolución / PDF
+      </Button>
     </div>
   );
 }
