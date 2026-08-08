@@ -8,8 +8,11 @@
 
 import { ReportData, ReportVariant, muestreoLabel } from '@/lib/report-data';
 import { uniformityCurveSvg, histogramSvg, svgToDataUri } from '@/lib/report-charts';
-import { categoriasBarSvg, mediaVsObjetivoSvg } from '@/lib/dataset-report-charts';
+import {
+  categoriasBarSvg, mediaVsObjetivoSvg, boxplotSvg, qqPlotSvg, bandaVsIcSvg,
+} from '@/lib/dataset-report-charts';
 import { classify } from '@/lib/classification';
+import { qqPoints } from '@/lib/statistics/normality';
 import { OUTLIER_METHOD_LABELS } from '@/lib/statistics/outliers';
 
 function esc(s: string): string {
@@ -224,6 +227,28 @@ function pesosTablaHtml(d: ReportData): string {
 }
 
 function metodologiaHtml(d: ReportData): string {
+  // Gráficos didácticos: dan imagen a los conceptos que esta sección explica.
+  // Se generan solo aquí, de modo que las variantes resumida y técnica no
+  // pagan el coste de construirlos.
+  const graficoBandaIc = d.ci95
+    ? svgToDataUri(
+        bandaVsIcSvg(
+          d.stats.promedio, d.stats.limiteInf, d.stats.limiteSup,
+          d.ci95.lower, d.ci95.upper, d.criterioPct, 'g', 1,
+        ),
+      )
+    : '';
+  const graficoCaja = svgToDataUri(
+    boxplotSvg(
+      d.descr.q1, d.descr.median, d.descr.q3, d.descr.min, d.descr.max,
+      d.outliers.flags.map((x) => x.value), 'g', 1,
+    ),
+  );
+  const graficoQQ =
+    d.pesos.length >= 3 && d.descr.sdSample > 0
+      ? svgToDataUri(qqPlotSvg(qqPoints(d.pesos, d.descr.mean, d.descr.sdSample), 'g', 0))
+      : '';
+
   return `<h2 class="pagebreak">Metodología y fórmulas (modo académico)</h2>
 <p>Todos los cálculos se realizan en gramos con precisión doble; el redondeo ocurre solo en la presentación.</p>
 <div class="formula">Media: x̄ = (Σxᵢ) / n</div>
@@ -234,12 +259,35 @@ function metodologiaHtml(d: ReportData): string {
 <div class="formula">IC 95% para la media: x̄ ± t₍₀.₉₇₅, n−1₎ · EEM</div>
 <div class="formula">Uniformidad (±${d.criterioPct}%): % de aves con peso en [x̄·(1−${(d.criterioPct / 100).toFixed(3)}), x̄·(1+${(d.criterioPct / 100).toFixed(3)})]</div>
 <p class="note">La banda de uniformidad describe la dispersión alrededor de la media observada; NO es un intervalo de confianza (error conceptual frecuente).</p>
+${graficoBandaIc ? `<div class="chart"><img src="${graficoBandaIc}" alt="Comparación en la misma escala entre la banda de uniformidad y el intervalo de confianza de la media"/></div>
+<p class="note">
+  Los dos rangos, en el mismo eje y con los datos de este lote. Responden a preguntas distintas:
+  la <b>banda ±${d.criterioPct}%</b> dice entre qué pesos está la mayoría de las <i>aves</i>;
+  el <b>IC 95%</b> dice entre qué valores es plausible que esté la <i>media verdadera</i> del lote.
+  Por eso el IC es mucho más estrecho, y se estrecha aún más al aumentar n, mientras que la banda no:
+  la banda depende de lo dispares que sean las aves, no de cuántas se pesaron.
+</p>` : ''}
 <div class="formula">Prueba t de una muestra: t = (x̄ − μ₀) / EEM, con gl = n − 1</div>
 <p class="note">Interpretación del valor p: probabilidad de observar una diferencia al menos tan grande como la vista, si H₀ fuera cierta. p ≥ α no "acepta" H₀; solo indica evidencia insuficiente.</p>
 <div class="formula">Percentiles: interpolación lineal tipo R-7 (Hyndman &amp; Fan, 1996)</div>
 <div class="formula">Asimetría G1 y curtosis G2: estimadores ajustados (Joanes &amp; Gill, 1998) — los de Minitab/SPSS</div>
-<div class="formula">Normalidad: prueba ómnibus K² de D'Agostino-Pearson (D'Agostino 1970; Anscombe &amp; Glynn 1983)</div>
 <div class="formula">Atípicos: cercos de Tukey (1.5×IQR y 3×IQR), |Z| &gt; 3 y Z modificada con MAD &gt; 3.5 (Iglewicz &amp; Hoaglin, 1993)</div>
+<div class="chart"><img src="${graficoCaja}" alt="Diagrama de caja con los cuartiles, los cercos de Tukey y los valores atípicos"/></div>
+<p class="note">
+  El diagrama de caja hace visibles los estadísticos de posición ya tabulados: la caja abarca el
+  50% central (Q1 a Q3), la línea interior es la mediana y los bigotes llegan hasta el dato más
+  extremo dentro de 1.5×IQR. Los círculos son las observaciones marcadas como atípicas — se
+  señalan, nunca se eliminan de forma automática.
+</p>
+<div class="formula">Normalidad: Shapiro-Wilk (AS R94, Royston 1995) y prueba ómnibus K² de D'Agostino-Pearson (D'Agostino 1970; Anscombe &amp; Glynn 1983)</div>
+${graficoQQ ? `<div class="chart"><img src="${graficoQQ}" alt="Gráfico Q-Q de los cuantiles observados frente a los teóricos de una distribución normal"/></div>
+<p class="note">
+  Cada punto es una observación: su posición en el eje horizontal es el peso que cabría esperar
+  bajo normalidad y en el vertical el peso realmente medido. Si los datos fueran perfectamente
+  normales, todos caerían sobre la línea discontinua. Las desviaciones en los extremos indican
+  colas más pesadas o ligeras; una curvatura sistemática, asimetría. Esta inspección es la que
+  ninguna prueba de normalidad sustituye.
+</p>` : ''}
 <p><b>Errores comunes que este reporte evita:</b></p>
 <ul>
 <li>Confundir la banda de uniformidad ±${d.criterioPct}% con un intervalo de confianza.</li>

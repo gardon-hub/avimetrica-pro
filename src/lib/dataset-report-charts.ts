@@ -258,6 +258,168 @@ export function mediaVsObjetivoSvg(
   `);
 }
 
+/**
+ * Diagrama de caja: mediana, cuartiles, cercos de Tukey y atípicos.
+ * Da imagen a los estadísticos de posición que el reporte ya tabula.
+ */
+export function boxplotSvg(
+  q1: number,
+  mediana: number,
+  q3: number,
+  min: number,
+  max: number,
+  atipicos: number[],
+  unidad: string,
+  decimales: number,
+): string {
+  const W = 620, H = 150, padL = 20, padR = 20, padT = 30, padB = 42;
+  const iqr = q3 - q1;
+  // Cercos de Tukey, recortados al dato real más extremo dentro del cerco
+  const cercoInf = Math.max(min, q1 - 1.5 * iqr);
+  const cercoSup = Math.min(max, q3 + 1.5 * iqr);
+
+  const todos = [min, max, ...atipicos];
+  let lo = Math.min(...todos);
+  let hi = Math.max(...todos);
+  const margen = (hi - lo) * 0.08 || 1;
+  lo -= margen;
+  hi += margen;
+
+  const toX = (v: number) => padL + ((v - lo) / (hi - lo)) * (W - padL - padR);
+  const f = (v: number) => v.toFixed(decimales);
+  const yc = padT + (H - padT - padB) / 2;
+  const alto = 34;
+
+  const marcas = Array.from({ length: 6 }, (_, i) => {
+    const v = lo + ((hi - lo) * i) / 5;
+    return `<line x1="${toX(v).toFixed(1)}" y1="${H - padB + 4}" x2="${toX(v).toFixed(1)}" y2="${H - padB + 8}" stroke="#9ca3af" stroke-width="1"/>
+      <text x="${toX(v).toFixed(1)}" y="${H - padB + 20}" text-anchor="middle" font-size="9" fill="#6b7280">${f(v)}</text>`;
+  }).join('');
+
+  const puntos = atipicos
+    .map((v) => `<circle cx="${toX(v).toFixed(1)}" cy="${yc}" r="3.5" fill="none" stroke="#dc2626" stroke-width="1.6"/>`)
+    .join('');
+
+  return envolver(W, H, `
+    <rect width="${W}" height="${H}" fill="white" rx="8"/>
+    <line x1="${toX(cercoInf).toFixed(1)}" y1="${yc}" x2="${toX(q1).toFixed(1)}" y2="${yc}" stroke="#374151" stroke-width="1.4"/>
+    <line x1="${toX(q3).toFixed(1)}" y1="${yc}" x2="${toX(cercoSup).toFixed(1)}" y2="${yc}" stroke="#374151" stroke-width="1.4"/>
+    <line x1="${toX(cercoInf).toFixed(1)}" y1="${yc - 9}" x2="${toX(cercoInf).toFixed(1)}" y2="${yc + 9}" stroke="#374151" stroke-width="1.4"/>
+    <line x1="${toX(cercoSup).toFixed(1)}" y1="${yc - 9}" x2="${toX(cercoSup).toFixed(1)}" y2="${yc + 9}" stroke="#374151" stroke-width="1.4"/>
+    <rect x="${toX(q1).toFixed(1)}" y="${yc - alto / 2}" width="${Math.max(toX(q3) - toX(q1), 1).toFixed(1)}" height="${alto}" fill="#4CAF50" fill-opacity="0.35" stroke="#2E7D32" stroke-width="1.4" rx="2"/>
+    <line x1="${toX(mediana).toFixed(1)}" y1="${yc - alto / 2}" x2="${toX(mediana).toFixed(1)}" y2="${yc + alto / 2}" stroke="#111827" stroke-width="2.2"/>
+    ${puntos}
+    <text x="${toX(q1).toFixed(1)}" y="${yc - alto / 2 - 6}" text-anchor="middle" font-size="8.5" fill="#374151">Q1 ${f(q1)}</text>
+    <text x="${toX(mediana).toFixed(1)}" y="${yc + alto / 2 + 12}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#111827">Mediana ${f(mediana)}</text>
+    <text x="${toX(q3).toFixed(1)}" y="${yc - alto / 2 - 6}" text-anchor="middle" font-size="8.5" fill="#374151">Q3 ${f(q3)}</text>
+    <line x1="${padL}" y1="${H - padB + 4}" x2="${W - padR}" y2="${H - padB + 4}" stroke="#9ca3af" stroke-width="1.2"/>
+    ${marcas}
+    <text x="${W - padR}" y="16" text-anchor="end" font-size="8.5" fill="#6b7280">Caja: Q1–Q3 · bigotes: cercos de 1.5×IQR · círculos: atípicos${unidad ? ` · ${esc(unidad)}` : ''}</text>
+  `);
+}
+
+/** Gráfico Q-Q: cuantiles observados frente a los teóricos normales. */
+export function qqPlotSvg(
+  puntos: Array<{ theoretical: number; observed: number }>,
+  unidad: string,
+  decimales: number,
+): string {
+  if (puntos.length < 3) return '';
+  const W = 620, H = 300, padL = 58, padR = 18, padT = 18, padB = 46;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const xs = puntos.map((p) => p.theoretical);
+  const ys = puntos.map((p) => p.observed);
+  const lo = Math.min(...xs, ...ys);
+  const hi = Math.max(...xs, ...ys);
+  const margen = (hi - lo) * 0.06 || 1;
+  const min = lo - margen;
+  const max = hi + margen;
+
+  const toX = (v: number) => padL + ((v - min) / (max - min)) * chartW;
+  const toY = (v: number) => padT + chartH * (1 - (v - min) / (max - min));
+  const f = (v: number) => v.toFixed(decimales);
+
+  const marcas = Array.from({ length: 5 }, (_, i) => {
+    const v = min + ((max - min) * i) / 4;
+    return `<line x1="${padL}" y1="${toY(v).toFixed(1)}" x2="${W - padR}" y2="${toY(v).toFixed(1)}" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="${padL - 5}" y="${(toY(v) + 3).toFixed(1)}" text-anchor="end" font-size="9" fill="#6b7280">${f(v)}</text>
+      <text x="${toX(v).toFixed(1)}" y="${H - padB + 16}" text-anchor="middle" font-size="9" fill="#6b7280">${f(v)}</text>`;
+  }).join('');
+
+  const circulos = puntos
+    .map((p) => `<circle cx="${toX(p.theoretical).toFixed(1)}" cy="${toY(p.observed).toFixed(1)}" r="2.6" fill="#2E7D32" fill-opacity="0.75"/>`)
+    .join('');
+
+  return envolver(W, H, `
+    <rect width="${W}" height="${H}" fill="white" rx="8"/>
+    ${marcas}
+    <line x1="${toX(min).toFixed(1)}" y1="${toY(min).toFixed(1)}" x2="${toX(max).toFixed(1)}" y2="${toY(max).toFixed(1)}" stroke="#1d4ed8" stroke-width="1.6" stroke-dasharray="6,4"/>
+    ${circulos}
+    <line x1="${padL}" y1="${toY(min).toFixed(1)}" x2="${W - padR}" y2="${toY(min).toFixed(1)}" stroke="#9ca3af" stroke-width="1.2"/>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${toY(min).toFixed(1)}" stroke="#9ca3af" stroke-width="1.2"/>
+    <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="#374151">Cuantiles teóricos de una normal${unidad ? ` (${esc(unidad)})` : ''}</text>
+    <text x="12" y="${padT + 10}" font-size="9.5" fill="#374151">Observado</text>
+    <text x="${W - padR}" y="${padT + 10}" text-anchor="end" font-size="8.5" fill="#1d4ed8">Línea: ajuste normal perfecto</text>
+  `);
+}
+
+/**
+ * Banda de uniformidad frente al intervalo de confianza de la media.
+ *
+ * Es el gráfico más didáctico del reporte académico: pone ambos rangos en el
+ * MISMO eje para que se vea que miden cosas distintas —la banda describe la
+ * dispersión de las aves; el IC, la incertidumbre sobre la media— y que el IC
+ * es mucho más estrecho. Confundirlos es el error conceptual que la aplicación
+ * viene señalando desde la auditoría.
+ */
+export function bandaVsIcSvg(
+  media: number,
+  limInf: number,
+  limSup: number,
+  ciLower: number,
+  ciUpper: number,
+  criterioPct: number,
+  unidad: string,
+  decimales: number,
+): string {
+  const W = 620, H = 190, padL = 118, padR = 24, padT = 26, padB = 44;
+  let lo = Math.min(limInf, ciLower);
+  let hi = Math.max(limSup, ciUpper);
+  const margen = (hi - lo) * 0.12 || 1;
+  lo -= margen;
+  hi += margen;
+
+  const toX = (v: number) => padL + ((v - lo) / (hi - lo)) * (W - padL - padR);
+  const f = (v: number) => v.toFixed(decimales);
+  const yBanda = padT + 22;
+  const yIc = padT + 74;
+
+  const marcas = Array.from({ length: 6 }, (_, i) => {
+    const v = lo + ((hi - lo) * i) / 5;
+    return `<line x1="${toX(v).toFixed(1)}" y1="${padT - 6}" x2="${toX(v).toFixed(1)}" y2="${H - padB + 6}" stroke="#f3f4f6" stroke-width="1"/>
+      <text x="${toX(v).toFixed(1)}" y="${H - padB + 20}" text-anchor="middle" font-size="9" fill="#6b7280">${f(v)}</text>`;
+  }).join('');
+
+  const barra = (y: number, a: number, b: number, color: string, relleno: string) => `
+    <rect x="${toX(a).toFixed(1)}" y="${y - 11}" width="${Math.max(toX(b) - toX(a), 2).toFixed(1)}" height="22" fill="${relleno}" stroke="${color}" stroke-width="1.4" rx="3"/>
+    <text x="${toX(a).toFixed(1)}" y="${y + 24}" text-anchor="middle" font-size="8.5" fill="#6b7280">${f(a)}</text>
+    <text x="${toX(b).toFixed(1)}" y="${y + 24}" text-anchor="middle" font-size="8.5" fill="#6b7280">${f(b)}</text>`;
+
+  return envolver(W, H, `
+    <rect width="${W}" height="${H}" fill="white" rx="8"/>
+    ${marcas}
+    ${barra(yBanda, limInf, limSup, '#2E7D32', 'rgba(76,175,80,0.30)')}
+    ${barra(yIc, ciLower, ciUpper, '#1d4ed8', 'rgba(37,99,235,0.30)')}
+    <line x1="${toX(media).toFixed(1)}" y1="${padT - 6}" x2="${toX(media).toFixed(1)}" y2="${H - padB + 6}" stroke="#111827" stroke-width="1.4" stroke-dasharray="5,4"/>
+    <text x="${toX(media).toFixed(1)}" y="${padT - 10}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#111827">media ${f(media)}</text>
+    <text x="${padL - 8}" y="${yBanda + 4}" text-anchor="end" font-size="9.5" font-weight="bold" fill="#2E7D32">Banda ±${criterioPct}%</text>
+    <text x="${padL - 8}" y="${yIc + 4}" text-anchor="end" font-size="9.5" font-weight="bold" fill="#1d4ed8">IC 95% de la media</text>
+    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">Ambos en la misma escala${unidad ? ` (${esc(unidad)})` : ''}</text>
+  `);
+}
+
 /** Genera los cortes efectivos legibles para el pie de un gráfico. */
 export function describeBins(bins: Bin[], unidad: string, dec: number): string {
   return bins
