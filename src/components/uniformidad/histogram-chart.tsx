@@ -7,6 +7,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { buildHistogram, BinRule } from '@/lib/statistics/histogram';
 import { normalPdf } from '@/lib/statistics/distributions';
@@ -20,6 +21,7 @@ type DisplayMode = 'count' | 'percent' | 'density';
 
 export function HistogramChart() {
   const { pesos, stats } = useUniformidadStore();
+  const t = useTranslations('histogram');
   const [rule, setRule] = useState<BinRule>('auto');
   const [manualBins, setManualBins] = useState('8');
   const [mode, setMode] = useState<DisplayMode>('count');
@@ -32,7 +34,7 @@ export function HistogramChart() {
   const med = useMemo(() => median(pesos), [pesos]);
 
   if (!hist || pesos.length < 2) {
-    return <p className="text-sm text-muted-foreground text-center py-4">Se necesitan al menos 2 pesos.</p>;
+    return <p className="text-sm text-muted-foreground text-center py-4">{t('needTwo')}</p>;
   }
 
   const { promedio: mu, desvEst: sigma, limiteInf, limiteSup, criterioPct } = stats;
@@ -79,11 +81,11 @@ export function HistogramChart() {
   }
 
   const yTicks = 4;
-  const modeLabel = mode === 'count' ? 'Frecuencia' : mode === 'percent' ? '%' : 'Densidad';
+  const modeLabel = mode === 'count' ? t('axisFrequency') : mode === 'percent' ? '%' : t('axisDensity');
 
   const refLines: Array<{ x: number; color: string; label: string }> = [
     { x: mu, color: '#333', label: `μ ${mu.toFixed(0)}` },
-    { x: med, color: '#7c3aed', label: `Med ${med.toFixed(0)}` },
+    { x: med, color: '#7c3aed', label: `${t('median')} ${med.toFixed(0)}` },
     { x: limiteInf, color: '#e53935', label: `−${criterioPct}%` },
     { x: limiteSup, color: '#2E7D32', label: `+${criterioPct}%` },
   ];
@@ -92,14 +94,14 @@ export function HistogramChart() {
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 items-end">
         <div className="flex flex-col gap-1">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Clases</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('bins')}</Label>
           <Select value={rule} onValueChange={(v) => setRule(v as BinRule)}>
             <SelectTrigger className="h-9 w-44 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="auto">Automático</SelectItem>
+              <SelectItem value="auto">{t('auto')}</SelectItem>
               <SelectItem value="sturges">Sturges</SelectItem>
               <SelectItem value="freedman-diaconis">Freedman-Diaconis</SelectItem>
-              <SelectItem value="manual">Manual</SelectItem>
+              <SelectItem value="manual">{t('manual')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -111,23 +113,23 @@ export function HistogramChart() {
             value={manualBins}
             onChange={(e) => setManualBins(e.target.value)}
             className="h-9 w-20 text-xs"
-            aria-label="Número de clases"
+            aria-label={t('binCount')}
           />
         )}
         <div className="flex flex-col gap-1">
-          <Label className="text-[10px] uppercase font-bold text-muted-foreground">Mostrar</Label>
+          <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('show')}</Label>
           <Select value={mode} onValueChange={(v) => setMode(v as DisplayMode)}>
             <SelectTrigger className="h-9 w-36 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="count">Frecuencias</SelectItem>
-              <SelectItem value="percent">Porcentajes</SelectItem>
-              <SelectItem value="density">Densidad</SelectItem>
+              <SelectItem value="count">{t('counts')}</SelectItem>
+              <SelectItem value="percent">{t('percents')}</SelectItem>
+              <SelectItem value="density">{t('density')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="flex items-center gap-1.5 pb-2">
           <Checkbox id="overlay-normal" checked={overlay} onCheckedChange={(v) => setOverlay(v === true)} />
-          <Label htmlFor="overlay-normal" className="text-xs cursor-pointer">Curva normal</Label>
+          <Label htmlFor="overlay-normal" className="text-xs cursor-pointer">{t('normalCurve')}</Label>
         </div>
       </div>
 
@@ -135,7 +137,7 @@ export function HistogramChart() {
         viewBox={`0 0 ${width} ${height}`}
         className="w-full h-auto"
         role="img"
-        aria-label={`Histograma de ${hist.n} pesos en ${hist.bins.length} clases${overlay ? ' con curva normal superpuesta' : ''}`}
+        aria-label={t(overlay ? 'svgAltOverlay' : 'svgAlt', { n: hist.n, clases: hist.bins.length })}
       >
         <rect width={width} height={height} fill="white" rx={8} />
         {Array.from({ length: yTicks + 1 }, (_, i) => {
@@ -160,7 +162,14 @@ export function HistogramChart() {
             stroke="#2E7D32"
             strokeWidth={1}
           >
-            <title>{`[${b.x0.toFixed(1)} – ${b.x1.toFixed(1)}) g: ${b.count} aves (${b.percent.toFixed(1)}%)`}</title>
+            <title>
+              {t('binTooltip', {
+                desde: b.x0.toFixed(1),
+                hasta: b.x1.toFixed(1),
+                n: b.count,
+                pct: b.percent.toFixed(1),
+              })}
+            </title>
           </rect>
         ))}
         {overlay && curvePts.length > 0 && (
@@ -192,12 +201,16 @@ export function HistogramChart() {
               );
             })}
         <text x={width / 2} y={height - 4} textAnchor="middle" fontSize={12} fontWeight="bold" fill="#444">
-          Peso (g) — {modeLabel}, {hist.bins.length} clases ({hist.rule === 'manual' ? 'manual' : hist.rule})
+          {t('caption', {
+            modo: modeLabel,
+            clases: hist.bins.length,
+            regla: hist.rule === 'manual' ? t('manual').toLowerCase() : hist.rule,
+          })}
         </text>
       </svg>
       <p className="text-[11px] text-muted-foreground leading-snug">
-        Barras: distribución empírica real de los {hist.n} pesos. {overlay && 'Línea azul: normal teórica ajustada con la media y SD muestral del lote. '}
-        Líneas punteadas: media (μ), mediana y límites del criterio de uniformidad.
+        {t('legendBars', { n: hist.n })} {overlay && `${t('legendCurve')} `}
+        {t('legendLines')}
       </p>
     </div>
   );

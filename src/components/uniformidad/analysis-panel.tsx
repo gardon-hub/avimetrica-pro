@@ -7,6 +7,7 @@
  * la prueba t de una muestra.
  */
 
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DescriptiveTable } from './descriptive-table';
@@ -17,6 +18,7 @@ import { TTestPanel } from './t-test-panel';
 
 export function AnalysisPanel() {
   const { pesos } = useUniformidadStore();
+  const t = useTranslations('analysis');
 
   if (pesos.length === 0) {
     return null;
@@ -25,15 +27,15 @@ export function AnalysisPanel() {
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3">
-        Análisis estadístico
+        {t('title')}
       </h2>
       <Tabs defaultValue="resumen">
         <TabsList className="w-full flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="resumen" className="text-xs flex-1">Resumen</TabsTrigger>
-          <TabsTrigger value="histograma" className="text-xs flex-1">Histograma</TabsTrigger>
-          <TabsTrigger value="diagnostico" className="text-xs flex-1">Distribución y atípicos</TabsTrigger>
-          <TabsTrigger value="probabilidades" className="text-xs flex-1">Probabilidades</TabsTrigger>
-          <TabsTrigger value="prueba-t" className="text-xs flex-1">Prueba t</TabsTrigger>
+          <TabsTrigger value="resumen" className="text-xs flex-1">{t('tabs.summary')}</TabsTrigger>
+          <TabsTrigger value="histograma" className="text-xs flex-1">{t('tabs.histogram')}</TabsTrigger>
+          <TabsTrigger value="diagnostico" className="text-xs flex-1">{t('tabs.diagnostics')}</TabsTrigger>
+          <TabsTrigger value="probabilidades" className="text-xs flex-1">{t('tabs.probabilities')}</TabsTrigger>
+          <TabsTrigger value="prueba-t" className="text-xs flex-1">{t('tabs.tTest')}</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="pt-3">
           <DescriptiveTable />
