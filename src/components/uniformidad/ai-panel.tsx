@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import ReactMarkdown from 'react-markdown';
 import { useUniformidadStore } from '@/lib/store';
 import { buildReportData, ReportData } from '@/lib/report-data';
@@ -64,6 +65,8 @@ function buildResumenIA(d: ReportData) {
 
 export function AiPanel() {
   const { pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext } = useUniformidadStore();
+  const t = useTranslations('ai');
+  const locale = useLocale();
   const [aiText, setAiText] = useState<string>('');
   const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'unavailable' | 'error' | 'done'>('idle');
   const [aiMessage, setAiMessage] = useState<string>('');
@@ -90,17 +93,17 @@ export function AiPanel() {
       const json = await res.json();
       if (res.status === 503) {
         setAiStatus('unavailable');
-        setAiMessage(json.message ?? 'Servicio de IA no disponible.');
+        setAiMessage(json.message ?? t('unavailable'));
       } else if (!res.ok) {
         setAiStatus('error');
-        setAiMessage(json.error ?? 'Error del asistente de IA.');
+        setAiMessage(json.error ?? t('error'));
       } else {
         setAiStatus('done');
         setAiText(json.texto);
       }
     } catch {
       setAiStatus('error');
-      setAiMessage('No se pudo contactar al servidor.');
+      setAiMessage(t('noServer'));
     }
   };
 
@@ -109,30 +112,35 @@ export function AiPanel() {
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
-        <GraduationCap className="h-4 w-4" /> Asistente e interpretación
+        <GraduationCap className="h-4 w-4" /> {t('title')}
       </h2>
       <Tabs defaultValue="academico-local">
         <TabsList className="w-full flex h-auto gap-1">
-          <TabsTrigger value="academico-local" className="text-xs flex-1">Modo académico (local)</TabsTrigger>
-          <TabsTrigger value="ia" className="text-xs flex-1">Asistente IA (opcional)</TabsTrigger>
+          <TabsTrigger value="academico-local" className="text-xs flex-1">{t('tabLocal')}</TabsTrigger>
+          <TabsTrigger value="ia" className="text-xs flex-1">{t('tabAi')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="academico-local" className="pt-3">
           <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
-            Explicación paso a paso generada localmente a partir de los resultados calculados —
-            funciona siempre, sin servicios externos.
+            {t('localIntro')}
           </p>
+          {/* El texto explicativo lo produce lib/academic-mode.ts, que sigue en
+              español por decisión de alcance: se avisa en vez de mezclar
+              idiomas en silencio. */}
+          {locale !== 'es' && (
+            <p className="text-[11px] text-amber-700 mb-2 leading-snug">⚠️ {t('onlySpanish')}</p>
+          )}
           <Accordion type="multiple" className="w-full">
             {sections.map((s, i) => (
               <AccordionItem key={i} value={`sec-${i}`}>
                 <AccordionTrigger className="text-xs font-semibold py-2.5">{s.titulo}</AccordionTrigger>
                 <AccordionContent className="text-[11px] space-y-1.5 leading-relaxed">
-                  <p><b>Qué se calculó:</b> {s.queSeCalculo}</p>
+                  <p><b>{t('whatWasComputed')}</b> {s.queSeCalculo}</p>
                   <p className="font-mono bg-muted/60 rounded px-2 py-1">{s.formula}</p>
-                  <p><b>Resultado:</b> {s.resultado}</p>
-                  <p><b>Cómo se interpreta:</b> {s.interpretacion}</p>
+                  <p><b>{t('result')}</b> {s.resultado}</p>
+                  <p><b>{t('howToRead')}</b> {s.interpretacion}</p>
                   <div>
-                    <b>Errores comunes a evitar:</b>
+                    <b>{t('commonErrors')}</b>
                     <ul className="list-disc pl-4 mt-0.5">
                       {s.erroresComunes.map((e, j) => (
                         <li key={j}>{e}</li>
@@ -147,9 +155,7 @@ export function AiPanel() {
 
         <TabsContent value="ia" className="pt-3 space-y-3">
           <p className="text-[11px] text-muted-foreground leading-snug">
-            El asistente recibe los resultados <b>ya calculados</b> (nunca calcula por su cuenta) y
-            redacta una interpretación con sus limitaciones. Requiere configurar una clave de API;
-            si no está disponible, la aplicación funciona igual con el modo académico local.
+            {t.rich('aiIntro', { b: (c) => <b>{c}</b> })}
           </p>
           <div className="flex gap-2">
             <Button
@@ -157,19 +163,19 @@ export function AiPanel() {
               onClick={() => setModo('interpretacion')}
               className="h-8 text-xs flex-1"
             >
-              Interpretación
+              {t('modeInterpretation')}
             </Button>
             <Button
               variant={modo === 'academico' ? 'default' : 'outline'}
               onClick={() => setModo('academico')}
               className="h-8 text-xs flex-1"
             >
-              Académico paso a paso
+              {t('modeAcademic')}
             </Button>
           </div>
           <Button onClick={handleAsk} disabled={aiStatus === 'loading'} className="w-full h-9 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white">
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            {aiStatus === 'loading' ? 'Generando…' : 'Generar interpretación con IA'}
+            {aiStatus === 'loading' ? t('generating') : t('generate')}
           </Button>
 
           {(aiStatus === 'unavailable' || aiStatus === 'error') && (
@@ -183,7 +189,7 @@ export function AiPanel() {
             <div className="prose prose-sm max-w-none text-xs bg-muted/40 rounded-md p-3 [&_h1]:text-sm [&_h2]:text-xs [&_h3]:text-xs [&_h2]:font-bold [&_ul]:pl-4">
               <ReactMarkdown>{aiText}</ReactMarkdown>
               <p className="text-[10px] text-muted-foreground border-t pt-1.5 mt-2">
-                Texto generado por IA sobre resultados calculados localmente. No sustituye el criterio profesional.
+                {t('disclaimer')}
               </p>
             </div>
           )}

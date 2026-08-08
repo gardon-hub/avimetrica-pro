@@ -3,6 +3,7 @@
 /** Sección visible de fuentes técnicas y trazabilidad (Fase 7 / sección 20). */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { FUENTES_TECNICAS, FECHA_INCORPORACION, VERSION_DATOS } from '@/lib/fuentes';
 import { APP_VERSION } from '@/lib/report-data';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, ChevronDown } from 'lucide-react';
 
 export function FuentesPanel() {
+  const t = useTranslations('sources');
   const [open, setOpen] = useState(false);
 
   return (
@@ -17,7 +19,7 @@ export function FuentesPanel() {
       <Collapsible open={open} onOpenChange={setOpen}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" className="w-full h-9 text-sm font-bold uppercase tracking-wide text-muted-foreground justify-between px-1">
-            <span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> Fuentes técnicas</span>
+            <span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> {t('title')}</span>
             <ChevronDown className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`} />
           </Button>
         </CollapsibleTrigger>
@@ -26,10 +28,10 @@ export function FuentesPanel() {
             <table className="w-full text-[11px] border-collapse">
               <thead>
                 <tr className="border-b font-bold text-muted-foreground">
-                  <th className="py-1.5 text-left">Línea genética</th>
-                  <th className="py-1.5 text-left">Documento</th>
-                  <th className="py-1.5 text-left">Origen del dato</th>
-                  <th className="py-1.5 text-left">Estado</th>
+                  <th className="py-1.5 text-left">{t('colLine')}</th>
+                  <th className="py-1.5 text-left">{t('colDocument')}</th>
+                  <th className="py-1.5 text-left">{t('colOrigin')}</th>
+                  <th className="py-1.5 text-left">{t('colStatus')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -40,9 +42,9 @@ export function FuentesPanel() {
                     <td className="py-1.5 pr-2">{f.detalle}</td>
                     <td className="py-1.5">
                       {f.estado === 'oficial' ? (
-                        <span className="text-green-700 font-semibold">Oficial</span>
+                        <span className="text-green-700 font-semibold">{t('official')}</span>
                       ) : (
-                        <span className="text-amber-700 font-semibold">⚠️ Aproximado</span>
+                        <span className="text-amber-700 font-semibold">{t('approximate')}</span>
                       )}
                       {f.notas && <div className="text-muted-foreground">{f.notas}</div>}
                     </td>
@@ -52,12 +54,13 @@ export function FuentesPanel() {
             </table>
           </div>
           <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-md p-2.5 space-y-0.5">
-            <div>Incorporación de datos: {FECHA_INCORPORACION}</div>
-            <div>Versión interna de datos de referencia: <b>{VERSION_DATOS}</b> · Versión de la aplicación: <b>{APP_VERSION}</b></div>
-            <div>
-              Donde la tabla no cita año, edición o página es porque el registro del proyecto no lo anotó:
-              se indica el origen tal como quedó documentado, sin completar datos no verificados.
-            </div>
+            <div>{t('dataDate', { fecha: FECHA_INCORPORACION })}</div>
+            <div>{t.rich('versions', { datos: VERSION_DATOS, app: APP_VERSION, b: (c) => <b>{c}</b> })}</div>
+            <div>{t('note')}</div>
+            {/* Los títulos de documento y las notas de origen NO se traducen:
+                son el registro de trazabilidad y reescribirlos falsearía de
+                qué guía y en qué términos se tomó cada dato. */}
+            <div>{t('recordLanguage')}</div>
           </div>
         </CollapsibleContent>
       </Collapsible>
