@@ -15,6 +15,9 @@ import { classify } from '@/lib/classification';
 import { describe } from '@/lib/statistics/descriptive';
 import { twoSampleTTest, pairedTTest, meanConfidenceInterval } from '@/lib/statistics/inference';
 import { CategoriasBarChart, MediasBarChart } from './comparison-charts';
+import { buildComparisonReportHtml } from '@/lib/comparison-report';
+import { Button } from '@/components/ui/button';
+import { Printer } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -125,6 +128,30 @@ export function DatasetComparison({
       nB: cB.bins[i]?.count ?? 0,
     }));
   }, [a, b]);
+
+  const imprimir = () => {
+    if (!a || !b || !resultado || !design || design === 'ns') return;
+    const html = buildComparisonReportHtml({
+      tituloModulo: dominio === 'huevos' ? 'Peso y clasificación de huevo' : 'Modo Estadística',
+      nombreA: a.nombre,
+      nombreB: b.nombre,
+      dA: resultado.dA,
+      dB: resultado.dB,
+      ciA: intervalos.a,
+      ciB: intervalos.b,
+      test: resultado.test,
+      pareada: resultado.paired,
+      diseno: design,
+      categorias,
+      unidad: a.unidad,
+      decimales: a.decimales,
+    });
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 400);
+  };
 
   if (lista.length < 2) {
     return (
@@ -347,6 +374,13 @@ export function DatasetComparison({
               Ambos muestreos necesitan al menos 2 observaciones con variabilidad.
             </p>
           )}
+
+          <Button
+            onClick={imprimir}
+            className="w-full h-10 text-sm mt-3 bg-gray-800 hover:bg-gray-900 text-white"
+          >
+            <Printer className="h-4 w-4 mr-1.5" /> Imprimir comparación / PDF
+          </Button>
         </>
       )}
     </div>

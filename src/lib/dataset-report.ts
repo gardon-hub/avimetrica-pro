@@ -15,6 +15,7 @@ import { shapiroWilk } from '@/lib/statistics/shapiro-wilk';
 import { detectOutliers } from '@/lib/statistics/outliers';
 import { classify, type ClassificationScheme } from '@/lib/classification';
 import { histogramSvg, svgToDataUri } from '@/lib/report-charts';
+import { categoriasBarSvg } from '@/lib/dataset-report-charts';
 import { REPORT_CSS } from '@/lib/report-html';
 import { APP_VERSION } from '@/lib/report-data';
 import type { VariableDefinition } from '@/lib/domains/types';
@@ -81,6 +82,7 @@ export function buildDatasetReportHtml(input: DatasetReportInput): string {
   const hist = valores.length >= 5
     ? svgToDataUri(histogramSvg(valores, d.mean, d.sdSample, d.mean * 0.9, d.mean * 1.1))
     : '';
+  const graficoCat = svgToDataUri(categoriasBarSvg(cl.bins, cl.unclassified, cl.n));
 
   const meta: Array<[string, string]> = [
     ['Variable', `${variable.label}${u ? ` (${u})` : ''}`],
@@ -145,6 +147,7 @@ export function buildDatasetReportHtml(input: DatasetReportInput): string {
   Criterio: <b>${esc(input.criterioLabel)}</b>${input.criterioOficial ? ' (norma oficial)' : ' (criterio no normativo)'}.
   ${esc(input.criterioFuente)}
 </p>
+${graficoCat ? `<div class="chart"><img src="${graficoCat}" alt="Gráfico de barras del porcentaje de observaciones en cada categoría"/></div>` : ''}
 <table>
   <tr><th>Categoría</th><th class="num">Rango</th><th class="num">n</th><th class="num">%</th></tr>
   ${filasCat}
