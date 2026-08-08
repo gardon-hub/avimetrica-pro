@@ -1,0 +1,42 @@
+'use client';
+
+import { LogoHeader } from '@/components/uniformidad/logo-header';
+import { ModuleNav } from '@/components/shell/module-nav';
+import { Credits } from '@/components/uniformidad/credits';
+import { ValueInput } from '@/components/dataset/value-input';
+import { DescriptivePanel } from '@/components/dataset/descriptive-panel';
+import { ClassificationPanel } from '@/components/dataset/classification-panel';
+import { DatasetContextForm } from '@/components/dataset/context-form';
+import { useHuevosStore } from '@/lib/stores/huevos';
+import { DOMINIO_HUEVOS } from '@/lib/domains';
+
+export default function HuevosPage() {
+  const { valores, variable } = useHuevosStore();
+
+  return (
+    <div className="min-h-screen flex flex-col bg-muted/40">
+      <main className="flex-1 w-full max-w-2xl mx-auto px-3 sm:px-4 py-4">
+        <LogoHeader />
+        <ModuleNav />
+
+        <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
+          <h1 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            {DOMINIO_HUEVOS.label}
+          </h1>
+          <p className="text-[11px] text-muted-foreground mt-1 leading-snug">
+            {DOMINIO_HUEVOS.description}
+          </p>
+        </div>
+
+        <DatasetContextForm store={useHuevosStore} />
+        <ValueInput store={useHuevosStore} domain={DOMINIO_HUEVOS} />
+        <ClassificationPanel store={useHuevosStore} domain={DOMINIO_HUEVOS} />
+        <DescriptivePanel valores={valores} variable={variable} />
+        <Credits />
+      </main>
+      <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">
+        Avimétrica Pro — Universidad Nacional de Agricultura, Honduras
+      </footer>
+    </div>
+  );
+}

@@ -525,3 +525,158 @@ suite('Shapiro-Wilk (AS R94)', () => {
     expect(shapiroWilk(Array.from({ length: 5001 }, (_, i) => i))).toBeNull();
   });
 });
+
+suite('motor de clasificación (Fase 8)', () => {
+  it('bins absolutos: asigna por [min, max) y cuenta correctamente', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const bins = [
+      { label: 'Chico', min: null, max: 50 },
+      { label: 'Mediano', min: 50, max: 60 },
+      { label: 'Grande', min: 60, max: null },
+    ];
+    const r = classify([45, 50, 55, 59.99, 60, 70], { type: 'absolute-bins', bins });
+    expect(r.bins.map((b) => b.count)).toEqual([1, 3, 2]);
+    expect(r.unclassified).toBe(0);
+    expect(r.n).toBe(6);
+    expect(r.modeLabel).toBe('Mediano');
+    // El corte inferior es inclusivo y el superior exclusivo
+    expect(r.bins[1].indices).toEqual([1, 2, 3]);
+  });
+
+  it('bins con hueco: los valores no cubiertos quedan sin clasificar', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const bins = [
+      { label: 'Bajo', min: 0, max: 10 },
+      { label: 'Alto', min: 20, max: 30 },
+    ];
+    const r = classify([5, 15, 25], { type: 'absolute-bins', bins });
+    expect(r.bins.map((b) => b.count)).toEqual([1, 1]);
+    expect(r.unclassified).toBe(1);
+    expect(r.unclassifiedIndices).toEqual([1]);
+  });
+
+  it('EQUIVALENCIA: la banda relativa reproduce calculateStats exactamente', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const { calculateStats } = await import('../src/lib/calculations');
+    // Conjuntos variados, incluyendo valores justo en los límites
+    const casos = [
+      [2350, 2410, 2480, 2390, 2445, 2500, 2420, 2465, 2380, 2440],
+      [100, 110, 90, 105, 95, 120, 80, 100, 100, 100],
+      [1000],
+      [1500, 1500, 1500],
+      [10, 1000, 2000, 3000, 10000],
+    ];
+    for (const pct of [5, 7.5, 10, 15]) {
+      for (const datos of casos) {
+        const st = calculateStats(datos, pct);
+        const cl = classify(datos, { type: 'relative-band', pct });
+        expect(cl.bins[0].count).toBe(st.countDebajo);
+        expect(cl.bins[1].count).toBe(st.countDentro);
+        expect(cl.bins[2].count).toBe(st.countEncima);
+        expect(cl.unclassified).toBe(0);
+        expect(cl.bins[1].pct).toBeCloseTo(st.uniformidad, 10);
+      }
+    }
+  });
+
+  it('EQUIVALENCIA en el límite exacto: un valor justo en media+X% cuenta como dentro', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const { calculateStats } = await import('../src/lib/calculations');
+    // media = 100 exacta; el límite superior con ±10% es 110 exacto
+    const datos = [90, 100, 110];
+    const st = calculateStats(datos, 10);
+    const cl = classify(datos, { type: 'relative-band', pct: 10 });
+    expect(st.countDentro).toBe(3);
+    expect(cl.bins[1].count).toBe(3);
+    expect(cl.bins[2].count).toBe(0);
+  });
+
+  it('uniformityPct coincide con calculateStats', async () => {
+    const { uniformityPct } = await import('../src/lib/classification');
+    const { calculateStats } = await import('../src/lib/calculations');
+    const datos = [2350, 2410, 2480, 2390, 2445, 2500, 2420, 2465, 2380, 2440];
+    expect(uniformityPct(datos, 10)).toBeCloseTo(calculateStats(datos, 10).uniformidad, 10);
+    expect(uniformityPct([], 10)).toBe(0);
+  });
+
+  it('validateBins detecta nombres vacíos, repetidos, rangos invertidos y solapes', async () => {
+    const { validateBins } = await import('../src/lib/classification');
+    expect(validateBins([{ label: 'A', min: 0, max: 10 }]).ok).toBe(true);
+    expect(validateBins([]).ok).toBe(false);
+    expect(validateBins([{ label: '', min: 0, max: 10 }]).ok).toBe(false);
+    expect(validateBins([{ label: 'A', min: 10, max: 5 }]).ok).toBe(false);
+    const dup = validateBins([{ label: 'A', min: 0, max: 5 }, { label: 'a', min: 5, max: 10 }]);
+    expect(dup.ok).toBe(false);
+    const overlap = validateBins([{ label: 'A', min: 0, max: 10 }, { label: 'B', min: 5, max: 15 }]);
+    expect(overlap.ok).toBe(false);
+    expect(overlap.errors.some((e) => e.includes('solapan'))).toBe(true);
+  });
+});
+
+suite('dominio huevos: norma USDA (Fase 9)', () => {
+  it('la derivación oz/docena → g/huevo da los valores esperados', async () => {
+    const { minimoPorHuevoGramos } = await import('../src/lib/domains/huevos');
+    // (oz/12) × 28.349523125 — comprobado aritméticamente contra la norma
+    expect(minimoPorHuevoGramos(30)).toBeCloseTo(70.8738078125, 9); // Jumbo
+    expect(minimoPorHuevoGramos(27)).toBeCloseTo(63.7864270313, 9); // Extra Large
+    expect(minimoPorHuevoGramos(24)).toBeCloseTo(56.6990462500, 9); // Large
+    expect(minimoPorHuevoGramos(21)).toBeCloseTo(49.6116654688, 9); // Medium
+    expect(minimoPorHuevoGramos(18)).toBeCloseTo(42.5242846875, 9); // Small
+    expect(minimoPorHuevoGramos(15)).toBeCloseTo(35.4369039063, 9); // Peewee
+  });
+
+  it('los bins USDA son contiguos, ascendentes y sin solapes', async () => {
+    const { buildUsdaBins } = await import('../src/lib/domains/huevos');
+    const { validateBins } = await import('../src/lib/classification');
+    const bins = buildUsdaBins();
+    expect(bins.length).toBe(6);
+    expect(bins[0].label).toBe('Peewee');
+    expect(bins[5].label).toBe('Jumbo');
+    // Contiguos: el max de cada uno es el min del siguiente
+    for (let i = 0; i < bins.length - 1; i++) {
+      expect(bins[i].max).toBeCloseTo(bins[i + 1].min!, 10);
+    }
+    // El último no tiene tope y el primero sí tiene piso (Peewee mínimo)
+    expect(bins[5].max).toBeNull();
+    expect(bins[0].min).toBeCloseTo(35.4369039063, 8);
+    expect(validateBins(bins).ok).toBe(true);
+  });
+
+  it('clasifica una muestra de huevos en sus categorías USDA', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const { DOMINIO_HUEVOS } = await import('../src/lib/domains/huevos');
+    const preset = DOMINIO_HUEVOS.classificationPresets.find((p) => p.id === 'usda')!;
+    //            Peewee  Small  Medium  Large  XL     Jumbo
+    const pesos = [36,    45,    52,     58,    65,    72];
+    const r = classify(pesos, preset.scheme);
+    expect(r.bins.map((b) => b.count)).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(r.unclassified).toBe(0);
+  });
+
+  it('un huevo bajo el mínimo de Peewee queda sin clasificar (fiel a la norma)', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const { DOMINIO_HUEVOS } = await import('../src/lib/domains/huevos');
+    const preset = DOMINIO_HUEVOS.classificationPresets.find((p) => p.id === 'usda')!;
+    const r = classify([30, 58], preset.scheme);
+    expect(r.unclassified).toBe(1);
+    expect(r.unclassifiedIndices).toEqual([0]);
+  });
+
+  it('un huevo justo en el mínimo de su clase pertenece a esa clase', async () => {
+    const { classify } = await import('../src/lib/classification');
+    const { DOMINIO_HUEVOS, minimoPorHuevoGramos } = await import('../src/lib/domains/huevos');
+    const preset = DOMINIO_HUEVOS.classificationPresets.find((p) => p.id === 'usda')!;
+    const exactoLarge = minimoPorHuevoGramos(24); // 56.699… g = mínimo de Large
+    const r = classify([exactoLarge], preset.scheme);
+    expect(r.bins.find((b) => b.label.startsWith('Large'))!.count).toBe(1);
+  });
+
+  it('el dominio expone USDA como oficial y los otros criterios como no oficiales', async () => {
+    const { DOMINIO_HUEVOS } = await import('../src/lib/domains/huevos');
+    expect(DOMINIO_HUEVOS.defaultPresetId).toBe('usda');
+    const usda = DOMINIO_HUEVOS.classificationPresets.find((p) => p.id === 'usda')!;
+    expect(usda.official).toBe(true);
+    const otros = DOMINIO_HUEVOS.classificationPresets.filter((p) => p.id !== 'usda');
+    expect(otros.every((p) => p.official === false)).toBe(true);
+  });
+});
