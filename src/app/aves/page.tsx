@@ -19,6 +19,7 @@ import { DiagnosticPanel } from '@/components/uniformidad/diagnostic-panel';
 import { ReportPanel } from '@/components/uniformidad/report-panel';
 import { SessionManager } from '@/components/uniformidad/session-manager';
 import { Credits } from '@/components/uniformidad/credits';
+import { HowToCite } from '@/components/uniformidad/how-to-cite';
 import { useTranslations } from 'next-intl';
 
 export default function AvesPage() {
@@ -45,6 +46,7 @@ export default function AvesPage() {
         <SessionManager />
         <ReportPanel />
         <FuentesPanel />
+        <HowToCite />
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">

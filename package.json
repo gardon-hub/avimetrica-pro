@@ -1,6 +1,7 @@
 {
   "name": "avimetrica-pro",
   "version": "0.7.0",
+  "license": "MIT",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",

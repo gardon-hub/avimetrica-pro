@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { LogoHeader } from '@/components/uniformidad/logo-header';
 import { ModuleNav } from '@/components/shell/module-nav';
 import { Credits } from '@/components/uniformidad/credits';
+import { HowToCite } from '@/components/uniformidad/how-to-cite';
 import { ValueInput } from '@/components/dataset/value-input';
 import { DescriptivePanel } from '@/components/dataset/descriptive-panel';
 import { ClassificationPanel } from '@/components/dataset/classification-panel';
@@ -49,6 +50,7 @@ export default function HuevosPage() {
           onCambio={() => setToken((t) => t + 1)}
         />
         <DatasetComparison dominio="huevos" refrescarToken={token} />
+        <HowToCite />
         <Credits />
       </main>
       <footer className="w-full bg-green-700 text-white text-center py-2.5 text-xs sm:text-sm mt-auto">

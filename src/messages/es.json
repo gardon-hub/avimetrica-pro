@@ -1120,6 +1120,17 @@
   "footer": {
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },
+  "cite": {
+    "title": "Cómo citar",
+    "intro": "Si esta aplicación le fue útil en docencia, investigación o producción, cítela así. Los datos coinciden con el archivo CITATION.cff del repositorio.",
+    "apa": "APA 7",
+    "bibtex": "BibTeX",
+    "softwareType": "Software",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "license": "Licencia {licencia}",
+    "doiPending": "⚠️ DOI pendiente: se emitirá al hacer público el repositorio y publicar una versión en Zenodo. Mientras tanto, la cita enlaza al repositorio."
+  },
   "credits": {
     "author": "Gustavo Alonso Ardón, MSc.",
     "qualification": "Candidato a Doctor",
