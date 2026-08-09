@@ -18,6 +18,7 @@ import { APP_VERSION } from '@/lib/report-data';
 import { svgToDataUri } from '@/lib/report-charts';
 import { categoriasComparadasSvg, mediasComparadasSvg } from '@/lib/dataset-report-charts';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
+import { fmtP, fmtPFrase } from '@/lib/p-value';
 
 export interface PesajeResumen {
   etiqueta: string;
@@ -48,11 +49,6 @@ export interface PesajesComparisonInput {
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/** Texto plano: quien lo inserta en el HTML lo escapa. */
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 const DISENO_CLAVE: Record<PesajesComparisonInput['diseno'], string> = {
@@ -197,8 +193,8 @@ ${test ? `
   </tr>
 </table>
 <p>${test.rejectNull
-  ? esc(tr('reject', { p: fmtP(test.pValue) }))
-  : `${esc(tr('notReject', { p: fmtP(test.pValue) }))} ${esc(tr('notRejectCaveat'))}`}</p>
+  ? esc(tr('reject', { p: fmtPFrase(test.pValue) }))
+  : `${esc(tr('notReject', { p: fmtPFrase(test.pValue) }))} ${esc(tr('notRejectCaveat'))}`}</p>
 ` : `<h2>${esc(tr('testTitle'))}</h2><p class="note">${esc(tr('notRun'))}</p>`}
 
 <h2>${esc(tr('limitationsTitle'))}</h2>

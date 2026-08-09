@@ -13,6 +13,7 @@ import { meanConfidenceInterval } from '@/lib/statistics/inference';
 import { shapiroWilk } from '@/lib/statistics/shapiro-wilk';
 import { detectOutliers } from '@/lib/statistics/outliers';
 import { normalPdf } from '@/lib/statistics/distributions';
+import { fmtPFrase } from '@/lib/p-value';
 import type { VariableDefinition } from '@/lib/domains/types';
 import { Sigma } from 'lucide-react';
 
@@ -159,7 +160,7 @@ export function DescriptivePanel({ valores, variable }: { valores: number[]; var
             <b>{t('normalityLabel')}</b>{' '}
             {t('normalityValues', {
               w: sw.W.toFixed(4),
-              p: sw.pValue < 0.0001 ? '< 0.0001' : sw.pValue.toFixed(4),
+              p: fmtPFrase(sw.pValue),
             })}{' '}
             {t(sw.pValue >= 0.05 ? 'normalityOk' : 'normalityDeviates')}
           </div>

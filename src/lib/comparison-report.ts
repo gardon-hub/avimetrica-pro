@@ -17,6 +17,7 @@ import {
   type CategoriaComparadaSvg,
 } from '@/lib/dataset-report-charts';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
+import { fmtP, fmtPFrase } from '@/lib/p-value';
 
 export interface ComparisonReportInput {
   tituloModulo: string;
@@ -37,15 +38,6 @@ export interface ComparisonReportInput {
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/**
- * Devuelve TEXTO PLANO, no HTML: el «<» se escapa donde se inserta, igual que
- * el resto de cadenas. Devolver aquí la entidad `&lt;` provocaba doble
- * escapado y el documento mostraba «p = &lt; 0.0001» literal.
- */
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 /** Clave del catálogo para cada diseño declarado. */
@@ -135,7 +127,7 @@ ${test ? `
     <td class="num">${Number.isFinite(test.cohenD) ? test.cohenD.toFixed(2) : '—'}</td>
   </tr>
 </table>
-<p>${esc(tr(test.rejectNull ? 'reject' : 'notReject', { p: fmtP(test.pValue) }))}${
+<p>${esc(tr(test.rejectNull ? 'reject' : 'notReject', { p: fmtPFrase(test.pValue) }))}${
   test.rejectNull ? '' : ` <b>${esc(tr('notRejectCaveat'))}</b>`
 }</p>
 ` : `<h2>${esc(tr('testTitle'))}</h2><p class="note">${esc(tr('notRun'))}</p>`}

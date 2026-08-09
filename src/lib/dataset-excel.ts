@@ -13,6 +13,7 @@ import { detectOutliers } from '@/lib/statistics/outliers';
 import { classify } from '@/lib/classification';
 import type { DatasetReportInput } from '@/lib/dataset-report';
 import type { ReportI18n } from '@/lib/report-i18n';
+import { fmtPFrase } from '@/lib/p-value';
 
 type Row = Array<string | number>;
 
@@ -73,7 +74,7 @@ export function buildDatasetWorkbook(
     [tr('provenance'), input.criterioFuente],
     [tr('officialStandard'), input.criterioOficial ? tr('yes') : tr('no')],
     [],
-    [tr('shapiro'), sw ? `W = ${num(sw.W, 4)}, p = ${sw.pValue < 0.0001 ? '< 0.0001' : num(sw.pValue, 4)}` : tr('notRun')],
+    [tr('shapiro'), sw ? `W = ${num(sw.W, 4)}, p ${fmtPFrase(sw.pValue)}` : tr('notRun')],
     [tr('possibleOutliers'), out.flags.length],
   ];
   const wsR = XLSX.utils.aoa_to_sheet(resumen);

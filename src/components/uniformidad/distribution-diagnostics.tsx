@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { AlertTriangle, Info } from 'lucide-react';
+import { fmtPFrase } from '@/lib/p-value';
 
 function BoxplotSVG({ pesos }: { pesos: number[] }) {
   const t = useTranslations('diagnostics');
@@ -161,7 +162,7 @@ export function DistributionDiagnostics() {
           <div>
             {t.rich('shapiro', {
               w: sw.W.toFixed(4),
-              p: sw.pValue < 0.0001 ? '< 0.0001' : sw.pValue.toFixed(4),
+              p: fmtPFrase(sw.pValue),
               b: (c) => <b>{c}</b>,
             })}
           </div>
@@ -171,7 +172,7 @@ export function DistributionDiagnostics() {
             {t.rich('dagostino', {
               metodo: normality.method,
               k: normality.statistic.toFixed(3),
-              p: normality.pValue < 0.0001 ? '< 0.0001' : normality.pValue.toFixed(4),
+              p: fmtPFrase(normality.pValue),
               b: (c) => <b>{c}</b>,
             })}
           </div>

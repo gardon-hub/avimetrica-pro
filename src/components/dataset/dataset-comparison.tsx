@@ -14,6 +14,7 @@ import type { ClassificationScheme } from '@/lib/classification';
 import { classify } from '@/lib/classification';
 import { describe } from '@/lib/statistics/descriptive';
 import { twoSampleTTest, pairedTTest, meanConfidenceInterval } from '@/lib/statistics/inference';
+import { fmtPFrase } from '@/lib/p-value';
 import { CategoriasBarChart, MediasBarChart } from './comparison-charts';
 import { buildComparisonReportHtml } from '@/lib/comparison-report';
 import { Button } from '@/components/ui/button';
@@ -45,10 +46,6 @@ interface Cargado {
   unidad: string;
   decimales: number;
   scheme: ClassificationScheme | null;
-}
-
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 export function DatasetComparison({
@@ -349,7 +346,7 @@ export function DatasetComparison({
                 {t.rich('statsLine', {
                   t: resultado.test.t.toFixed(4),
                   gl: resultado.test.df.toFixed(resultado.paired ? 0 : 1),
-                  p: fmtP(resultado.test.pValue),
+                  p: fmtPFrase(resultado.test.pValue),
                   b: (c) => <b>{c}</b>,
                 })}
               </div>
@@ -359,7 +356,7 @@ export function DatasetComparison({
                 {Number.isFinite(resultado.test.cohenD) && <> · {t('cohenD')} <b>{resultado.test.cohenD.toFixed(2)}</b></>}
               </div>
               <p className="leading-snug">
-                {t(resultado.test.rejectNull ? 'reject' : 'notReject', { p: fmtP(resultado.test.pValue) })}
+                {t(resultado.test.rejectNull ? 'reject' : 'notReject', { p: fmtPFrase(resultado.test.pValue) })}
               </p>
               {design === 'repeticiones' && (
                 <p className="text-amber-700 leading-snug">{t('repeatedWarning')}</p>

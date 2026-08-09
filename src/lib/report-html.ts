@@ -14,6 +14,7 @@ import {
 } from '@/lib/dataset-report-charts';
 import { classify } from '@/lib/classification';
 import { qqPoints } from '@/lib/statistics/normality';
+import { fmtP, fmtPFrase } from '@/lib/p-value';
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -23,11 +24,6 @@ function fmt(v: number | null | undefined, dec = 2): string {
   if (v === null || v === undefined || Number.isNaN(v)) return '—';
   if (!Number.isFinite(v)) return v > 0 ? '+∞' : '−∞';
   return v.toFixed(dec);
-}
-
-/** Texto plano: el «<» se escapa donde se inserta (ver report-i18n.ts). */
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 /** Hoja de estilos compartida por todos los reportes de la aplicación. */
@@ -149,10 +145,10 @@ function normalidadHtml(d: ReportData, t: ReportTranslator): string {
   const concl = tr(ref.pValue >= 0.05 ? 'normalOk' : 'normalRejected');
   let html = `<h2>${esc(tr('normalityTitle'))}</h2>`;
   if (d.shapiro) {
-    html += `<p>${esc(tr('shapiroLabel'))} <b>${fmt(d.shapiro.W, 4)}</b>${esc(tr('shapiroP'))} <b>${esc(fmtP(d.shapiro.pValue))}</b></p>`;
+    html += `<p>${esc(tr('shapiroLabel'))} <b>${fmt(d.shapiro.W, 4)}</b>${esc(tr('shapiroP'))} <b>${esc(fmtPFrase(d.shapiro.pValue))}</b></p>`;
   }
   if (d.normality) {
-    html += `<p>${esc(d.normality.method)}${esc(tr('dagostinoK'))} <b>${fmt(d.normality.statistic, 3)}</b>${esc(tr('dagostinoP'))} <b>${esc(fmtP(d.normality.pValue))}</b></p>`;
+    html += `<p>${esc(d.normality.method)}${esc(tr('dagostinoK'))} <b>${fmt(d.normality.statistic, 3)}</b>${esc(tr('dagostinoP'))} <b>${esc(fmtPFrase(d.normality.pValue))}</b></p>`;
   }
   html += `<p>${esc(tr('conclusionPrefix'))} ${esc(concl)}.</p>`;
   if (d.shapiro && d.normality && (d.shapiro.pValue >= 0.05) !== (d.normality.pValue >= 0.05)) {

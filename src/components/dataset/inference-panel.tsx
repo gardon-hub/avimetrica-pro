@@ -10,6 +10,7 @@
 
 import type { DatasetStore } from '@/lib/dataset-store';
 import { oneSampleTTest, tTestAssumptionWarnings, type Alternative } from '@/lib/statistics/inference';
+import { fmtPFrase } from '@/lib/p-value';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,10 +32,6 @@ const ALTERNATIVAS: Array<{ v: Alternative; label: string; desc: string }> = [
   { v: 'greater', label: 'greater', desc: 'greaterDesc' },
   { v: 'less', label: 'less', desc: 'lessDesc' },
 ];
-
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
-}
 
 export function InferencePanel({ store }: { store: DatasetStore }) {
   const { valores, variable, muHipotetica, setMuHipotetica } = store();
@@ -113,7 +110,7 @@ export function InferencePanel({ store }: { store: DatasetStore }) {
             {tr.rich('statsLine', {
               t: resultado.t.toFixed(4),
               gl: resultado.df,
-              p: fmtP(resultado.pValue),
+              p: fmtPFrase(resultado.pValue),
               b: (c) => <b>{c}</b>,
             })}
           </div>
@@ -133,7 +130,7 @@ export function InferencePanel({ store }: { store: DatasetStore }) {
               alfa: alfa.toFixed(2),
               mu0: f(mu0),
               unidad: u,
-              p: fmtP(resultado.pValue),
+              p: fmtPFrase(resultado.pValue),
             })}
           </p>
           {!resultado.rejectNull && (

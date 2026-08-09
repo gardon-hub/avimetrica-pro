@@ -21,6 +21,7 @@ import { APP_VERSION } from '@/lib/report-data';
 import type { VariableDefinition } from '@/lib/domains/types';
 import type { DatasetContext } from '@/lib/dataset-store';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
+import { fmtP, fmtPFrase } from '@/lib/p-value';
 
 export interface DatasetReportInput {
   tituloModulo: string;
@@ -37,11 +38,6 @@ export interface DatasetReportInput {
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-/** Texto plano: el «<» se escapa donde se inserta (ver report-i18n.ts). */
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 // El traductor y el idioma llegan como parámetro: ver src/lib/report-i18n.ts.
@@ -168,7 +164,7 @@ ${hist ? `<div class="chart"><img src="${hist}" alt="${esc(tr('histogramAlt'))}"
 
 <h2>${esc(tr('normalityTitle'))}</h2>
 ${sw
-  ? `<p>${esc(tr('shapiroLabel'))} <b>${f(sw.W, 4)}</b>${esc(tr('shapiroP'))} <b>${esc(fmtP(sw.pValue))}</b> — ${esc(tr(sw.pValue >= 0.05 ? 'shapiroOk' : 'shapiroRejected'))}.</p>
+  ? `<p>${esc(tr('shapiroLabel'))} <b>${f(sw.W, 4)}</b>${esc(tr('shapiroP'))} <b>${esc(fmtPFrase(sw.pValue))}</b> — ${esc(tr(sw.pValue >= 0.05 ? 'shapiroOk' : 'shapiroRejected'))}.</p>
      <p class="note">${esc(tr('shapiroNote'))}</p>`
   : `<p class="note">${esc(tr('normalityNotRun'))}</p>`}
 

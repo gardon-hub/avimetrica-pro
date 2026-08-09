@@ -7,6 +7,7 @@
  */
 
 import { ReportData } from '@/lib/report-data';
+import { fmtPFrase } from '@/lib/p-value';
 
 export interface AcademicSection {
   titulo: string;
@@ -81,7 +82,7 @@ export function buildAcademicSections(d: ReportData): AcademicSection[] {
       titulo: 'Prueba t de una muestra contra el objetivo',
       queSeCalculo: `Si la diferencia entre el promedio observado (${f(t.mean, 1)} g) y el objetivo de la línea (${f(t.mu0, 0)} g) puede explicarse por azar de muestreo.`,
       formula: 't = (x̄ − μ₀) / (s/√n), con gl = n − 1',
-      resultado: `t = ${f(t.t, 3)} con ${t.df} gl → valor p = ${t.pValue < 0.0001 ? '< 0.0001' : f(t.pValue, 4)}.`,
+      resultado: `t = ${f(t.t, 3)} con ${t.df} gl → valor p ${fmtPFrase(t.pValue)}.`,
       interpretacion: t.rejectNull
         ? `Como p < 0.05, la diferencia observada sería muy improbable si el lote realmente promediara ${f(t.mu0, 0)} g: hay evidencia de que el peso promedio difiere del objetivo.`
         : `Como p ≥ 0.05, los datos no permiten descartar que el promedio real sea ${f(t.mu0, 0)} g. Ojo: esto NO demuestra que sean iguales; puede faltar potencia (muestra pequeña).`,
@@ -96,8 +97,8 @@ export function buildAcademicSections(d: ReportData): AcademicSection[] {
   if (d.shapiro || d.normality) {
     const ref = d.shapiro ?? d.normality!;
     const partes: string[] = [];
-    if (d.shapiro) partes.push(`Shapiro-Wilk: W = ${f(d.shapiro.W, 4)}, p = ${d.shapiro.pValue < 0.0001 ? '< 0.0001' : f(d.shapiro.pValue, 4)}`);
-    if (d.normality) partes.push(`D'Agostino-Pearson: K² = ${f(d.normality.statistic, 3)}, p = ${d.normality.pValue < 0.0001 ? '< 0.0001' : f(d.normality.pValue, 4)}`);
+    if (d.shapiro) partes.push(`Shapiro-Wilk: W = ${f(d.shapiro.W, 4)}, p ${fmtPFrase(d.shapiro.pValue)}`);
+    if (d.normality) partes.push(`D'Agostino-Pearson: K² = ${f(d.normality.statistic, 3)}, p ${fmtPFrase(d.normality.pValue)}`);
     out.push({
       titulo: 'Evaluación de normalidad',
       queSeCalculo: 'Si la forma de la distribución de pesos es compatible con una campana normal.',

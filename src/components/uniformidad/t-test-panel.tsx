@@ -13,6 +13,7 @@ import { oneSampleTTest, tTestAssumptionWarnings, Alternative } from '@/lib/stat
 import { tInv } from '@/lib/statistics/distributions';
 import { detectOutliers } from '@/lib/statistics/outliers';
 import { getTargetWeight, isApproximateLine } from '@/lib/diagnostic-engine';
+import { fmtP, fmtPFrase } from '@/lib/p-value';
 import { ShadedCurve } from './shaded-curve';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,11 +28,6 @@ const ALT_KEYS: Record<Alternative, 'altTwoSided' | 'altGreater' | 'altLess'> = 
   greater: 'altGreater',
   less: 'altLess',
 };
-
-function fmtP(p: number): string {
-  if (p < 0.0001) return '< 0.0001';
-  return p.toFixed(4);
-}
 
 export function TTestPanel() {
   const { pesos, lineaGenetica, edadSemanas } = useUniformidadStore();
@@ -96,7 +92,7 @@ export function TTestPanel() {
     const comunes = { alpha: alphaTxt, dir, mu0: mu0Txt };
     if (result.rejectNull) {
       return {
-        decision: t('reject', { p: fmtP(result.pValue), alpha: alphaTxt }),
+        decision: t('reject', { p: fmtPFrase(result.pValue), alpha: alphaTxt }),
         text: t('rejectText', {
           ...comunes,
           diff: `${result.diff >= 0 ? '+' : ''}${result.diff.toFixed(1)}`,
@@ -105,7 +101,7 @@ export function TTestPanel() {
       };
     }
     return {
-      decision: t('notReject', { p: fmtP(result.pValue), alpha: alphaTxt }),
+      decision: t('notReject', { p: fmtPFrase(result.pValue), alpha: alphaTxt }),
       text: t('notRejectText', comunes),
     };
   }, [result, alpha, mu0, alternative, t]);

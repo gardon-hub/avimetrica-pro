@@ -76,6 +76,9 @@ describe('reporte de comparación de pesajes: idiomas', () => {
       expect(texto.match(/reports\.[a-zA-Z.]+/g)).toBeNull();
       expect(texto.match(/credits\.[a-zA-Z.]+/g)).toBeNull();
       expect(texto.match(/&(lt|gt|amp);/g)).toBeNull();
+      // El doble signo «p = < 0.0001»: el operador vive en el valor
+      // (fmtPFrase), nunca también en el mensaje.
+      expect(texto.match(/= *[<≥>] *0/g)).toBeNull();
       expect(html).toContain(`lang="${locale}"`);
     });
   }
@@ -142,6 +145,7 @@ describe('libros de Excel: idiomas', () => {
       const texto = textoLibro(buildWorkbook(d, { locale, t: t as never }));
       expect(texto).not.toMatch(CLAVE_SIN_RESOLVER);
       expect(texto).not.toMatch(/&(lt|gt|amp);/);
+      expect(texto).not.toMatch(/= *[<≥>] *0/);
     });
 
     it(`el libro de conjuntos sale resuelto en ${locale}`, () => {
@@ -163,6 +167,7 @@ describe('libros de Excel: idiomas', () => {
       const texto = textoLibro(wb);
       expect(texto).not.toMatch(CLAVE_SIN_RESOLVER);
       expect(texto).not.toMatch(/&(lt|gt|amp);/);
+      expect(texto).not.toMatch(/= *[<≥>] *0/);
     });
   }
 });

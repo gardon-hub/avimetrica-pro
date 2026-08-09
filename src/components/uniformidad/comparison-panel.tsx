@@ -13,6 +13,7 @@ import { calculateStats } from '@/lib/calculations';
 import { median } from '@/lib/statistics/descriptive';
 import { twoSampleTTest, pairedTTest, meanConfidenceInterval } from '@/lib/statistics/inference';
 import { buildPesajesComparisonReportHtml } from '@/lib/pesajes-comparison-report';
+import { fmtPFrase } from '@/lib/p-value';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,10 +22,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Printer } from 'lucide-react';
 
 type Design = 'independientes' | 'pareadas' | 'repeticiones' | 'ns';
-
-function fmtP(p: number): string {
-  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
-}
 
 type Traductor = ReturnType<typeof useTranslations<'comparison'>>;
 
@@ -273,7 +270,7 @@ export function ComparisonPanel({
                 {t(result.paired ? 'titlePaired' : 'titleWelch')}
               </div>
               <div className="tabular-nums">
-                t = <b>{result.test.t.toFixed(4)}</b> · {tPruebaT('statDf')} = <b>{result.test.df.toFixed(result.paired ? 0 : 1)}</b> · {tPruebaT('statP')} = <b>{fmtP(result.test.pValue)}</b>
+                t = <b>{result.test.t.toFixed(4)}</b> · {tPruebaT('statDf')} = <b>{result.test.df.toFixed(result.paired ? 0 : 1)}</b> · {tPruebaT('statP')} <b>{fmtPFrase(result.test.pValue)}</b>
               </div>
               <div className="tabular-nums">
                 {t('meanDiff')} <b>{result.test.diff >= 0 ? '+' : ''}{result.test.diff.toFixed(1)} g</b> ·{' '}
@@ -281,7 +278,7 @@ export function ComparisonPanel({
                 {Number.isFinite(result.test.cohenD) && <> · {t('cohenD')} <b>{result.test.cohenD.toFixed(2)}</b></>}
               </div>
               <p className="leading-snug">
-                {t(result.test.rejectNull ? 'reject' : 'notReject', { p: fmtP(result.test.pValue) })}
+                {t(result.test.rejectNull ? 'reject' : 'notReject', { p: fmtPFrase(result.test.pValue) })}
               </p>
               {design === 'repeticiones' && (
                 <p className="text-amber-700 leading-snug">{t('warnRepeats')}</p>

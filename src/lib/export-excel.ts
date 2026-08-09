@@ -12,6 +12,7 @@
 import * as XLSX from 'xlsx';
 import { ReportData, ReportLimitation } from '@/lib/report-data';
 import type { ReportI18n, ReportTranslator } from '@/lib/report-i18n';
+import { fmtPFrase } from '@/lib/p-value';
 
 type Row = Array<string | number>;
 
@@ -29,7 +30,6 @@ export function buildWorkbook(d: ReportData, { locale, t }: ReportI18n): XLSX.Wo
   const wb = XLSX.utils.book_new();
 
   // ── Hoja Resumen ──
-  const p = (v: number) => (v < 0.0001 ? '< 0.0001' : num(v, 4));
   const resumen: Row[] = [
     [tr('docTitle')],
     [tr('generated'), new Date(d.generadoEnMs).toLocaleString(locale)],
@@ -59,9 +59,9 @@ export function buildWorkbook(d: ReportData, { locale, t }: ReportI18n): XLSX.Wo
     [tr('diffPct'), num(d.targetDiffPct, 2)],
     [tr('pctWithinGuide'), num(d.pctDentroGuia, 1)],
     [],
-    [tr('shapiro'), d.shapiro ? `W = ${num(d.shapiro.W, 4)}, p = ${p(d.shapiro.pValue)}` : tr('shapiroNotRun')],
-    [tr('dagostino'), d.normality ? `K² = ${num(d.normality.statistic, 3)}, p = ${p(d.normality.pValue)}` : tr('dagostinoNotRun')],
-    [tr('tTest'), d.tTest ? `t = ${num(d.tTest.t, 4)}, gl = ${d.tTest.df}, p = ${p(d.tTest.pValue)}` : tr('tTestNotRun')],
+    [tr('shapiro'), d.shapiro ? `W = ${num(d.shapiro.W, 4)}, p ${fmtPFrase(d.shapiro.pValue)}` : tr('shapiroNotRun')],
+    [tr('dagostino'), d.normality ? `K² = ${num(d.normality.statistic, 3)}, p ${fmtPFrase(d.normality.pValue)}` : tr('dagostinoNotRun')],
+    [tr('tTest'), d.tTest ? `t = ${num(d.tTest.t, 4)}, gl = ${d.tTest.df}, p ${fmtPFrase(d.tTest.pValue)}` : tr('tTestNotRun')],
     [tr('possibleOutliers'), d.outliers.flags.length],
     [],
     [tr('limitations')],
