@@ -5,7 +5,29 @@
  */
 
 import * as XLSX from 'xlsx';
-import { ReportData, muestreoLabel } from '@/lib/report-data';
+import { ReportData, ReportLimitation, muestreoLabel } from '@/lib/report-data';
+
+/**
+ * Redacción en español de cada limitación.
+ *
+ * El reporte HTML las toma del catálogo de idiomas; esta tabla sobrevive
+ * únicamente porque el Excel todavía no está traducido. Cuando lo esté, debe
+ * borrarse y pasar el traductor, igual que a los generadores de HTML.
+ */
+const LIMITACION_ESP: Record<ReportLimitation['code'], (p?: Record<string, string | number>) => string> = {
+  limSmall: (p) => `La muestra es pequeña (n=${p?.n}): las estimaciones tienen amplia incertidumbre y las pruebas poca potencia. Se recomienda pesar al menos 30 aves.`,
+  limSamplingUnknown: () => 'No se documentó el método de muestreo: si las aves no se seleccionaron al azar, los resultados pueden no representar al lote completo.',
+  limSamplingConvenience: () => 'El muestreo fue por conveniencia: las aves más fáciles de capturar pueden diferir sistemáticamente del resto del lote (sesgo de selección).',
+  limApproxLine: () => 'Los pesos de referencia de esta línea genética son APROXIMADOS (sin guía oficial auditada): la comparación con el objetivo es orientativa.',
+  limNoAge: () => 'No se indicó la edad del lote: no fue posible comparar contra el peso objetivo de la línea genética.',
+  limNormality: () => 'Los pesos se desvían de la distribución normal: las probabilidades teóricas y la prueba t deben interpretarse con cautela (ver histograma y Q-Q).',
+  limOutliers: (p) => `Se detectaron ${p?.n} posible(s) valor(es) atípico(s) que influyen en media, SD y CV. Verificar si son errores de medición o aves reales.`,
+  limProfessional: () => 'Este reporte describe el pesaje analizado; no sustituye el criterio del profesional a cargo del lote.',
+};
+
+function limitacionEsp(l: ReportLimitation): string {
+  return LIMITACION_ESP[l.code](l.params);
+}
 import { OUTLIER_METHOD_LABELS } from '@/lib/statistics/outliers';
 
 type Row = Array<string | number>;
@@ -54,7 +76,7 @@ export function buildWorkbook(d: ReportData): XLSX.WorkBook {
     ['Posibles atípicos', d.outliers.flags.length],
     [],
     ['Limitaciones'],
-    ...d.limitaciones.map((l): Row => [l]),
+    ...d.limitaciones.map((l): Row => [limitacionEsp(l)]),
   ];
   const wsResumen = XLSX.utils.aoa_to_sheet(resumen);
   wsResumen['!cols'] = [{ wch: 34 }, { wch: 60 }];

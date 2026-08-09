@@ -6,7 +6,8 @@
  * Las plantillas SOLO formatean datos ya calculados (ReportData).
  */
 
-import { ReportData, ReportVariant, muestreoLabel } from '@/lib/report-data';
+import { ReportData, ReportVariant, VARIANT_KEYS } from '@/lib/report-data';
+import type { ReportI18n, ReportTranslator } from '@/lib/report-i18n';
 import { uniformityCurveSvg, histogramSvg, svgToDataUri } from '@/lib/report-charts';
 import {
   categoriasBarSvg, mediaVsObjetivoSvg, boxplotSvg, qqPlotSvg, bandaVsIcSvg,
@@ -25,8 +26,9 @@ function fmt(v: number | null | undefined, dec = 2): string {
   return v.toFixed(dec);
 }
 
+/** Texto plano: el «<» se escapa donde se inserta (ver report-i18n.ts). */
 function fmtP(p: number): string {
-  return p < 0.0001 ? '&lt; 0.0001' : p.toFixed(4);
+  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 /** Hoja de estilos compartida por todos los reportes de la aplicación. */
@@ -62,168 +64,192 @@ li { margin-bottom: 2px; }
 @media print { body { padding: 0; } .no-print { display: none; } }
 `;
 
-function headerHtml(d: ReportData, variantLabel: string): string {
+/** Atajo al espacio `reports.aves` del catálogo. */
+function scoped(t: ReportTranslator): ReportTranslator {
+  return (k, v) => t(`reports.aves.${k}`, v);
+}
+
+function headerHtml(d: ReportData, variant: ReportVariant, { locale, t }: ReportI18n): string {
+  const tr = scoped(t);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `
 <div class="header">
   <img src="${origin}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
-  <h1>Reporte de Uniformidad — ${esc(variantLabel)}</h1>
-  <div class="subtitle">Avimétrica Pro · Analítica de peso, uniformidad y desempeño avícola · Generado: ${esc(d.generadoEl)} · v${esc(d.appVersion)}</div>
+  <h1>${esc(tr('title', { variante: tr(VARIANT_KEYS[variant]) }))}</h1>
+  <div class="subtitle">${esc(tr('subtitle', { fecha: new Date(d.generadoEnMs).toLocaleString(locale), version: d.appVersion }))}</div>
 </div>`;
 }
 
-function metaHtml(d: ReportData): string {
+function metaHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
   const c = d.contexto;
+  const metodo = c.metodoMuestreo || 'ns';
   const rows: Array<[string, string]> = [
-    ['Línea genética', `${d.lineaGenetica}${d.lineaAproximada ? ' ⚠️ (referencia aproximada)' : ''}`],
-    ['Edad', d.edadSemanas ? `${d.edadSemanas} semanas` : 'No especificada'],
-    ['Lote', c.lote || '—'],
-    ['Granja / Galpón', `${c.granja || '—'} / ${c.galpon || '—'}`],
-    ['Responsable', c.responsable || '—'],
-    ['Muestreo', muestreoLabel(c.metodoMuestreo)],
-    ['Aves pesadas', String(d.stats.totalAves)],
-    ['Criterio de uniformidad', `media ±${d.criterioPct}% (banda descriptiva, no es IC)`],
+    [tr('metaLine'), `${d.lineaGenetica}${d.lineaAproximada ? ` ${tr('approxRef')}` : ''}`],
+    [tr('metaAge'), d.edadSemanas ? tr('ageWeeks', { n: d.edadSemanas }) : tr('ageUnspecified')],
+    [tr('metaLot'), c.lote || '—'],
+    [tr('metaFarmHouse'), `${c.granja || '—'} / ${c.galpon || '—'}`],
+    [tr('metaResponsible'), c.responsable || '—'],
+    [tr('metaSampling'), t(`sampling.${metodo}`)],
+    [tr('metaBirds'), String(d.stats.totalAves)],
+    [tr('metaCriterion'), tr('criterionValue', { pct: d.criterioPct })],
   ];
   return `<div class="meta">${rows.map(([k, v]) => `<div><b>${esc(k)}:</b> ${esc(v)}</div>`).join('')}</div>`;
 }
 
-function kpisHtml(d: ReportData): string {
+function kpisHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
   const uniClass = d.stats.uniformidad >= 85 ? 'good' : d.stats.uniformidad >= 70 ? 'warn' : 'bad';
   const kpis: Array<[string, string, string]> = [
-    ['Media', `${fmt(d.stats.promedio, 1)} g`, ''],
-    ['Objetivo', d.target ? `${fmt(d.target.pesoOptimo, 0)} g` : '—', ''],
-    ['Diferencia', d.targetDiffG !== null ? `${d.targetDiffG >= 0 ? '+' : ''}${fmt(d.targetDiffG, 1)} g (${fmt(d.targetDiffPct, 1)}%)` : '—',
+    [tr('kpiMean'), `${fmt(d.stats.promedio, 1)} g`, ''],
+    [tr('kpiTarget'), d.target ? `${fmt(d.target.pesoOptimo, 0)} g` : '—', ''],
+    [tr('kpiDifference'), d.targetDiffG !== null ? `${d.targetDiffG >= 0 ? '+' : ''}${fmt(d.targetDiffG, 1)} g (${fmt(d.targetDiffPct, 1)}%)` : '—',
       d.targetDiffPct !== null ? (Math.abs(d.targetDiffPct) <= 5 ? 'good' : Math.abs(d.targetDiffPct) <= 10 ? 'warn' : 'bad') : ''],
-    ['Uniformidad', `${fmt(d.stats.uniformidad, 1)}%`, uniClass],
-    ['CV', `${fmt(d.stats.cv, 2)}%`, ''],
-    ['SD muestral', `${fmt(d.stats.desvEst, 1)} g`, ''],
-    ['IC 95% media', d.ci95 ? `${fmt(d.ci95.lower, 1)}–${fmt(d.ci95.upper, 1)} g` : '—', ''],
-    ['En rango guía', d.pctDentroGuia !== null ? `${fmt(d.pctDentroGuia, 1)}%` : '—', ''],
+    [tr('kpiUniformity'), `${fmt(d.stats.uniformidad, 1)}%`, uniClass],
+    [tr('kpiCv'), `${fmt(d.stats.cv, 2)}%`, ''],
+    [tr('kpiSd'), `${fmt(d.stats.desvEst, 1)} g`, ''],
+    [tr('kpiCi'), d.ci95 ? `${fmt(d.ci95.lower, 1)}–${fmt(d.ci95.upper, 1)} g` : '—', ''],
+    [tr('kpiWithinGuide'), d.pctDentroGuia !== null ? `${fmt(d.pctDentroGuia, 1)}%` : '—', ''],
   ];
   return `<div class="kpis">${kpis
     .map(([l, v, cls]) => `<div class="kpi"><div class="v ${cls}">${v}</div><div class="l">${esc(l)}</div></div>`)
     .join('')}</div>`;
 }
 
-function descriptivaHtml(d: ReportData): string {
+function descriptivaHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
   const s = d.descr;
   const rows: Array<[string, string]> = [
-    ['n', String(s.n)],
-    ['Media', `${fmt(s.mean)} g`],
-    ['Mediana', `${fmt(s.median)} g`],
-    ['Mínimo – Máximo', `${fmt(s.min, 1)} – ${fmt(s.max, 1)} g`],
-    ['Rango', `${fmt(s.range, 1)} g`],
-    ['Varianza muestral', `${fmt(s.varianceSample)} g²`],
-    ['SD muestral', `${fmt(s.sdSample)} g`],
-    ['CV', `${fmt(s.cv)} %`],
-    ['Error estándar (EEM)', `${fmt(s.sem)} g`],
-    ['Q1 / Q3 (IQR)', `${fmt(s.q1)} / ${fmt(s.q3)} (${fmt(s.iqr)}) g`],
-    ['P5 / P95', `${fmt(s.percentiles[5])} / ${fmt(s.percentiles[95])} g`],
-    ['Asimetría (G1)', s.skewness === null ? '—' : fmt(s.skewness, 3)],
-    ['Curtosis exceso (G2)', s.kurtosis === null ? '—' : fmt(s.kurtosis, 3)],
-    ['IC 95% media', d.ci95 ? `${fmt(d.ci95.lower)} – ${fmt(d.ci95.upper)} g` : '—'],
+    [tr('rowN'), String(s.n)],
+    [tr('rowMean'), `${fmt(s.mean)} g`],
+    [tr('rowMedian'), `${fmt(s.median)} g`],
+    [tr('rowMinMax'), `${fmt(s.min, 1)} – ${fmt(s.max, 1)} g`],
+    [tr('rowRange'), `${fmt(s.range, 1)} g`],
+    [tr('rowVariance'), `${fmt(s.varianceSample)} g²`],
+    [tr('rowSd'), `${fmt(s.sdSample)} g`],
+    [tr('rowCv'), `${fmt(s.cv)} %`],
+    [tr('rowSem'), `${fmt(s.sem)} g`],
+    [tr('rowQuartiles'), `${fmt(s.q1)} / ${fmt(s.q3)} (${fmt(s.iqr)}) g`],
+    [tr('rowPercentiles'), `${fmt(s.percentiles[5])} / ${fmt(s.percentiles[95])} g`],
+    [tr('rowSkewness'), s.skewness === null ? '—' : fmt(s.skewness, 3)],
+    [tr('rowKurtosis'), s.kurtosis === null ? '—' : fmt(s.kurtosis, 3)],
+    [tr('rowCi'), d.ci95 ? `${fmt(d.ci95.lower)} – ${fmt(d.ci95.upper)} g` : '—'],
   ];
   const half = Math.ceil(rows.length / 2);
   const col = (rs: Array<[string, string]>) =>
     `<table>${rs.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="num"><b>${v}</b></td></tr>`).join('')}</table>`;
-  return `<h2>Resumen estadístico</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${col(rows.slice(0, half))}${col(rows.slice(half))}</div>`;
+  return `<h2>${esc(tr('summaryTitle'))}</h2><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${col(rows.slice(0, half))}${col(rows.slice(half))}</div>`;
 }
 
-function normalidadHtml(d: ReportData): string {
+function normalidadHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
   if (!d.normality && !d.shapiro) {
-    return `<h2>Normalidad</h2><p class="note">No evaluada (se requieren ≥3 pesos con variabilidad).</p>`;
+    return `<h2>${esc(tr('normalityTitle'))}</h2><p class="note">${esc(tr('normalityNotRun'))}</p>`;
   }
   const ref = d.shapiro ?? d.normality!;
-  const concl = ref.pValue >= 0.05
-    ? 'no se rechaza la hipótesis de normalidad: los datos son compatibles con una distribución normal (esto no la demuestra)'
-    : 'se rechaza la hipótesis de normalidad: los pesos se desvían de la distribución normal';
-  let html = `<h2>Normalidad</h2>`;
+  const concl = tr(ref.pValue >= 0.05 ? 'normalOk' : 'normalRejected');
+  let html = `<h2>${esc(tr('normalityTitle'))}</h2>`;
   if (d.shapiro) {
-    html += `<p>Shapiro-Wilk (AS R94): W = <b>${fmt(d.shapiro.W, 4)}</b>, valor p = <b>${fmtP(d.shapiro.pValue)}</b></p>`;
+    html += `<p>${esc(tr('shapiroLabel'))} <b>${fmt(d.shapiro.W, 4)}</b>${esc(tr('shapiroP'))} <b>${esc(fmtP(d.shapiro.pValue))}</b></p>`;
   }
   if (d.normality) {
-    html += `<p>${esc(d.normality.method)}: K² = <b>${fmt(d.normality.statistic, 3)}</b>, valor p = <b>${fmtP(d.normality.pValue)}</b></p>`;
+    html += `<p>${esc(d.normality.method)}${esc(tr('dagostinoK'))} <b>${fmt(d.normality.statistic, 3)}</b>${esc(tr('dagostinoP'))} <b>${esc(fmtP(d.normality.pValue))}</b></p>`;
   }
-  html += `<p>Conclusión (α = 0.05): ${concl}.</p>`;
+  html += `<p>${esc(tr('conclusionPrefix'))} ${esc(concl)}.</p>`;
   if (d.shapiro && d.normality && (d.shapiro.pValue >= 0.05) !== (d.normality.pValue >= 0.05)) {
-    html += `<p class="note">⚠️ Las dos pruebas discrepan al 5%: evidencia limítrofe; priorizar la inspección gráfica.</p>`;
+    html += `<p class="note">${esc(tr('testsDisagree'))}</p>`;
   }
   if (d.normality && !d.normality.reliable) {
-    html += `<p class="note">⚠️ Con n &lt; 20 la prueba K² es poco confiable; priorizar la inspección gráfica.</p>`;
+    html += `<p class="note">${esc(tr('k2Unreliable'))}</p>`;
   }
-  html += `<p class="note">Las pruebas no sustituyen la inspección gráfica (histograma y Q-Q en la aplicación).</p>`;
+  html += `<p class="note">${esc(tr('normalityNote'))}</p>`;
   return html;
 }
 
-function atipicosHtml(d: ReportData): string {
+function atipicosHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
   if (d.outliers.flags.length === 0) {
-    return `<h2>Valores atípicos</h2><p>Ninguna observación marcada por las reglas 1.5×IQR, 3×IQR, |Z|&gt;3 ni Z-modificada (MAD).</p>`;
+    return `<h2>${esc(tr('outliersTitle'))}</h2><p>${esc(tr('outliersNone'))}</p>`;
   }
   const rows = d.outliers.flags
-    .map((f) => `<tr><td class="num">${f.index + 1}</td><td class="num">${fmt(f.value, 1)}</td><td class="num">${f.deviationFromMean >= 0 ? '+' : ''}${fmt(f.deviationFromMean, 1)}</td><td>${f.methods.map((m) => esc(OUTLIER_METHOD_LABELS[m])).join(' · ')}</td></tr>`)
+    .map((f) => `<tr><td class="num">${f.index + 1}</td><td class="num">${fmt(f.value, 1)}</td><td class="num">${f.deviationFromMean >= 0 ? '+' : ''}${fmt(f.deviationFromMean, 1)}</td><td>${f.methods.map((m) => esc(t(`outlierMethods.${m}`))).join(' · ')}</td></tr>`)
     .join('');
-  return `<h2>Valores atípicos (${d.outliers.flags.length})</h2>
-<table><tr><th class="num"># Ave</th><th class="num">Peso (g)</th><th class="num">vs. media (g)</th><th>Métodos que lo marcan</th></tr>${rows}</table>
-<p class="note">Un valor marcado no es necesariamente un error: verificar antes de excluir. Ninguna observación fue eliminada en este análisis.</p>`;
+  return `<h2>${esc(tr('outliersTitleN', { n: d.outliers.flags.length }))}</h2>
+<table><tr><th class="num">${esc(tr('colBird'))}</th><th class="num">${esc(tr('colWeight'))}</th><th class="num">${esc(tr('colVsMean'))}</th><th>${esc(tr('colMethods'))}</th></tr>${rows}</table>
+<p class="note">${esc(tr('outliersNote'))}</p>`;
 }
 
-function tTestHtml(d: ReportData): string {
+function tTestHtml(d: ReportData, tf: ReportTranslator): string {
+  const tr = scoped(tf);
   if (!d.tTest) {
-    return `<h2>Prueba t contra el peso objetivo</h2><p class="note">No ejecutada (se requiere edad con referencia disponible y n ≥ 2 con variabilidad).</p>`;
+    return `<h2>${esc(tr('tTestNotRunTitle'))}</h2><p class="note">${esc(tr('tTestNotRun'))}</p>`;
   }
   const t = d.tTest;
-  const concl = t.rejectNull
-    ? `Con α = 0.05, existe evidencia estadística de que el peso promedio del lote difiere del objetivo de ${fmt(t.mu0, 0)} g.`
-    : `Con α = 0.05, no se encontró evidencia estadística suficiente para concluir que el peso promedio difiere del objetivo de ${fmt(t.mu0, 0)} g. Esto no demuestra que sean iguales.`;
-  return `<h2>Prueba t de una muestra contra el peso objetivo</h2>
-<p>H₀: μ = ${fmt(t.mu0, 0)} g · H₁: μ ≠ ${fmt(t.mu0, 0)} g (bilateral, 95% de confianza)</p>
-<table><tr><th class="num">t</th><th class="num">gl</th><th class="num">Valor p</th><th class="num">Diferencia</th><th class="num">IC 95%</th><th class="num">d de Cohen</th></tr>
-<tr><td class="num">${fmt(t.t, 4)}</td><td class="num">${t.df}</td><td class="num">${fmtP(t.pValue)}</td><td class="num">${t.diff >= 0 ? '+' : ''}${fmt(t.diff, 1)} g</td><td class="num">${fmt(t.ciLower, 1)} – ${fmt(t.ciUpper, 1)} g</td><td class="num">${fmt(t.cohenD, 2)}</td></tr></table>
-<p>${concl}</p>`;
+  const concl = tr(t.rejectNull ? 'tReject' : 'tNotReject', { mu0: fmt(t.mu0, 0) });
+  return `<h2>${esc(tr('tTestTitle'))}</h2>
+<p>${esc(tr('hypotheses', { mu0: fmt(t.mu0, 0) }))}</p>
+<table><tr><th class="num">${esc(tr('colT'))}</th><th class="num">${esc(tr('colDf'))}</th><th class="num">${esc(tr('colP'))}</th><th class="num">${esc(tr('colDifference'))}</th><th class="num">${esc(tr('colCi'))}</th><th class="num">${esc(tr('colCohenD'))}</th></tr>
+<tr><td class="num">${fmt(t.t, 4)}</td><td class="num">${t.df}</td><td class="num">${esc(fmtP(t.pValue))}</td><td class="num">${t.diff >= 0 ? '+' : ''}${fmt(t.diff, 1)} g</td><td class="num">${fmt(t.ciLower, 1)} – ${fmt(t.ciUpper, 1)} g</td><td class="num">${fmt(t.cohenD, 2)}</td></tr></table>
+<p>${esc(concl)}</p>`;
 }
 
-function diagnosticoHtml(d: ReportData, full: boolean): string {
+/**
+ * Diagnóstico zootécnico. Su PROSA la redacta el motor (diagnostic-engine) y
+ * sigue únicamente en español por el alcance acordado: solo se traducen los
+ * rótulos que la enmarcan. Cuando el idioma no es español, buildReportHtml
+ * añade un aviso visible para que no se lea como un descuido.
+ */
+function diagnosticoHtml(d: ReportData, full: boolean, t: ReportTranslator): string {
+  const tr = scoped(t);
   const dg = d.diagnostic;
-  let html = `<h2>Diagnóstico zootécnico</h2>
-<p><b>${esc(dg.title)}</b> · ${dg.birdType === 'broiler' ? 'Broiler (engorde)' : 'Ponedora (postura)'} · ${esc(dg.stageLabel)}</p>
-<p><b>Interpretación:</b> ${esc(dg.interpretacion)}</p>
-<p><b>Peso vs. referencia:</b> ${esc(dg.pesoComparacion)}</p>`;
+  let html = `<h2>${esc(tr('diagnosisTitle'))}</h2>
+<p><b>${esc(dg.title)}</b> · ${esc(tr(dg.birdType === 'broiler' ? 'broiler' : 'layer'))} · ${esc(dg.stageLabel)}</p>
+<p><b>${esc(tr('interpretation'))}</b> ${esc(dg.interpretacion)}</p>
+<p><b>${esc(tr('weightVsReference'))}</b> ${esc(dg.pesoComparacion)}</p>`;
   if (dg.alertas.length > 0) {
-    html += `<div class="alert"><b>Alertas:</b><ul>${dg.alertas.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>`;
+    html += `<div class="alert"><b>${esc(tr('alerts'))}</b><ul>${dg.alertas.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>`;
   }
   if (full && dg.causas.length > 0) {
-    html += `<p><b>Posibles factores a investigar</b> (no diagnósticos definitivos):</p><ul>${dg.causas.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`;
+    html += `<p><b>${esc(tr('causes'))}</b> ${esc(tr('causesNote'))}</p><ul>${dg.causas.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`;
   }
   const recs = full ? dg.recomendaciones : dg.recomendaciones.slice(0, 3);
   if (recs.length > 0) {
-    html += `<p><b>Recomendaciones:</b></p><ul>${recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`;
+    html += `<p><b>${esc(tr('recommendations'))}</b></p><ul>${recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`;
   }
   return html;
 }
 
-function limitacionesHtml(d: ReportData): string {
-  return `<h2>Limitaciones</h2><ul>${d.limitaciones.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`;
+function limitacionesHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
+  return `<h2>${esc(tr('limitationsTitle'))}</h2><ul>${d.limitaciones
+    .map((l) => `<li>${esc(tr(l.code, l.params))}</li>`)
+    .join('')}</ul>`;
 }
 
-function fuentesHtml(d: ReportData): string {
-  return `<h2>Fuentes y trazabilidad</h2>
-<p>Pesos de referencia: guías de manejo de la línea <b>${esc(d.lineaGenetica)}</b>${d.lineaAproximada ? ' — <span class="warn"><b>valores APROXIMADOS sin guía oficial auditada</b></span>' : ' (documento oficial de la casa genética)'}.
-Versión interna de datos de referencia: <b>${esc(d.refDataVersion)}</b> · Versión de la aplicación: <b>${esc(d.appVersion)}</b>.</p>
-<p class="note">Los cálculos estadísticos se ejecutan localmente con funciones deterministas verificadas por pruebas automatizadas (ver ESTADISTICA en AUDITORIA.md del proyecto).</p>`;
+function fuentesHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
+  const procedencia = d.lineaAproximada
+    ? ` — <span class="warn"><b>${esc(tr('refApproximate'))}</b></span>`
+    : ` ${esc(tr('refOfficial'))}`;
+  return `<h2>${esc(tr('sourcesTitle'))}</h2>
+<p>${esc(tr('refWeights'))} <b>${esc(d.lineaGenetica)}</b>${procedencia}.
+${esc(tr('refVersions', { datos: d.refDataVersion, app: d.appVersion }))}</p>
+<p class="note">${esc(tr('localNote'))}</p>`;
 }
 
-function pesosTablaHtml(d: ReportData): string {
+function pesosTablaHtml(d: ReportData, t: ReportTranslator): string {
+  const tr = scoped(t);
   const rows = d.pesos
     .map((p, i) => {
-      let estado = 'Dentro del rango';
+      let estado = tr('statusIn');
       let cls = '';
-      if (p < d.stats.limiteInf) { estado = `Debajo (−${fmt(d.stats.limiteInf - p, 1)} g)`; cls = 'bad'; }
-      else if (p > d.stats.limiteSup) { estado = `Encima (+${fmt(p - d.stats.limiteSup, 1)} g)`; cls = 'good'; }
-      return `<tr><td class="num">${i + 1}</td><td class="num">${fmt(p, 1)}</td><td class="${cls}">${estado}</td></tr>`;
+      if (p < d.stats.limiteInf) { estado = tr('statusBelow', { g: fmt(d.stats.limiteInf - p, 1) }); cls = 'bad'; }
+      else if (p > d.stats.limiteSup) { estado = tr('statusAbove', { g: fmt(p - d.stats.limiteSup, 1) }); cls = 'good'; }
+      return `<tr><td class="num">${i + 1}</td><td class="num">${fmt(p, 1)}</td><td class="${cls}">${esc(estado)}</td></tr>`;
     })
     .join('');
-  return `<h2 class="pagebreak">Pesos individuales (${d.pesos.length})</h2>
-<table><tr><th class="num"># Ave</th><th class="num">Peso (g)</th><th>Estado vs. banda ±${d.criterioPct}%</th></tr>${rows}</table>`;
+  return `<h2 class="pagebreak">${esc(tr('weightsTitle', { n: d.pesos.length }))}</h2>
+<table><tr><th class="num">${esc(tr('colBird'))}</th><th class="num">${esc(tr('colWeight'))}</th><th>${esc(tr('colStatus', { pct: d.criterioPct }))}</th></tr>${rows}</table>`;
 }
 
 function metodologiaHtml(d: ReportData): string {
@@ -298,16 +324,17 @@ ${graficoQQ ? `<div class="chart"><img src="${graficoQQ}" alt="Gráfico Q-Q de l
 </ul>`;
 }
 
-function footerHtml(): string {
+function footerHtml(t: ReportTranslator): string {
   return `<div class="footer">
-  <span class="name">Gustavo Alonso Ardón</span><br/>
-  Profesor Investigador en Ciencias Avícolas<br/>
-  Universidad Nacional de Agricultura, Honduras, Centro América
+  <span class="name">${esc(t('credits.author'))}</span><br/>
+  ${esc(t('credits.role'))}<br/>
+  ${esc(t('credits.institution'))}
 </div>`;
 }
 
-export function buildReportHtml(d: ReportData, variant: ReportVariant): string {
-  const variantLabel = variant === 'resumido' ? 'Resumen ejecutivo' : variant === 'tecnico' ? 'Reporte técnico' : 'Reporte académico';
+export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: ReportI18n): string {
+  const { locale, t } = i18n;
+  const tr = scoped(t);
   const curve = svgToDataUri(uniformityCurveSvg(d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup, d.stats.uniformidad, d.criterioPct));
   const hist = svgToDataUri(histogramSvg(d.pesos, d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup));
 
@@ -318,9 +345,9 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant): string {
     type: 'relative-band',
     pct: d.criterioPct,
     labels: {
-      below: `Bajo −${d.criterioPct}%`,
-      within: `Dentro de ±${d.criterioPct}%`,
-      above: `Sobre +${d.criterioPct}%`,
+      below: tr('bandBelow', { pct: d.criterioPct }),
+      within: tr('bandWithin', { pct: d.criterioPct }),
+      above: tr('bandAbove', { pct: d.criterioPct }),
     },
   });
   const COLORES_BANDA = ['#e53935', '#4CAF50', '#1d4ed8'];
@@ -340,61 +367,63 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant): string {
           d.stats.promedio,
           d.ci95,
           d.target.pesoOptimo,
-          'Objetivo de la línea',
+          tr('targetLineLabel'),
           'g',
           1,
         ),
       )
     : '';
 
-  let body = headerHtml(d, variantLabel) + metaHtml(d) + kpisHtml(d);
+  // Aviso visible cuando el idioma no es español: el diagnóstico zootécnico y
+  // la metodología los redacta el motor y siguen sin traducir. Vale más
+  // decirlo que dejar que parezca un descuido del documento.
+  const avisoIdioma = locale === 'es'
+    ? ''
+    : `<p class="note"><b>${esc(tr('spanishOnlyNotice'))}</b></p>`;
+
+  let body = headerHtml(d, variant, i18n) + metaHtml(d, t) + kpisHtml(d, t) + avisoIdioma;
 
   const bloqueBanda = `
-<h2>Distribución respecto a la banda de uniformidad</h2>
-<div class="chart"><img src="${barras}" alt="Gráfico de barras del porcentaje de aves por debajo, dentro y por encima de la banda de uniformidad"/></div>
+<h2>${esc(tr('bandTitle'))}</h2>
+<div class="chart"><img src="${barras}" alt="${esc(tr('bandAlt'))}"/></div>
 <table>
-  <tr><th>Categoría</th><th class="num">Aves</th><th class="num">%</th></tr>
+  <tr><th>${esc(tr('colCategory'))}</th><th class="num">${esc(tr('colBirds'))}</th><th class="num">%</th></tr>
   ${clasif.bins.map((b) => `<tr><td>${esc(b.label)}</td><td class="num">${b.count}</td><td class="num">${b.pct.toFixed(1)}</td></tr>`).join('')}
 </table>
-<p class="note">
-  Banda de ${d.criterioPct}% alrededor de la media observada (${fmt(d.stats.limiteInf, 1)} – ${fmt(d.stats.limiteSup, 1)} g).
-  Es una banda descriptiva de la dispersión del lote, <b>no</b> un intervalo de confianza.
-</p>`;
+<p class="note">${esc(tr('bandNote', { pct: d.criterioPct, min: fmt(d.stats.limiteInf, 1), max: fmt(d.stats.limiteSup, 1) }))}</p>`;
 
   const bloqueObjetivo = vsObjetivo
-    ? `<h2>Peso promedio frente al objetivo de la línea</h2>
-<div class="chart"><img src="${vsObjetivo}" alt="Gráfico de barras del peso promedio del lote con su intervalo de confianza, frente a la línea del peso objetivo"/></div>
-<p class="note">
-  La barra de error es el IC 95 % de la media observada. El objetivo se traza como línea de referencia
-  porque es un valor de guía genética, no una medición con incertidumbre propia. Si la línea queda
-  fuera del intervalo, la diferencia respecto al objetivo es estadísticamente apreciable; la prueba t
-  siguiente lo cuantifica. La escala no arranca en cero.
-</p>`
+    ? `<h2>${esc(tr('targetTitle'))}</h2>
+<div class="chart"><img src="${vsObjetivo}" alt="${esc(tr('targetAlt'))}"/></div>
+<p class="note">${esc(tr('targetNote'))}</p>`
     : '';
 
+  const curvaHtml = `<div class="chart"><img src="${curve}" alt="${esc(tr('curveAlt'))}"/></div>`;
+
   if (variant === 'resumido') {
-    body += `<div class="chart"><img src="${curve}" alt="Curva de distribución con banda de uniformidad"/></div>`;
+    body += curvaHtml;
     body += bloqueBanda;
-    body += diagnosticoHtml(d, false);
-    body += limitacionesHtml(d);
+    body += diagnosticoHtml(d, false, t);
+    body += limitacionesHtml(d, t);
   } else {
-    body += `<div class="chart"><img src="${curve}" alt="Curva de distribución con banda de uniformidad"/></div>`;
+    body += curvaHtml;
     body += bloqueBanda;
-    body += descriptivaHtml(d);
-    body += `<div class="chart"><img src="${hist}" alt="Histograma con curva normal superpuesta"/></div>`;
-    body += normalidadHtml(d);
-    body += atipicosHtml(d);
+    body += descriptivaHtml(d, t);
+    body += `<div class="chart"><img src="${hist}" alt="${esc(tr('histogramAlt'))}"/></div>`;
+    body += normalidadHtml(d, t);
+    body += atipicosHtml(d, t);
     body += bloqueObjetivo;
-    body += tTestHtml(d);
-    body += diagnosticoHtml(d, true);
-    body += limitacionesHtml(d);
-    body += fuentesHtml(d);
+    body += tTestHtml(d, t);
+    body += diagnosticoHtml(d, true, t);
+    body += limitacionesHtml(d, t);
+    body += fuentesHtml(d, t);
     if (variant === 'academico') {
       body += metodologiaHtml(d);
     }
-    body += pesosTablaHtml(d);
+    body += pesosTablaHtml(d, t);
   }
-  body += footerHtml();
+  body += footerHtml(t);
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Reporte de Uniformidad — ${esc(variantLabel)}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
+  const titulo = tr('title', { variante: tr(VARIANT_KEYS[variant]) });
+  return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(titulo)}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

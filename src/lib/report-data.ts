@@ -19,6 +19,16 @@ export const APP_VERSION = '0.7.0';
 
 export type ReportVariant = 'resumido' | 'tecnico' | 'academico';
 
+/**
+ * Clave del catálogo para cada variante. El rótulo visible sale del idioma
+ * activo; aquí solo vive el identificador, que es del dominio.
+ */
+export const VARIANT_KEYS: Record<ReportVariant, string> = {
+  resumido: 'variantSummary',
+  tecnico: 'variantTechnical',
+  academico: 'variantAcademic',
+};
+
 export const VARIANT_LABELS: Record<ReportVariant, string> = {
   resumido: 'Resumido (administración)',
   tecnico: 'Técnico',
@@ -34,7 +44,12 @@ export interface ReportContext {
 }
 
 export interface ReportData {
-  generadoEl: string; // fecha-hora legible
+  generadoEl: string; // fecha-hora legible, formateada con el idioma del sistema
+  /**
+   * Marca de tiempo cruda. El reporte HTML la formatea con el idioma elegido
+   * por el usuario; `generadoEl` no sirve para eso porque ya viene formateada.
+   */
+  generadoEnMs: number;
   appVersion: string;
   refDataVersion: string;
   lineaGenetica: string;
@@ -55,7 +70,7 @@ export interface ReportData {
   /** t bilateral al 95% contra el peso objetivo (solo si hay objetivo) */
   tTest: TTestResult | null;
   diagnostic: DiagnosticResult;
-  limitaciones: string[];
+  limitaciones: ReportLimitation[];
   pesos: number[];
 }
 
@@ -72,6 +87,24 @@ export function muestreoLabel(v: string | undefined): string {
   return MUESTREO_TEXT[v] ?? v;
 }
 
+/**
+ * Limitación detectada, SIN redactar: el generador del reporte compone el
+ * texto desde el catálogo con `code` y `params`. Este módulo ensambla datos,
+ * no texto de interfaz.
+ */
+export interface ReportLimitation {
+  code:
+    | 'limSmall'
+    | 'limSamplingUnknown'
+    | 'limSamplingConvenience'
+    | 'limApproxLine'
+    | 'limNoAge'
+    | 'limNormality'
+    | 'limOutliers'
+    | 'limProfessional';
+  params?: Record<string, string | number>;
+}
+
 function buildLimitaciones(d: {
   n: number;
   metodoMuestreo?: string;
@@ -79,29 +112,19 @@ function buildLimitaciones(d: {
   edadSemanas: number | null;
   normality: NormalityTestResult | null;
   outlierCount: number;
-}): string[] {
-  const lim: string[] = [];
-  if (d.n < 30) {
-    lim.push(`La muestra es pequeña (n=${d.n}): las estimaciones tienen amplia incertidumbre y las pruebas poca potencia. Se recomienda pesar al menos 30 aves.`);
-  }
+}): ReportLimitation[] {
+  const lim: ReportLimitation[] = [];
+  if (d.n < 30) lim.push({ code: 'limSmall', params: { n: d.n } });
   if (!d.metodoMuestreo || d.metodoMuestreo === 'ns') {
-    lim.push('No se documentó el método de muestreo: si las aves no se seleccionaron al azar, los resultados pueden no representar al lote completo.');
+    lim.push({ code: 'limSamplingUnknown' });
   } else if (d.metodoMuestreo === 'conveniencia') {
-    lim.push('El muestreo fue por conveniencia: las aves más fáciles de capturar pueden diferir sistemáticamente del resto del lote (sesgo de selección).');
+    lim.push({ code: 'limSamplingConvenience' });
   }
-  if (d.lineaAproximada) {
-    lim.push('Los pesos de referencia de esta línea genética son APROXIMADOS (sin guía oficial auditada): la comparación con el objetivo es orientativa.');
-  }
-  if (d.edadSemanas === null) {
-    lim.push('No se indicó la edad del lote: no fue posible comparar contra el peso objetivo de la línea genética.');
-  }
-  if (d.normality && d.normality.pValue < 0.05) {
-    lim.push('Los pesos se desvían de la distribución normal: las probabilidades teóricas y la prueba t deben interpretarse con cautela (ver histograma y Q-Q).');
-  }
-  if (d.outlierCount > 0) {
-    lim.push(`Se detectaron ${d.outlierCount} posible(s) valor(es) atípico(s) que influyen en media, SD y CV. Verificar si son errores de medición o aves reales.`);
-  }
-  lim.push('Este reporte describe el pesaje analizado; no sustituye el criterio del profesional a cargo del lote.');
+  if (d.lineaAproximada) lim.push({ code: 'limApproxLine' });
+  if (d.edadSemanas === null) lim.push({ code: 'limNoAge' });
+  if (d.normality && d.normality.pValue < 0.05) lim.push({ code: 'limNormality' });
+  if (d.outlierCount > 0) lim.push({ code: 'limOutliers', params: { n: d.outlierCount } });
+  lim.push({ code: 'limProfessional' });
   return lim;
 }
 
@@ -147,6 +170,7 @@ export function buildReportData(input: {
 
   return {
     generadoEl: new Date().toLocaleString(),
+    generadoEnMs: Date.now(),
     appVersion: APP_VERSION,
     refDataVersion: REFERENCE_DATA_VERSION,
     lineaGenetica,

@@ -7,9 +7,9 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
-import { buildReportData, ReportVariant, VARIANT_LABELS } from '@/lib/report-data';
+import { buildReportData, ReportVariant, VARIANT_KEYS } from '@/lib/report-data';
 import { buildReportHtml } from '@/lib/report-html';
 import { downloadExcel } from '@/lib/export-excel';
 import { MUESTREO_KEYS } from '@/lib/lotes-api';
@@ -22,9 +22,12 @@ import { FileText, Printer, Sheet, ChevronDown } from 'lucide-react';
 
 export function ReportPanel() {
   const { pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext, setReportContext } = useUniformidadStore();
-  // Solo el selector de método de muestreo está traducido por ahora: el resto
-  // de este panel se traduce junto con los generadores de reportes.
   const tMuestreo = useTranslations('sampling');
+  const tPanel = useTranslations('avesReportPanel');
+  const tRep = useTranslations('reports.aves');
+  // El generador necesita el traductor de la raíz (ver report-i18n.ts).
+  const tRaiz = useTranslations();
+  const locale = useLocale();
   const [variant, setVariant] = useState<ReportVariant>('tecnico');
   const [show, setShow] = useState(false);
   const [ctxOpen, setCtxOpen] = useState(false);
@@ -40,7 +43,10 @@ export function ReportPanel() {
     });
   }, [show, pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext]);
 
-  const html = useMemo(() => (data ? buildReportHtml(data, variant) : ''), [data, variant]);
+  const html = useMemo(
+    () => (data ? buildReportHtml(data, variant, { locale, t: tRaiz }) : ''),
+    [data, variant, locale, tRaiz],
+  );
 
   const handlePrint = () => {
     if (!html) return;
@@ -54,35 +60,35 @@ export function ReportPanel() {
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
-        <FileText className="h-4 w-4" /> Reportes
+        <FileText className="h-4 w-4" /> {tPanel('title')}
       </h2>
 
       <Collapsible open={ctxOpen} onOpenChange={setCtxOpen} className="mb-3">
         <CollapsibleTrigger asChild>
           <Button variant="outline" className="w-full h-9 text-xs font-semibold border-dashed">
-            Datos del encabezado (lote, granja, responsable…)
+            {tPanel('headerData')}
             <ChevronDown className={`h-3.5 w-3.5 ml-2 transition-transform ${ctxOpen ? 'rotate-180' : ''}`} />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Lote</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{tPanel('lot')}</Label>
             <Input value={reportContext.lote ?? ''} onChange={(e) => setReportContext({ lote: e.target.value })} className="h-9 text-sm" />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Granja</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{tPanel('farm')}</Label>
             <Input value={reportContext.granja ?? ''} onChange={(e) => setReportContext({ granja: e.target.value })} className="h-9 text-sm" />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Galpón</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{tPanel('house')}</Label>
             <Input value={reportContext.galpon ?? ''} onChange={(e) => setReportContext({ galpon: e.target.value })} className="h-9 text-sm" />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Responsable</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{tPanel('responsible')}</Label>
             <Input value={reportContext.responsable ?? ''} onChange={(e) => setReportContext({ responsable: e.target.value })} className="h-9 text-sm" />
           </div>
           <div className="flex flex-col gap-1 sm:col-span-2">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Método de muestreo</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{tPanel('samplingMethod')}</Label>
             <Select
               value={reportContext.metodoMuestreo ?? 'ns'}
               onValueChange={(v) => setReportContext({ metodoMuestreo: v })}
@@ -102,8 +108,8 @@ export function ReportPanel() {
         <Select value={variant} onValueChange={(v) => setVariant(v as ReportVariant)}>
           <SelectTrigger className="h-10 text-sm flex-1"><SelectValue /></SelectTrigger>
           <SelectContent>
-            {(Object.keys(VARIANT_LABELS) as ReportVariant[]).map((v) => (
-              <SelectItem key={v} value={v}>{VARIANT_LABELS[v]}</SelectItem>
+            {(Object.keys(VARIANT_KEYS) as ReportVariant[]).map((v) => (
+              <SelectItem key={v} value={v}>{tRep(VARIANT_KEYS[v])}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -112,7 +118,7 @@ export function ReportPanel() {
           disabled={pesos.length === 0}
           className="h-10 px-5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white"
         >
-          <FileText className="h-4 w-4 mr-1.5" /> Generar
+          <FileText className="h-4 w-4 mr-1.5" /> {tPanel('generate')}
         </Button>
       </div>
 
@@ -120,15 +126,15 @@ export function ReportPanel() {
         <div className="space-y-3">
           <div className="flex gap-2">
             <Button onClick={handlePrint} className="flex-1 h-10 text-sm bg-gray-800 hover:bg-gray-900 text-white">
-              <Printer className="h-4 w-4 mr-1.5" /> Imprimir / PDF
+              <Printer className="h-4 w-4 mr-1.5" /> {tPanel('print')}
             </Button>
             <Button onClick={() => downloadExcel(data)} variant="outline" className="flex-1 h-10 text-sm border-green-600 text-green-700 hover:bg-green-50 font-semibold">
-              <Sheet className="h-4 w-4 mr-1.5" /> Descargar Excel
+              <Sheet className="h-4 w-4 mr-1.5" /> {tPanel('excel')}
             </Button>
           </div>
           <iframe
             srcDoc={html}
-            title={`Vista previa del reporte ${VARIANT_LABELS[variant]}`}
+            title={tRep('title', { variante: tRep(VARIANT_KEYS[variant]) })}
             className="w-full h-[560px] border rounded-md bg-white"
             sandbox=""
           />

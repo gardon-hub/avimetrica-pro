@@ -345,17 +345,18 @@ suite('reportes (Fase 6)', () => {
     expect(d.tTest!.mu0).toBeCloseTo(d.target!.pesoOptimo, 10);
     expect(d.targetDiffG).toBeCloseTo(d.stats.promedio - d.target!.pesoOptimo, 10);
     expect(d.normality).not.toBeNull();
-    // n=30 y muestreo aleatorio: no debe aparecer la limitación de muestreo
-    expect(d.limitaciones.some((l) => l.includes('conveniencia'))).toBe(false);
-    expect(d.limitaciones.some((l) => l.includes('No se documentó'))).toBe(false);
+    // n=30 y muestreo aleatorio: no debe aparecer la limitación de muestreo.
+    // Se comprueba el código, no su redacción: el texto vive en los catálogos.
+    expect(d.limitaciones.some((l) => l.code === 'limSamplingConvenience')).toBe(false);
+    expect(d.limitaciones.some((l) => l.code === 'limSamplingUnknown')).toBe(false);
   });
 
   it('buildReportData null sin pesos y limitaciones con n pequeño', async () => {
     const { buildReportData } = await import('../src/lib/report-data');
     expect(buildReportData({ pesos: [], lineaGenetica: 'Otra', edadSemanas: '', criterioPct: 10, contexto: {} })).toBeNull();
     const small = buildReportData({ pesos: [2400, 2450, 2500], lineaGenetica: 'Otra', edadSemanas: '', criterioPct: 10, contexto: {} })!;
-    expect(small.limitaciones.some((l) => l.includes('n=3'))).toBe(true);
-    expect(small.limitaciones.some((l) => l.includes('No se indicó la edad'))).toBe(true);
+    expect(small.limitaciones.some((l) => l.code === 'limSmall' && l.params?.n === 3)).toBe(true);
+    expect(small.limitaciones.some((l) => l.code === 'limNoAge')).toBe(true);
     expect(small.target).toBeNull();
     expect(small.tTest).toBeNull();
   });
@@ -388,18 +389,28 @@ suite('plantillas de reporte', () => {
       pesos, lineaGenetica: 'Broiler - Cobb', edadSemanas: '6', criterioPct: 10,
       contexto: { lote: 'L-1' },
     })!;
-    const resumido = buildReportHtml(d, 'resumido');
-    const tecnico = buildReportHtml(d, 'tecnico');
-    const academico = buildReportHtml(d, 'academico');
-    expect(resumido).toContain('Resumen ejecutivo');
-    expect(resumido).not.toContain('Resumen estadístico'); // sin descriptiva completa
-    expect(tecnico).toContain('Resumen estadístico');
-    expect(tecnico).toContain('Fuentes y trazabilidad');
+    // Traductor de prueba: devuelve la clave y, si los hay, sus parámetros
+    // interpolados. Así el test comprueba QUÉ secciones arma cada variante y
+    // con qué datos, sin depender de la redacción de ningún idioma — que es
+    // justo lo que cambia al traducir.
+    const i18n = {
+      locale: 'es',
+      t: (k: string, v?: Record<string, string | number>) =>
+        v ? `${k}(${Object.values(v).join('|')})` : k,
+    };
+    const resumido = buildReportHtml(d, 'resumido', i18n);
+    const tecnico = buildReportHtml(d, 'tecnico', i18n);
+    const academico = buildReportHtml(d, 'academico', i18n);
+    expect(resumido).toContain('reports.aves.variantSummary');
+    expect(resumido).not.toContain('reports.aves.summaryTitle'); // sin descriptiva completa
+    expect(tecnico).toContain('reports.aves.summaryTitle');
+    expect(tecnico).toContain('reports.aves.sourcesTitle');
     expect(tecnico).not.toContain('Metodología y fórmulas');
     expect(academico).toContain('Metodología y fórmulas');
     expect(academico).toContain('corrección de Bessel');
-    // La banda de uniformidad nunca debe llamarse intervalo de confianza
-    expect(tecnico).toContain('no es IC');
+    // La banda de uniformidad nunca debe llamarse intervalo de confianza: la
+    // salvedad se declara en la clave del criterio, que debe estar presente.
+    expect(tecnico).toContain('reports.aves.criterionValue');
   });
 });
 
