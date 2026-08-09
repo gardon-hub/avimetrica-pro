@@ -609,7 +609,10 @@ suite('motor de clasificación (Fase 8)', () => {
     expect(dup.ok).toBe(false);
     const overlap = validateBins([{ label: 'A', min: 0, max: 10 }, { label: 'B', min: 5, max: 15 }]);
     expect(overlap.ok).toBe(false);
-    expect(overlap.errors.some((e) => e.includes('solapan'))).toBe(true);
+    // Se comprueba el código del problema, no su redacción: el texto vive en
+    // los catálogos de idioma y cambia según el idioma elegido.
+    expect(overlap.issues.some((i) => i.code === 'overlap')).toBe(true);
+    expect(overlap.issues.find((i) => i.code === 'overlap')?.params).toEqual({ a: 'A', b: 'B' });
   });
 });
 

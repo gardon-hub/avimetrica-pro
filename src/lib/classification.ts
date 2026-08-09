@@ -176,22 +176,32 @@ export function uniformityPct(values: number[], pct: number): number {
   return r.bins[1].pct;
 }
 
+/**
+ * Problema detectado al validar, sin redactar: quien lo muestre compone el
+ * texto desde el catálogo de idiomas con `code` y `params`. Este módulo es de
+ * cálculo y no debe cargar texto de interfaz.
+ */
+export interface BinIssue {
+  code: 'empty' | 'unnamed' | 'inverted' | 'duplicated' | 'overlap';
+  params?: Record<string, string | number>;
+}
+
 /** Valida un conjunto de bins definido por el usuario. */
-export function validateBins(bins: Bin[]): { ok: boolean; errors: string[] } {
-  const errors: string[] = [];
-  if (bins.length === 0) errors.push('Define al menos una categoría.');
+export function validateBins(bins: Bin[]): { ok: boolean; issues: BinIssue[] } {
+  const issues: BinIssue[] = [];
+  if (bins.length === 0) issues.push({ code: 'empty' });
 
   bins.forEach((b, i) => {
-    if (!b.label.trim()) errors.push(`La categoría ${i + 1} no tiene nombre.`);
+    if (!b.label.trim()) issues.push({ code: 'unnamed', params: { n: i + 1 } });
     if (b.min !== null && b.max !== null && b.min >= b.max) {
-      errors.push(`En "${b.label}" el límite inferior (${b.min}) no es menor que el superior (${b.max}).`);
+      issues.push({ code: 'inverted', params: { categoria: b.label, min: b.min, max: b.max } });
     }
   });
 
   const named = bins.map((b) => b.label.trim().toLowerCase());
   const dups = named.filter((l, i) => l && named.indexOf(l) !== i);
   if (dups.length > 0) {
-    errors.push(`Hay nombres de categoría repetidos: ${[...new Set(dups)].join(', ')}.`);
+    issues.push({ code: 'duplicated', params: { lista: [...new Set(dups)].join(', ') } });
   }
 
   // Solapamientos: se detectan para avisar, no son un error fatal porque el
@@ -205,10 +215,10 @@ export function validateBins(bins: Bin[]): { ok: boolean; errors: string[] } {
       const bMin = b.min ?? -Infinity;
       const bMax = b.max ?? Infinity;
       if (aMin < bMax && bMin < aMax) {
-        errors.push(`"${a.label}" y "${b.label}" se solapan; cada valor se contará solo en "${a.label}".`);
+        issues.push({ code: 'overlap', params: { a: a.label, b: b.label } });
       }
     }
   }
 
-  return { ok: errors.length === 0, errors };
+  return { ok: issues.length === 0, issues };
 }

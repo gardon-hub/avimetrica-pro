@@ -12,7 +12,7 @@ import { useState } from 'react';
 import type { DatasetStore } from '@/lib/dataset-store';
 import type { Domain } from '@/lib/domains/types';
 import { findPreset } from '@/lib/domains/types';
-import { validateBins, type Bin } from '@/lib/classification';
+import { validateBins, type Bin, type BinIssue } from '@/lib/classification';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,12 +20,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tags, ChevronDown, Info, AlertTriangle, Plus, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const PALETA = ['#38bdf8', '#22c55e', '#84cc16', '#f59e0b', '#f97316', '#ef4444', '#a855f7', '#94a3b8'];
 
-function fmtRango(bin: Bin, unidad: string, dec: number): string {
+function fmtRango(bin: Bin, unidad: string, dec: number, todos: string): string {
   const f = (v: number) => v.toFixed(dec);
-  if (bin.min === null && bin.max === null) return 'todos los valores';
+  if (bin.min === null && bin.max === null) return todos;
   if (bin.min === null) return `< ${f(bin.max!)} ${unidad}`;
   if (bin.max === null) return `≥ ${f(bin.min)} ${unidad}`;
   return `${f(bin.min)} – < ${f(bin.max)} ${unidad}`;
@@ -33,6 +34,7 @@ function fmtRango(bin: Bin, unidad: string, dec: number): string {
 
 export function ClassificationPanel({ store, domain }: { store: DatasetStore; domain: Domain }) {
   const { valores, variable, presetId, scheme, clasificacion, setPreset, setScheme } = store();
+  const t = useTranslations('classification');
   const [editorAbierto, setEditorAbierto] = useState(false);
 
   const preset = findPreset(domain, presetId);
@@ -43,7 +45,7 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
   // memoización manual impedía al React Compiler optimizar el componente.
   const validacion = binsEditables
     ? validateBins(binsEditables)
-    : { ok: true, errors: [] as string[] };
+    : { ok: true, issues: [] as BinIssue[] };
 
   const maxPct = Math.max(...clasificacion.bins.map((b) => b.pct), 1);
 
@@ -79,17 +81,17 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
-        <Tags className="h-4 w-4" /> Clasificación por categorías
+        <Tags className="h-4 w-4" /> {t('title')}
       </h2>
 
       <div className="flex flex-col gap-1 mb-3">
-        <Label className="text-[10px] uppercase font-bold text-muted-foreground">Criterio</Label>
+        <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('criterion')}</Label>
         <Select value={presetId} onValueChange={setPreset}>
           <SelectTrigger className="h-10 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             {domain.classificationPresets.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.label}{p.official ? ' — norma oficial' : ''}
+                {p.official ? t('officialSuffix', { label: p.label }) : p.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -100,26 +102,24 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
         <Alert className={preset.official ? 'border-green-200 bg-green-50 mb-3' : 'border-blue-200 bg-blue-50 mb-3'}>
           <Info className="h-4 w-4" />
           <AlertDescription className="text-[11px] leading-snug">
-            <b>{preset.official ? 'Norma oficial.' : 'Criterio no normativo.'}</b> {preset.source}
+            <b>{t(preset.official ? 'officialLabel' : 'nonNormativeLabel')}</b> {preset.source}
             {preset.note && <div className="mt-1">{preset.note}</div>}
           </AlertDescription>
         </Alert>
       )}
 
       {valores.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-3">
-          Registra valores para ver la distribución por categorías.
-        </p>
+        <p className="text-xs text-muted-foreground text-center py-3">{t('empty')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[11px] border-collapse">
             <thead>
               <tr className="border-b font-bold text-muted-foreground">
-                <th className="py-1 text-left">Categoría</th>
-                <th className="py-1 text-left">Rango</th>
-                <th className="py-1 text-right">n</th>
-                <th className="py-1 text-right pr-3">%</th>
-                <th className="py-1 text-left w-24 pl-1">Distribución</th>
+                <th className="py-1 text-left">{t('colCategory')}</th>
+                <th className="py-1 text-left">{t('colRange')}</th>
+                <th className="py-1 text-right">{t('colN')}</th>
+                <th className="py-1 text-right pr-3">{t('colPct')}</th>
+                <th className="py-1 text-left w-24 pl-1">{t('colDistribution')}</th>
               </tr>
             </thead>
             <tbody>
@@ -134,13 +134,13 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
                     {b.label}
                   </td>
                   <td className="py-1.5 text-muted-foreground tabular-nums">
-                    {fmtRango(clasificacion.effectiveBins[i], variable.unit, variable.decimals)}
+                    {fmtRango(clasificacion.effectiveBins[i], variable.unit, variable.decimals, t('allValues'))}
                   </td>
                   <td className="py-1.5 text-right tabular-nums font-semibold">{b.count}</td>
                   <td className="py-1.5 text-right tabular-nums pr-3">{b.pct.toFixed(1)}</td>
                   <td className="py-1.5 pl-1">
                     <div className="bg-muted rounded-sm h-3 w-full overflow-hidden" role="img"
-                      aria-label={`${b.label}: ${b.pct.toFixed(1)} por ciento`}>
+                      aria-label={t('barAria', { categoria: b.label, pct: b.pct.toFixed(1) })}>
                       <div
                         className="h-full rounded-sm"
                         style={{
@@ -154,8 +154,8 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
               ))}
               {clasificacion.unclassified > 0 && (
                 <tr className="border-b border-border/50 text-amber-700">
-                  <td className="py-1.5 font-semibold">Sin clasificar</td>
-                  <td className="py-1.5">fuera de todas las categorías</td>
+                  <td className="py-1.5 font-semibold">{t('unclassified')}</td>
+                  <td className="py-1.5">{t('unclassifiedRange')}</td>
                   <td className="py-1.5 text-right tabular-nums font-semibold">{clasificacion.unclassified}</td>
                   <td className="py-1.5 text-right tabular-nums pr-3">
                     {((clasificacion.unclassified / clasificacion.n) * 100).toFixed(1)}
@@ -168,10 +168,12 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
 
           {clasificacion.modeLabel && (
             <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
-              Categoría predominante: <b>{clasificacion.modeLabel}</b>.
+              {t.rich('predominant', { categoria: clasificacion.modeLabel, b: (c) => <b>{c}</b> })}
               {clasificacion.unclassified > 0 && (
-                <> Hay <b>{clasificacion.unclassified}</b> valor(es) fuera de todas las categorías —
-                revisa si son correctos o si el criterio necesita ajustarse.</>
+                <>{' '}{t.rich('predominantWithUnclassified', {
+                  n: clasificacion.unclassified,
+                  b: (c) => <b>{c}</b>,
+                })}</>
               )}
             </p>
           )}
@@ -182,58 +184,67 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
         <Collapsible open={editorAbierto} onOpenChange={setEditorAbierto} className="mt-3">
           <CollapsibleTrigger asChild>
             <Button variant="outline" className="w-full h-9 text-xs font-semibold border-dashed">
-              Editar los cortes de las categorías
+              {t('editCuts')}
               <ChevronDown className={`h-3.5 w-3.5 ml-2 transition-transform ${editorAbierto ? 'rotate-180' : ''}`} />
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3 space-y-2">
-            <p className="text-[10px] text-muted-foreground leading-snug">
-              Cada categoría incluye su límite inferior y excluye el superior. Deja un límite vacío
-              para dejarlo abierto (sin tope). Al editar, el criterio deja de coincidir con la norma
-              seleccionada.
-            </p>
+            <p className="text-[10px] text-muted-foreground leading-snug">{t('editHelp')}</p>
             {binsEditables.map((b, i) => (
               <div key={i} className="flex gap-1.5 items-center">
                 <Input
                   value={b.label}
                   onChange={(e) => actualizarBin(i, { label: e.target.value })}
                   className="h-8 text-[11px] flex-1"
-                  aria-label={`Nombre de la categoría ${i + 1}`}
+                  aria-label={t('binName', { n: i + 1 })}
                 />
                 <Input
                   type="number"
                   value={b.min ?? ''}
-                  placeholder="mín"
+                  placeholder={t('minPlaceholder')}
                   onChange={(e) => actualizarBin(i, { min: e.target.value === '' ? null : parseFloat(e.target.value) })}
                   className="h-8 text-[11px] w-20"
-                  aria-label={`Límite inferior de ${b.label}`}
+                  aria-label={t('lowerBound', { categoria: b.label })}
                 />
                 <Input
                   type="number"
                   value={b.max ?? ''}
-                  placeholder="máx"
+                  placeholder={t('maxPlaceholder')}
                   onChange={(e) => actualizarBin(i, { max: e.target.value === '' ? null : parseFloat(e.target.value) })}
                   className="h-8 text-[11px] w-20"
-                  aria-label={`Límite superior de ${b.label}`}
+                  aria-label={t('upperBound', { categoria: b.label })}
                 />
                 <button
                   onClick={() => eliminarBin(i)}
                   className="text-red-400 hover:text-red-600 px-1"
-                  aria-label={`Eliminar la categoría ${b.label}`}
-                  title="Eliminar categoría"
+                  aria-label={t('deleteBin', { categoria: b.label })}
+                  title={t('deleteBinTitle')}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
             <Button variant="outline" onClick={agregarBin} className="w-full h-8 text-xs">
-              <Plus className="h-3.5 w-3.5 mr-1" /> Añadir categoría
+              <Plus className="h-3.5 w-3.5 mr-1" /> {t('addBin')}
             </Button>
             {!validacion.ok && (
               <Alert className="border-amber-300 bg-amber-50">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertDescription className="text-[11px] text-amber-900 space-y-0.5">
-                  {validacion.errors.map((e, i) => <div key={i}>• {e}</div>)}
+                  {validacion.issues.map((issue, i) => (
+                    <div key={i}>
+                      {t(
+                        {
+                          empty: 'issueEmpty',
+                          unnamed: 'issueUnnamed',
+                          inverted: 'issueInverted',
+                          duplicated: 'issueDuplicated',
+                          overlap: 'issueOverlap',
+                        }[issue.code],
+                        issue.params,
+                      )}
+                    </div>
+                  ))}
                 </AlertDescription>
               </Alert>
             )}
