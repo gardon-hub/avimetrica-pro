@@ -9,6 +9,8 @@
  * oscuro sin duplicar código.
  */
 
+import { useTranslations } from 'next-intl';
+
 const COLOR_A = '#2563eb'; // azul
 const COLOR_B = '#f59e0b'; // ámbar
 
@@ -55,6 +57,10 @@ export function CategoriasBarChart({
   nombreA: string;
   nombreB: string;
 }) {
+  // El hook va antes del retorno temprano: las reglas de hooks no admiten
+  // llamadas condicionales.
+  const t = useTranslations('comparisonCharts');
+
   if (categorias.length === 0) return null;
 
   const W = 560;
@@ -79,7 +85,7 @@ export function CategoriasBarChart({
       viewBox={`0 0 ${W} ${H}`}
       className="w-full h-auto"
       role="img"
-      aria-label={`Gráfico de barras comparando el porcentaje por categoría entre ${nombreA} y ${nombreB}`}
+      aria-label={t('categoriesAlt', { a: nombreA, b: nombreB })}
     >
       <rect width={W} height={H} className="fill-card" rx={8} />
 
@@ -105,10 +111,10 @@ export function CategoriasBarChart({
         return (
           <g key={c.label}>
             <rect x={xA} y={toY(c.pctA)} width={barW} height={Math.max(toY(0) - toY(c.pctA), 0)} fill={COLOR_A} rx={2}>
-              <title>{`${c.label} — ${nombreA}: ${c.nA} (${c.pctA.toFixed(1)} %)`}</title>
+              <title>{t('categoryTooltip', { categoria: c.label, conjunto: nombreA, n: c.nA, pct: c.pctA.toFixed(1) })}</title>
             </rect>
             <rect x={xB} y={toY(c.pctB)} width={barW} height={Math.max(toY(0) - toY(c.pctB), 0)} fill={COLOR_B} rx={2}>
-              <title>{`${c.label} — ${nombreB}: ${c.nB} (${c.pctB.toFixed(1)} %)`}</title>
+              <title>{t('categoryTooltip', { categoria: c.label, conjunto: nombreB, n: c.nB, pct: c.pctB.toFixed(1) })}</title>
             </rect>
             <text
               x={centro}
@@ -163,6 +169,7 @@ export function MediasBarChart({
   unidad: string;
   decimales: number;
 }) {
+  const t = useTranslations('comparisonCharts');
   const W = 560;
   const H = 200;
   const padL = 52;
@@ -196,7 +203,9 @@ export function MediasBarChart({
       viewBox={`0 0 ${W} ${H}`}
       className="w-full h-auto"
       role="img"
-      aria-label={`Medias con intervalo de confianza del 95 %: ${nombreA} ${f(mediaA)} ${unidad}, ${nombreB} ${f(mediaB)} ${unidad}`}
+      aria-label={t('meansAlt', {
+        a: nombreA, mediaA: f(mediaA), b: nombreB, mediaB: f(mediaB), unidad,
+      })}
     >
       <rect width={W} height={H} className="fill-card" rx={8} />
 
@@ -223,7 +232,14 @@ export function MediasBarChart({
             opacity={0.85}
             rx={3}
           >
-            <title>{`${b.nombre}: ${f(b.media)} ${unidad}${b.ci ? ` (IC 95 %: ${f(b.ci.lower)} – ${f(b.ci.upper)})` : ''}`}</title>
+            <title>
+              {b.ci
+                ? t('meanTooltipCi', {
+                    conjunto: b.nombre, media: f(b.media), unidad,
+                    inferior: f(b.ci.lower), superior: f(b.ci.upper),
+                  })
+                : t('meanTooltip', { conjunto: b.nombre, media: f(b.media), unidad })}
+            </title>
           </rect>
           {b.ci && (
             <g stroke="#111827" strokeWidth={1.6} className="dark:stroke-white">
@@ -253,7 +269,7 @@ export function MediasBarChart({
       <line x1={padL} y1={toY(minY)} x2={W - padR} y2={toY(minY)} className="stroke-border" strokeWidth={1.5} />
       <text x={10} y={padT - 4} fontSize={9} className="fill-muted-foreground">{unidad}</text>
       <text x={W - padR} y={H - 6} textAnchor="end" fontSize={8.5} className="fill-muted-foreground">
-        Barras de error: IC 95 % de la media
+        {t('errorBars')}
       </text>
     </svg>
   );

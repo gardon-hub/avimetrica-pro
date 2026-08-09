@@ -3,6 +3,7 @@
 /** Reporte imprimible y exportación a Excel de un muestreo. */
 
 import { useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import type { DatasetStore } from '@/lib/dataset-store';
 import type { Domain } from '@/lib/domains/types';
 import { findPreset } from '@/lib/domains/types';
@@ -13,8 +14,15 @@ import { FileText, Printer, Sheet } from 'lucide-react';
 
 export function DatasetReportPanel({ store, domain }: { store: DatasetStore; domain: Domain }) {
   const { valores, variable, scheme, presetId, contexto, muHipotetica } = store();
+  const t = useTranslations('datasetReport');
+  const tNav = useTranslations('nav');
+  const locale = useLocale();
   const [mostrar, setMostrar] = useState(false);
 
+  // El documento generado sigue en español mientras no se traduzcan los
+  // generadores de lib/: estas cadenas viajan dentro de él, así que se dejan
+  // en español a propósito. Mezclar idiomas dentro del mismo documento sería
+  // peor que emitirlo entero en uno solo.
   const entrada: DatasetReportInput | null = useMemo(() => {
     if (valores.length === 0) return null;
     const preset = findPreset(domain, presetId);
@@ -48,7 +56,7 @@ export function DatasetReportPanel({ store, domain }: { store: DatasetStore; dom
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3 flex items-center gap-1.5">
-        <FileText className="h-4 w-4" /> Reporte
+        <FileText className="h-4 w-4" /> {t('title')}
       </h2>
 
       <Button
@@ -56,32 +64,32 @@ export function DatasetReportPanel({ store, domain }: { store: DatasetStore; dom
         disabled={!entrada}
         className="w-full h-10 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white mb-3"
       >
-        <FileText className="h-4 w-4 mr-1.5" /> Generar reporte
+        <FileText className="h-4 w-4 mr-1.5" /> {t('generate')}
       </Button>
 
       {entrada && mostrar && (
         <div className="space-y-3">
           <div className="flex gap-2">
             <Button onClick={imprimir} className="flex-1 h-10 text-sm bg-gray-800 hover:bg-gray-900 text-white">
-              <Printer className="h-4 w-4 mr-1.5" /> Imprimir / PDF
+              <Printer className="h-4 w-4 mr-1.5" /> {t('print')}
             </Button>
             <Button
               onClick={() => downloadDatasetExcel(entrada)}
               variant="outline"
               className="flex-1 h-10 text-sm border-green-600 text-green-700 hover:bg-green-50 font-semibold"
             >
-              <Sheet className="h-4 w-4 mr-1.5" /> Descargar Excel
+              <Sheet className="h-4 w-4 mr-1.5" /> {t('excel')}
             </Button>
           </div>
           <iframe
             srcDoc={html}
-            title={`Vista previa del reporte de ${domain.label}`}
+            title={t('previewTitle', { modulo: tNav(`${domain.id}.long`) })}
             className="w-full h-[520px] border rounded-md bg-white"
             sandbox=""
           />
           <p className="text-[10px] text-muted-foreground leading-snug">
-            La vista previa es el mismo documento que se imprime. Para PDF: Imprimir → «Guardar como PDF».
-            El Excel incluye hojas de Resumen, Categorías y Datos.
+            {t('note')}
+            {locale !== 'es' && <> {t('spanishOnly')}</>}
           </p>
         </div>
       )}
