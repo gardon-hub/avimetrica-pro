@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { DatasetStore } from '@/lib/dataset-store';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -16,13 +17,14 @@ import { ChevronDown, ClipboardList } from 'lucide-react';
 
 export function DatasetContextForm({ store }: { store: DatasetStore }) {
   const { contexto, setContexto } = store();
+  const t = useTranslations('datasetContext');
   const [abierto, setAbierto] = useState(false);
 
   const campos: Array<{ key: keyof typeof contexto; label: string; type?: string }> = [
-    { key: 'nombre', label: 'Nombre del muestreo' },
-    { key: 'origen', label: 'Granja / galpón / origen' },
-    { key: 'fecha', label: 'Fecha', type: 'date' },
-    { key: 'responsable', label: 'Responsable' },
+    { key: 'nombre', label: t('name') },
+    { key: 'origen', label: t('origin') },
+    { key: 'fecha', label: t('date'), type: 'date' },
+    { key: 'responsable', label: t('responsible') },
   ];
 
   const llenos = campos.filter((c) => contexto[c.key]).length;
@@ -32,7 +34,7 @@ export function DatasetContextForm({ store }: { store: DatasetStore }) {
       <CollapsibleTrigger asChild>
         <Button variant="outline" className="w-full h-10 text-sm font-semibold border-dashed">
           <ClipboardList className="h-4 w-4 mr-2" />
-          Datos del muestreo{llenos > 0 ? ` (${llenos} completados)` : ''}
+          {llenos > 0 ? t('triggerFilled', { n: llenos }) : t('trigger')}
           <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${abierto ? 'rotate-180' : ''}`} />
         </Button>
       </CollapsibleTrigger>
@@ -50,7 +52,7 @@ export function DatasetContextForm({ store }: { store: DatasetStore }) {
             </div>
           ))}
           <div className="flex flex-col gap-1 sm:col-span-2">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Observaciones</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('notes')}</Label>
             <Textarea
               value={contexto.observaciones}
               onChange={(e) => setContexto({ observaciones: e.target.value })}

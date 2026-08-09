@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type { DatasetStore } from '@/lib/dataset-store';
 import type { Domain } from '@/lib/domains/types';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,7 @@ function parseNumeros(texto: string): number[] {
 
 export function ValueInput({ store, domain }: { store: DatasetStore; domain: Domain }) {
   const { valores, variable, addValor, addValores, removeValor, updateValor, reset } = store();
+  const t = useTranslations('valueInput');
   const [entrada, setEntrada] = useState('');
   const [pegado, setPegado] = useState('');
   const [pegadoAbierto, setPegadoAbierto] = useState(false);
@@ -39,7 +41,7 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
   const agregar = () => {
     const v = parseFloat(entrada.replace(',', '.'));
     if (!Number.isFinite(v)) {
-      toast({ title: 'Valor no válido', description: 'Escribe un número.', variant: 'destructive' });
+      toast({ title: t('invalidTitle'), description: t('invalidBody'), variant: 'destructive' });
       return;
     }
     addValor(v);
@@ -52,7 +54,7 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
   const importarPegado = () => {
     if (previewPegado.length === 0) return;
     addValores(previewPegado);
-    toast({ title: `${previewPegado.length} valores agregados` });
+    toast({ title: t('added', { n: previewPegado.length }) });
     setPegado('');
     setPegadoAbierto(false);
   };
@@ -68,11 +70,11 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
           value={entrada}
           onChange={(e) => setEntrada(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && agregar()}
-          placeholder={`${variable.label} en ${variable.unit || 'unidades'}`}
+          placeholder={t('placeholder', { variable: variable.label, unidad: variable.unit || t('unitsFallback') })}
           className="h-11 text-base"
-          aria-label={`${variable.label} en ${variable.unit || 'unidades'}`}
+          aria-label={t('placeholder', { variable: variable.label, unidad: variable.unit || t('unitsFallback') })}
         />
-        <Button onClick={agregar} className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white shrink-0">
+        <Button onClick={agregar} aria-label={t('addAria')} className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white shrink-0">
           <Plus className="h-5 w-5" />
         </Button>
       </div>
@@ -81,7 +83,7 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
         <CollapsibleTrigger asChild>
           <Button variant="outline" className="w-full h-10 text-sm font-semibold border-dashed">
             <ClipboardPaste className="h-4 w-4 mr-2" />
-            Pegado masivo (Excel / lista de texto)
+            {t('bulkTrigger')}
             <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${pegadoAbierto ? 'rotate-180' : ''}`} />
           </Button>
         </CollapsibleTrigger>
@@ -89,17 +91,21 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
           <Textarea
             value={pegado}
             onChange={(e) => setPegado(e.target.value)}
-            placeholder="Pega aquí una columna de Excel o una lista separada por comas, espacios o saltos de línea."
+            placeholder={t('bulkPlaceholder')}
             className="min-h-24 text-sm font-mono"
-            aria-label="Valores para pegado masivo"
+            aria-label={t('bulkTrigger')}
           />
           {pegado && (
             <div className="text-xs bg-muted/50 rounded-md p-2 space-y-0.5">
-              <div>✅ <b>{previewPegado.length}</b> valores detectados</div>
+              <div>{t.rich('detected', { n: previewPegado.length, b: (c) => <b>{c}</b> })}</div>
               {sospechososPegado.length > 0 && (
                 <div className="text-amber-700">
-                  ⚠️ {sospechososPegado.length} fuera del rango plausible
-                  ({variable.plausibleMin}–{variable.plausibleMax} {variable.unit}): revisa unidad y digitación.
+                  {t('outOfRange', {
+                    n: sospechososPegado.length,
+                    min: variable.plausibleMin ?? '',
+                    max: variable.plausibleMax ?? '',
+                    unidad: variable.unit,
+                  })}
                 </div>
               )}
             </div>
@@ -109,7 +115,7 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
             disabled={previewPegado.length === 0}
             className="w-full h-10 bg-green-600 hover:bg-green-700 text-white font-bold"
           >
-            Agregar {previewPegado.length} valores
+            {t('addValues', { n: previewPegado.length })}
           </Button>
         </CollapsibleContent>
       </Collapsible>
@@ -120,23 +126,27 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
             <Alert className="border-amber-300 bg-amber-50 mb-2">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
               <AlertDescription className="text-[11px] text-amber-900">
-                {sospechosos} valor(es) fuera del rango plausible para {variable.label.toLowerCase()}
-                ({variable.plausibleMin}–{variable.plausibleMax} {variable.unit}). No se bloquean: verifica si son
-                reales o errores de digitación.
+                {t('suspicious', {
+                  n: sospechosos,
+                  variable: variable.label.toLowerCase(),
+                  min: variable.plausibleMin ?? '',
+                  max: variable.plausibleMax ?? '',
+                  unidad: variable.unit,
+                })}
               </AlertDescription>
             </Alert>
           )}
 
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] uppercase font-bold text-muted-foreground">
-              {valores.length} valores registrados
+              {t('registered', { n: valores.length })}
             </span>
             <Button
               variant="ghost"
               onClick={() => reset()}
               className="h-7 text-[11px] text-red-500 hover:text-red-700"
             >
-              <RotateCcw className="h-3 w-3 mr-1" /> Limpiar
+              <RotateCcw className="h-3 w-3 mr-1" /> {t('clear')}
             </Button>
           </div>
 
@@ -149,13 +159,13 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
                   value={v}
                   onChange={(e) => updateValor(i, parseFloat(e.target.value) || 0)}
                   className="h-7 text-xs flex-1"
-                  aria-label={`Valor ${i + 1}`}
+                  aria-label={t('valueAria', { n: i + 1 })}
                 />
                 <span className="text-[10px] text-muted-foreground shrink-0">{variable.unit}</span>
                 <button
                   onClick={() => removeValor(i)}
                   className="text-red-300 hover:text-red-600 shrink-0 flex items-center justify-center pointer-coarse:min-h-11 pointer-coarse:min-w-11"
-                  aria-label={`Eliminar el valor ${i + 1}`}
+                  aria-label={t('deleteAria', { n: i + 1 })}
                 >
                   <Trash2 className="h-3.5 w-3.5 pointer-coarse:h-5 pointer-coarse:w-5" />
                 </button>
