@@ -31,6 +31,27 @@ export interface ReportI18n {
   t: ReportTranslator;
 }
 
+function escapar(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Pie de autoría, idéntico en los cuatro reportes.
+ *
+ * Vive aquí y no copiado en cada generador porque es un dato que cambia —el
+ * grado académico ya cambió una vez— y cuatro copias acabarían divergiendo.
+ */
+export function reportFooterHtml(t: ReportTranslator): string {
+  const c = (k: string) => escapar(t(`credits.${k}`));
+  return `<div class="footer">
+  <span class="name">${c('author')}</span><br/>
+  ${c('qualification')} · ${c('role')}<br/>
+  ${c('center')}<br/>
+  ${c('faculty')}<br/>
+  ${c('institution')} · ${c('location')}
+</div>`;
+}
+
 /**
  * REGLA DE ORO: los mensajes del espacio `reports` son TEXTO PLANO. Nunca
  * llevan `<b>` ni ninguna otra etiqueta, y siempre se insertan con `esc(...)`.

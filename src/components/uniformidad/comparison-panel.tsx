@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { PesajeConLote } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { median } from '@/lib/statistics/descriptive';
@@ -57,6 +57,9 @@ export function ComparisonPanel({
   loteActual?: { codigo: string; lineaGenetica: string };
 }) {
   const t = useTranslations('comparison');
+  // El generador del reporte necesita el traductor de la raíz (report-i18n).
+  const tRaiz = useTranslations();
+  const locale = useLocale();
   // «gl» y «valor p» se reutilizan del catálogo de la prueba t para que no
   // existan dos traducciones distintas del mismo término estadístico.
   const tPruebaT = useTranslations('tTest');
@@ -131,7 +134,7 @@ export function ComparisonPanel({
         pesajeA.lote && pesajeB.lote && pesajeA.lote.lineaGenetica !== pesajeB.lote.lineaGenetica
           ? `Las líneas genéticas difieren (${pesajeA.lote.lineaGenetica} vs. ${pesajeB.lote.lineaGenetica}).`
           : undefined,
-    });
+    }, { locale, t: tRaiz });
     const w = window.open('', '_blank');
     if (!w) return;
     w.document.write(html);

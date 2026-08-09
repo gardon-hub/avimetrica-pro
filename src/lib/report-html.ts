@@ -7,7 +7,7 @@
  */
 
 import { ReportData, ReportVariant, VARIANT_KEYS } from '@/lib/report-data';
-import type { ReportI18n, ReportTranslator } from '@/lib/report-i18n';
+import { reportFooterHtml, type ReportI18n, type ReportTranslator } from '@/lib/report-i18n';
 import { uniformityCurveSvg, histogramSvg, svgToDataUri } from '@/lib/report-charts';
 import {
   categoriasBarSvg, mediaVsObjetivoSvg, boxplotSvg, qqPlotSvg, bandaVsIcSvg,
@@ -324,13 +324,7 @@ ${graficoQQ ? `<div class="chart"><img src="${graficoQQ}" alt="Gráfico Q-Q de l
 </ul>`;
 }
 
-function footerHtml(t: ReportTranslator): string {
-  return `<div class="footer">
-  <span class="name">${esc(t('credits.author'))}</span><br/>
-  ${esc(t('credits.role'))}<br/>
-  ${esc(t('credits.institution'))}
-</div>`;
-}
+// El pie de autoría es común a los cuatro reportes: vive en report-i18n.ts.
 
 export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: ReportI18n): string {
   const { locale, t } = i18n;
@@ -422,7 +416,7 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: Rep
     }
     body += pesosTablaHtml(d, t);
   }
-  body += footerHtml(t);
+  body += reportFooterHtml(t);
 
   const titulo = tr('title', { variante: tr(VARIANT_KEYS[variant]) });
   return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(titulo)}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;

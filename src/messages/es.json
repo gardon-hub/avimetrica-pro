@@ -878,6 +878,9 @@
       "limOutliers": "Se detectaron {n} posible(s) valor(es) atípico(s) que influyen en media, SD y CV. Verificar si son errores de medición o aves reales.",
       "limProfessional": "Este reporte describe el pesaje analizado; no sustituye el criterio del profesional a cargo del lote."
     },
+    "pesajesComparison": {
+      "spanishOnly": "Este reporte se emite todavía solo en español; su traducción está pendiente. El resto de la aplicación está en el idioma elegido."
+    },
     "evolution": {
       "docTitle": "Evolución del lote",
       "metaLot": "Lote:",
@@ -1118,8 +1121,12 @@
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },
   "credits": {
-    "author": "Gustavo Alonso Ardón",
-    "role": "Profesor Investigador en Ciencias Avícolas",
-    "institution": "Universidad Nacional de Agricultura, Honduras"
+    "author": "Gustavo Alonso Ardón, MSc.",
+    "qualification": "Candidato a Doctor",
+    "role": "Profesor Investigador",
+    "center": "Centro Integral de Aprendizaje Avícola (CIAA)",
+    "faculty": "Facultad de Medicina Veterinaria y Zootecnia (FMVZ)",
+    "institution": "Universidad Nacional de Agricultura (UNAG)",
+    "location": "Catacamas, Olancho, Honduras, Centro América"
   }
 }

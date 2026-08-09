@@ -16,7 +16,7 @@ import {
   mediasComparadasSvg,
   type CategoriaComparadaSvg,
 } from '@/lib/dataset-report-charts';
-import type { ReportI18n } from '@/lib/report-i18n';
+import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
 
 export interface ComparisonReportInput {
   tituloModulo: string;
@@ -149,11 +149,7 @@ ${test ? `
   <li>${esc(tr('limProfessional'))}</li>
 </ul>
 
-<div class="footer">
-  <span class="name">${esc(t('credits.author'))}</span><br/>
-  ${esc(t('credits.role'))}<br/>
-  ${esc(t('credits.institution'))}
-</div>`;
+${reportFooterHtml(t)}`;
 
   return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(tr('docTitle'))}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

@@ -16,6 +16,7 @@ import { REPORT_CSS } from '@/lib/report-html';
 import { APP_VERSION } from '@/lib/report-data';
 import { svgToDataUri } from '@/lib/report-charts';
 import { categoriasComparadasSvg, mediasComparadasSvg } from '@/lib/dataset-report-charts';
+import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
 
 export interface PesajeResumen {
   etiqueta: string;
@@ -55,8 +56,20 @@ const DISENO_TEXTO: Record<PesajesComparisonInput['diseno'], string> = {
     'Repeticiones del mismo grupo: mismo lote en fechas distintas, sin identificar aves. La independencia entre muestras es cuestionable, por lo que el valor p es orientativo.',
 };
 
-export function buildPesajesComparisonReportHtml(input: PesajesComparisonInput): string {
+/**
+ * PENDIENTE DE TRADUCIR: el cuerpo de este reporte sigue en español. Recibe
+ * ya el traductor porque el pie de autoría es compartido —el grado académico
+ * debe ser correcto en los cuatro reportes— y para avisar al lector cuando el
+ * idioma elegido no es español.
+ */
+export function buildPesajesComparisonReportHtml(
+  input: PesajesComparisonInput,
+  { locale, t }: ReportI18n,
+): string {
   const { a, b, test } = input;
+  const avisoIdioma = locale === 'es'
+    ? ''
+    : `<p class="note"><b>${esc(t('reports.pesajesComparison.spanishOnly'))}</b></p>`;
   const f = (v: number, k = 1) => (Number.isFinite(v) ? v.toFixed(k) : v > 0 ? '+∞' : '−∞');
 
   const gMedias = svgToDataUri(
@@ -116,6 +129,7 @@ export function buildPesajesComparisonReportHtml(input: PesajesComparisonInput):
   <div><b>Línea genética:</b> ${esc(input.lineaGenetica)}</div>
   <div><b>Diseño declarado:</b> ${esc(DISENO_TEXTO[input.diseno])}</div>
 </div>
+${avisoIdioma}
 
 ${input.lineasDistintas ? `<div class="alert"><b>Atención:</b> ${esc(input.lineasDistintas)} Una diferencia de peso puede deberse a la genética y no al manejo.</div>` : ''}
 
@@ -190,11 +204,7 @@ ${test ? `
   <li>Este reporte compara las muestras analizadas; no sustituye el criterio del profesional a cargo del lote.</li>
 </ul>
 
-<div class="footer">
-  <span class="name">Gustavo Alonso Ardón</span><br/>
-  Profesor Investigador en Ciencias Avícolas<br/>
-  Universidad Nacional de Agricultura, Honduras, Centro América
-</div>`;
+${reportFooterHtml(t)}`;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Comparación de pesajes</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

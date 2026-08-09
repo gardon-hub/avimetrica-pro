@@ -878,6 +878,9 @@
       "limOutliers": "{n} possible outlier(s) were detected, which influence the mean, SD and CV. Check whether they are measurement errors or genuine birds.",
       "limProfessional": "This report describes the weigh-in analysed; it does not replace the judgement of the professional in charge of the flock."
     },
+    "pesajesComparison": {
+      "spanishOnly": "This report is still issued in Spanish only; its translation is pending. The rest of the application is in the chosen language."
+    },
     "evolution": {
       "docTitle": "Flock trend",
       "metaLot": "Flock:",
@@ -1118,8 +1121,12 @@
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },
   "credits": {
-    "author": "Gustavo Alonso Ardón",
-    "role": "Research Professor in Poultry Science",
-    "institution": "Universidad Nacional de Agricultura (National University of Agriculture), Honduras"
+    "author": "Gustavo Alonso Ardón, MSc.",
+    "qualification": "Doctoral candidate",
+    "role": "Research Professor",
+    "center": "Centro Integral de Aprendizaje Avícola (Integrated Poultry Learning Centre, CIAA)",
+    "faculty": "Facultad de Medicina Veterinaria y Zootecnia (School of Veterinary Medicine and Animal Science, FMVZ)",
+    "institution": "Universidad Nacional de Agricultura (National University of Agriculture, UNAG)",
+    "location": "Catacamas, Olancho, Honduras, Central America"
   }
 }

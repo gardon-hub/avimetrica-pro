@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Avimétrica Pro",
-  description: "Analítica de peso, uniformidad y desempeño avícola. Por Gustavo Alonso Ardón - UNA, Honduras.",
+  description: "Analítica de peso, uniformidad y desempeño avícola. Por Gustavo Alonso Ardón, MSc. — Universidad Nacional de Agricultura, Honduras.",
   keywords: ["avimétrica", "uniformidad", "aves", "avicultura", "Ardón", "poultry", "Honduras"],
-  authors: [{ name: "Gustavo Alonso Ardón" }],
+  authors: [{ name: "Gustavo Alonso Ardón, MSc." }],
   icons: {
     icon: "/icon-192.png",
     apple: "/icon-192.png",

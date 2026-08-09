@@ -20,7 +20,7 @@ import { REPORT_CSS } from '@/lib/report-html';
 import { APP_VERSION } from '@/lib/report-data';
 import type { VariableDefinition } from '@/lib/domains/types';
 import type { DatasetContext } from '@/lib/dataset-store';
-import type { ReportI18n } from '@/lib/report-i18n';
+import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
 
 export interface DatasetReportInput {
   tituloModulo: string;
@@ -192,11 +192,7 @@ ${tt ? `<h2>${esc(tr('tTestTitle'))}</h2>
 
 ${contexto.observaciones ? `<h2>${esc(tr('observationsTitle'))}</h2><p>${esc(contexto.observaciones)}</p>` : ''}
 
-<div class="footer">
-  <span class="name">${esc(t('credits.author'))}</span><br/>
-  ${esc(t('credits.role'))}<br/>
-  ${esc(t('credits.institution'))}
-</div>`;
+${reportFooterHtml(t)}`;
 
   return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(input.tituloModulo)}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }
