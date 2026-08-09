@@ -7,11 +7,12 @@
  */
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { buildReportData, ReportVariant, VARIANT_LABELS } from '@/lib/report-data';
 import { buildReportHtml } from '@/lib/report-html';
 import { downloadExcel } from '@/lib/export-excel';
-import { MUESTREO_LABELS } from '@/lib/lotes-api';
+import { MUESTREO_KEYS } from '@/lib/lotes-api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +22,9 @@ import { FileText, Printer, Sheet, ChevronDown } from 'lucide-react';
 
 export function ReportPanel() {
   const { pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext, setReportContext } = useUniformidadStore();
+  // Solo el selector de método de muestreo está traducido por ahora: el resto
+  // de este panel se traduce junto con los generadores de reportes.
+  const tMuestreo = useTranslations('sampling');
   const [variant, setVariant] = useState<ReportVariant>('tecnico');
   const [show, setShow] = useState(false);
   const [ctxOpen, setCtxOpen] = useState(false);
@@ -85,8 +89,8 @@ export function ReportPanel() {
             >
               <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {Object.entries(MUESTREO_LABELS).map(([v, l]) => (
-                  <SelectItem key={v} value={v}>{l}</SelectItem>
+                {MUESTREO_KEYS.map((v) => (
+                  <SelectItem key={v} value={v}>{tMuestreo(v)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

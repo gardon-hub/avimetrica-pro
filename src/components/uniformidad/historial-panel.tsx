@@ -8,9 +8,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import {
-  LoteResumen, PesajeFull, PesajeConLote, TIPO_AVE_LABELS, SEXO_LABELS, MUESTREO_LABELS,
+  LoteResumen, PesajeFull, PesajeConLote, TIPO_AVE_KEYS, SEXO_KEYS, MUESTREO_KEYS,
   fetchLotes, fetchPesajes, fetchAllPesajes,
 } from '@/lib/lotes-api';
 import { GENETIC_LINES } from '@/lib/calculations';
@@ -39,6 +40,10 @@ import { PesajeEditor } from './pesaje-editor';
 
 export function HistorialPanel() {
   const { pesos, lineaGenetica, edadSemanas, uniformityPct, setPesos, setLineaGenetica, setEdadSemanas } = useUniformidadStore();
+  const t = useTranslations('history');
+  const tTipo = useTranslations('birdType');
+  const tSexo = useTranslations('sex');
+  const tMuestreo = useTranslations('sampling');
 
   const [lotes, setLotes] = useState<LoteResumen[]>([]);
   const [selectedLoteId, setSelectedLoteId] = useState<string>('');
@@ -75,9 +80,9 @@ export function HistorialPanel() {
     try {
       setLotes(await fetchLotes());
     } catch {
-      toast({ title: 'Error', description: 'No se pudieron cargar los lotes.', variant: 'destructive' });
+      toast({ title: t('errorTitle'), description: t('errorLoadFlocks'), variant: 'destructive' });
     }
-  }, []);
+  }, [t]);
 
   const refreshPesajes = useCallback(async (loteId: string) => {
     if (!loteId) return;
@@ -85,11 +90,11 @@ export function HistorialPanel() {
     try {
       setPesajes(await fetchPesajes(loteId));
     } catch {
-      toast({ title: 'Error', description: 'No se pudieron cargar los pesajes.', variant: 'destructive' });
+      toast({ title: t('errorTitle'), description: t('errorLoadWeighIns'), variant: 'destructive' });
     } finally {
       setLoadingPesajes(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos (fetch asíncrono)
@@ -104,7 +109,7 @@ export function HistorialPanel() {
 
   const handleCreateLote = async () => {
     if (!fCodigo.trim()) {
-      toast({ title: 'Falta el código', description: 'El código o nombre del lote es obligatorio.', variant: 'destructive' });
+      toast({ title: t('missingCodeTitle'), description: t('missingCodeBody'), variant: 'destructive' });
       return;
     }
     const res = await fetch('/api/lotes', {
@@ -117,13 +122,13 @@ export function HistorialPanel() {
     });
     if (res.ok) {
       const nuevo = await res.json();
-      toast({ title: 'Lote creado', description: `Lote "${nuevo.codigo}" registrado.` });
+      toast({ title: t('createdTitle'), description: t('createdBody', { codigo: nuevo.codigo }) });
       setCreateOpen(false);
       setFCodigo(''); setFGranja(''); setFGalpon(''); setFTamano(''); setFObs('');
       await refreshLotes();
       setSelectedLoteId(nuevo.id);
     } else {
-      toast({ title: 'Error', description: 'No se pudo crear el lote.', variant: 'destructive' });
+      toast({ title: t('errorTitle'), description: t('errorCreate'), variant: 'destructive' });
     }
   };
 
@@ -132,24 +137,24 @@ export function HistorialPanel() {
     const w: string[] = [];
     if (!selectedLote) return w;
     if (pesos.length < 30) {
-      w.push(`Solo ${pesos.length} aves pesadas: se recomienda ≥30 para estimaciones confiables.`);
+      w.push(t('warnFewBirds', { n: pesos.length }));
     }
     if (selectedLote.tamanoEstimado && pesos.length < selectedLote.tamanoEstimado * 0.02) {
-      w.push(`La muestra es <2% del lote (${pesos.length}/${selectedLote.tamanoEstimado} aves): puede no ser representativa.`);
+      w.push(t('warnSmallSample', { n: pesos.length, total: selectedLote.tamanoEstimado }));
     }
     const ultima = pesajes.length > 0 ? new Date(pesajes[pesajes.length - 1].fecha) : null;
     if (ultima && new Date(pFecha + 'T12:00:00') < ultima) {
-      w.push(`La fecha indicada es anterior al último pesaje registrado (${ultima.toLocaleDateString()}). Verifica que sea intencional.`);
+      w.push(t('warnBackdated', { fecha: ultima.toLocaleDateString() }));
     }
     if (selectedLote.lineaGenetica !== lineaGenetica) {
-      w.push(`La línea del editor (${lineaGenetica}) no coincide con la del lote (${selectedLote.lineaGenetica}).`);
+      w.push(t('warnLineMismatch', { editor: lineaGenetica, lote: selectedLote.lineaGenetica }));
     }
     const uniques = new Set(pesos).size;
     if (pesos.length >= 20 && uniques <= pesos.length * 0.3) {
-      w.push('Muchos valores repetidos: posible redondeo excesivo de la báscula o digitación.');
+      w.push(t('warnRepeated'));
     }
     return w;
-  }, [selectedLote, pesos, pesajes, pFecha, lineaGenetica]);
+  }, [selectedLote, pesos, pesajes, pFecha, lineaGenetica, t]);
 
   const handleSavePesaje = async () => {
     if (!selectedLoteId || pesos.length === 0) return;
@@ -169,13 +174,13 @@ export function HistorialPanel() {
       }),
     });
     if (res.ok) {
-      toast({ title: 'Pesaje guardado', description: `${pesos.length} pesos registrados en "${selectedLote?.codigo}".` });
+      toast({ title: t('savedTitle'), description: t('savedBody', { n: pesos.length, codigo: selectedLote?.codigo ?? '' }) });
       setSaveOpen(false);
       setPObs('');
       refreshPesajes(selectedLoteId);
       refreshLotes();
     } else {
-      toast({ title: 'Error', description: 'No se pudo guardar el pesaje.', variant: 'destructive' });
+      toast({ title: t('errorTitle'), description: t('errorSave'), variant: 'destructive' });
     }
   };
 
@@ -184,7 +189,10 @@ export function HistorialPanel() {
     setPesos(activos);
     if (selectedLote) setLineaGenetica(selectedLote.lineaGenetica);
     if (p.edadSemanas) setEdadSemanas(String(p.edadSemanas));
-    toast({ title: 'Pesaje cargado', description: `${activos.length} pesos del ${new Date(p.fecha).toLocaleDateString()} cargados en el editor.` });
+    toast({
+      title: t('loadedTitle'),
+      description: t('loadedBody', { n: activos.length, fecha: new Date(p.fecha).toLocaleDateString() }),
+    });
   };
 
   const handleConfirmDelete = async () => {
@@ -192,7 +200,7 @@ export function HistorialPanel() {
     const url = deleteTarget.kind === 'lote' ? `/api/lotes?id=${deleteTarget.id}` : `/api/pesajes?id=${deleteTarget.id}`;
     const res = await fetch(url, { method: 'DELETE' });
     if (res.ok) {
-      toast({ title: deleteTarget.kind === 'lote' ? 'Lote eliminado' : 'Pesaje eliminado' });
+      toast({ title: t(deleteTarget.kind === 'lote' ? 'deletedFlock' : 'deletedWeighIn') });
       if (deleteTarget.kind === 'lote') {
         setSelectedLoteId('');
         refreshLotes();
@@ -208,27 +216,31 @@ export function HistorialPanel() {
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-          <Archive className="h-4 w-4" /> Historial de lotes
+          <Archive className="h-4 w-4" /> {t('title')}
         </h2>
         <Button size="sm" variant="outline" onClick={() => { setFLinea(lineaGenetica); setCreateOpen(true); }} className="h-8 text-xs">
-          <Plus className="h-3.5 w-3.5 mr-1" /> Nuevo lote
+          <Plus className="h-3.5 w-3.5 mr-1" /> {t('newFlock')}
         </Button>
       </div>
 
       {lotes.length === 0 ? (
-        <p className="text-xs text-muted-foreground text-center py-3">
-          Aún no hay lotes. Crea uno para empezar a guardar pesajes con fecha y comparar la evolución.
-        </p>
+        <p className="text-xs text-muted-foreground text-center py-3">{t('empty')}</p>
       ) : (
         <div className="space-y-3">
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">Lote</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('flock')}</Label>
             <Select value={selectedLoteId} onValueChange={setSelectedLoteId}>
-              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="Seleccionar lote…" /></SelectTrigger>
+              <SelectTrigger className="h-10 text-xs"><SelectValue placeholder={t('selectFlock')} /></SelectTrigger>
               <SelectContent>
                 {lotes.map((l) => (
                   <SelectItem key={l.id} value={l.id}>
-                    {l.codigo}{l.granja ? ` · ${l.granja}` : ''}{l.galpon ? ` · galpón ${l.galpon}` : ''} · {l.pesajes.length} pesaje(s)
+                    {t('flockOption', {
+                      // El galpón lleva su rótulo: un «· 3» suelto no dice nada.
+                      codigo: [l.codigo, l.granja, l.galpon ? t('housePrefix', { galpon: l.galpon }) : null]
+                        .filter(Boolean)
+                        .join(' · '),
+                      pesajes: l.pesajes.length,
+                    })}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -238,24 +250,24 @@ export function HistorialPanel() {
           {selectedLote && (
             <>
               <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
-                <span>{TIPO_AVE_LABELS[selectedLote.tipoAve] ?? selectedLote.tipoAve}</span>
+                <span>{(TIPO_AVE_KEYS as readonly string[]).includes(selectedLote.tipoAve) ? tTipo(selectedLote.tipoAve) : selectedLote.tipoAve}</span>
                 <span>{selectedLote.lineaGenetica}</span>
-                <span>{SEXO_LABELS[selectedLote.sexo] ?? selectedLote.sexo}</span>
-                {selectedLote.tamanoEstimado && <span>{selectedLote.tamanoEstimado.toLocaleString()} aves</span>}
+                <span>{(SEXO_KEYS as readonly string[]).includes(selectedLote.sexo) ? tSexo(selectedLote.sexo) : selectedLote.sexo}</span>
+                {selectedLote.tamanoEstimado && <span>{t('birds', { n: selectedLote.tamanoEstimado.toLocaleString() })}</span>}
                 <button
                   className="text-red-500 hover:text-red-700 underline ml-auto"
-                  onClick={() => setDeleteTarget({ kind: 'lote', id: selectedLote.id, label: `el lote "${selectedLote.codigo}" y todos sus pesajes` })}
+                  onClick={() => setDeleteTarget({ kind: 'lote', id: selectedLote.id, label: t('deleteLabelFlock', { codigo: selectedLote.codigo }) })}
                 >
-                  eliminar lote
+                  {t('deleteFlock')}
                 </button>
               </div>
 
               <Tabs defaultValue="pesajes">
                 <TabsList className="w-full flex h-auto gap-1">
-                  <TabsTrigger value="pesajes" className="text-xs flex-1">Pesajes</TabsTrigger>
-                  <TabsTrigger value="evolucion" className="text-xs flex-1">Evolución</TabsTrigger>
-                  <TabsTrigger value="comparar" className="text-xs flex-1">Comparar</TabsTrigger>
-                  <TabsTrigger value="control" className="text-xs flex-1">Control</TabsTrigger>
+                  <TabsTrigger value="pesajes" className="text-xs flex-1">{t('tabWeighIns')}</TabsTrigger>
+                  <TabsTrigger value="evolucion" className="text-xs flex-1">{t('tabTrend')}</TabsTrigger>
+                  <TabsTrigger value="comparar" className="text-xs flex-1">{t('tabCompare')}</TabsTrigger>
+                  <TabsTrigger value="control" className="text-xs flex-1">{t('tabControl')}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="pesajes" className="pt-3 space-y-3">
@@ -265,25 +277,25 @@ export function HistorialPanel() {
                     className="w-full h-9 text-xs font-bold bg-green-600 hover:bg-green-700 text-white"
                   >
                     <Save className="h-3.5 w-3.5 mr-1.5" />
-                    Guardar el pesaje actual ({pesos.length} aves) en este lote
+                    {t('saveCurrent', { n: pesos.length })}
                   </Button>
 
                   {loadingPesajes ? (
-                    <p className="text-xs text-muted-foreground text-center py-2">Cargando…</p>
+                    <p className="text-xs text-muted-foreground text-center py-2">{t('loading')}</p>
                   ) : pesajes.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-2">Este lote aún no tiene pesajes.</p>
+                    <p className="text-xs text-muted-foreground text-center py-2">{t('noWeighIns')}</p>
                   ) : (
                     <div className="overflow-x-auto">
                       <table className="w-full text-[11px] border-collapse">
                         <thead>
                           <tr className="border-b font-bold text-muted-foreground">
-                            <th className="py-1 text-left">Fecha</th>
-                            <th className="py-1 text-right">Edad (sem)</th>
-                            <th className="py-1 text-right">n</th>
-                            <th className="py-1 text-right">Media (g)</th>
-                            <th className="py-1 text-right">CV (%)</th>
-                            <th className="py-1 text-right">Unif. (%)</th>
-                            <th className="py-1 text-right">Acciones</th>
+                            <th className="py-1 text-left">{t('colDate')}</th>
+                            <th className="py-1 text-right">{t('colAge')}</th>
+                            <th className="py-1 text-right">{t('colN')}</th>
+                            <th className="py-1 text-right">{t('colMean')}</th>
+                            <th className="py-1 text-right">{t('colCv')}</th>
+                            <th className="py-1 text-right">{t('colUnif')}</th>
+                            <th className="py-1 text-right">{t('colActions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -300,23 +312,27 @@ export function HistorialPanel() {
                                 <td className="py-1.5 text-right tabular-nums">{st.uniformidad.toFixed(1)}</td>
                                 <td className="py-1.5 text-right whitespace-nowrap">
                                   <button
-                                    title="Cargar en el editor de la pantalla principal"
+                                    title={t('loadIntoEditor')}
                                     className="text-blue-600 hover:text-blue-800 mr-2"
                                     onClick={() => handleLoadPesaje(p)}
                                   >
                                     <Upload className="h-3.5 w-3.5 inline" />
                                   </button>
                                   <button
-                                    title="Editar pesos individuales (corregir / excluir con motivo)"
+                                    title={t('editWeights')}
                                     className="text-emerald-600 hover:text-emerald-800 mr-2"
                                     onClick={() => setEditPesaje(p)}
                                   >
                                     <Pencil className="h-3.5 w-3.5 inline" />
                                   </button>
                                   <button
-                                    title="Eliminar pesaje"
+                                    title={t('deleteWeighIn')}
                                     className="text-red-400 hover:text-red-600"
-                                    onClick={() => setDeleteTarget({ kind: 'pesaje', id: p.id, label: `el pesaje del ${new Date(p.fecha).toLocaleDateString()} (${p.pesos.length} aves)` })}
+                                    onClick={() => setDeleteTarget({
+                                      kind: 'pesaje',
+                                      id: p.id,
+                                      label: t('deleteLabelWeighIn', { fecha: new Date(p.fecha).toLocaleDateString(), n: p.pesos.length }),
+                                    })}
                                   >
                                     <Trash2 className="h-3.5 w-3.5 inline" />
                                   </button>
@@ -354,14 +370,14 @@ export function HistorialPanel() {
                           try {
                             setAllPesajes(await fetchAllPesajes());
                           } catch {
-                            toast({ title: 'Error', description: 'No se pudieron cargar los pesajes de todos los lotes.', variant: 'destructive' });
+                            toast({ title: t('errorTitle'), description: t('errorLoadAll'), variant: 'destructive' });
                             setCompareAllLotes(false);
                           }
                         }
                       }}
                     />
                     <Label htmlFor="compare-all-lotes" className="text-xs cursor-pointer">
-                      Incluir pesajes de <b>todos los lotes</b> (comparación entre lotes o galpones)
+                      {t.rich('includeAllFlocks', { b: (c) => <b>{c}</b> })}
                     </Label>
                   </div>
                   <ComparisonPanel
@@ -387,45 +403,45 @@ export function HistorialPanel() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nuevo lote</DialogTitle>
+            <DialogTitle>{t('newFlock')}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1 sm:col-span-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Código o nombre *</Label>
-              <Input value={fCodigo} onChange={(e) => setFCodigo(e.target.value)} placeholder="Ej: Lote 2026-08-A" className="h-9 text-sm" />
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('code')}</Label>
+              <Input value={fCodigo} onChange={(e) => setFCodigo(e.target.value)} placeholder={t('codePlaceholder')} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Granja</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('farm')}</Label>
               <Input value={fGranja} onChange={(e) => setFGranja(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Galpón</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('house')}</Label>
               <Input value={fGalpon} onChange={(e) => setFGalpon(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tipo de ave</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('birdTypeLabel')}</Label>
               <Select value={fTipoAve} onValueChange={setFTipoAve}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(TIPO_AVE_LABELS).map(([v, l]) => (
-                    <SelectItem key={v} value={v}>{l}</SelectItem>
+                  {TIPO_AVE_KEYS.map((v) => (
+                    <SelectItem key={v} value={v}>{tTipo(v)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Sexo</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('sexLabel')}</Label>
               <Select value={fSexo} onValueChange={setFSexo}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(SEXO_LABELS).map(([v, l]) => (
-                    <SelectItem key={v} value={v}>{l}</SelectItem>
+                  {SEXO_KEYS.map((v) => (
+                    <SelectItem key={v} value={v}>{tSexo(v)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Línea genética</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('lineLabel')}</Label>
               <Select value={fLinea} onValueChange={setFLinea}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -436,17 +452,17 @@ export function HistorialPanel() {
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Tamaño estimado (aves)</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('estimatedSize')}</Label>
               <Input type="number" min={1} value={fTamano} onChange={(e) => setFTamano(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1 sm:col-span-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Observaciones</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('notes')}</Label>
               <Textarea value={fObs} onChange={(e) => setFObs(e.target.value)} className="min-h-16 text-sm" />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateLote} className="bg-green-600 hover:bg-green-700 text-white">Crear lote</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>{t('cancel')}</Button>
+            <Button onClick={handleCreateLote} className="bg-green-600 hover:bg-green-700 text-white">{t('createFlock')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -455,39 +471,39 @@ export function HistorialPanel() {
       <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Guardar pesaje en &quot;{selectedLote?.codigo}&quot;</DialogTitle>
+            <DialogTitle>{t('saveWeighInTitle', { codigo: selectedLote?.codigo ?? '' })}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Fecha del pesaje</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('weighInDate')}</Label>
               <Input type="date" value={pFecha} onChange={(e) => setPFecha(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Edad (semanas)</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('age')}</Label>
               <Input type="number" min={0} step={0.5} value={pEdad} onChange={(e) => setPEdad(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Método de muestreo</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('samplingMethod')}</Label>
               <Select value={pMuestreo} onValueChange={setPMuestreo}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(MUESTREO_LABELS).map(([v, l]) => (
-                    <SelectItem key={v} value={v}>{l}</SelectItem>
+                  {MUESTREO_KEYS.map((v) => (
+                    <SelectItem key={v} value={v}>{tMuestreo(v)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Responsable</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('responsible')}</Label>
               <Input value={pResponsable} onChange={(e) => setPResponsable(e.target.value)} className="h-9 text-sm" />
             </div>
             <div className="flex flex-col gap-1 sm:col-span-2">
-              <Label className="text-[10px] uppercase font-bold text-muted-foreground">Observaciones</Label>
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('notes')}</Label>
               <Textarea value={pObs} onChange={(e) => setPObs(e.target.value)} className="min-h-16 text-sm" />
             </div>
           </div>
           <div className="text-[11px] text-muted-foreground">
-            Se guardarán <b>{pesos.length}</b> pesos con el criterio de uniformidad ±{uniformityPct}%.
+            {t.rich('willSave', { n: pesos.length, pct: uniformityPct, b: (c) => <b>{c}</b> })}
           </div>
           {saveWarnings.length > 0 && (
             <Alert className="border-amber-300 bg-amber-50">
@@ -500,8 +516,8 @@ export function HistorialPanel() {
             </Alert>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSavePesaje} className="bg-green-600 hover:bg-green-700 text-white">Guardar pesaje</Button>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>{t('cancel')}</Button>
+            <Button onClick={handleSavePesaje} className="bg-green-600 hover:bg-green-700 text-white">{t('saveWeighIn')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -520,15 +536,15 @@ export function HistorialPanel() {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {deleteTarget?.kind === 'lote' ? 'lote' : 'pesaje'}?</AlertDialogTitle>
+            <AlertDialogTitle>{t(deleteTarget?.kind === 'lote' ? 'deleteTitleFlock' : 'deleteTitleWeighIn')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Se eliminará {deleteTarget?.label}. Esta acción no se puede deshacer.
+              {t('deleteBody', { objeto: deleteTarget?.label ?? '' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700 text-white">
-              Eliminar
+              {t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

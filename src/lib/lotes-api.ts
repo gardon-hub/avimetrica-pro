@@ -46,27 +46,14 @@ export interface PesajeFull {
   pesos: BirdWeightRow[];
 }
 
-export const TIPO_AVE_LABELS: Record<string, string> = {
-  broiler: 'Pollo de engorde',
-  pollita: 'Pollita de reemplazo',
-  ponedora: 'Ponedora',
-  reproductora: 'Reproductora',
-};
-
-export const SEXO_LABELS: Record<string, string> = {
-  hembras: 'Hembras',
-  machos: 'Machos',
-  mixto: 'Mixto',
-  na: 'No aplica',
-};
-
-export const MUESTREO_LABELS: Record<string, string> = {
-  aleatorio: 'Aleatorio',
-  sistematico: 'Sistemático',
-  zonas: 'Por zonas',
-  conveniencia: 'Conveniencia',
-  ns: 'No especificado',
-};
+/**
+ * Claves válidas de cada catálogo, en su orden de presentación. Lo que sí
+ * pertenece al dominio son los valores y su orden; los rótulos visibles viven
+ * en los catálogos de idioma (`birdType`, `sex`, `sampling`).
+ */
+export const TIPO_AVE_KEYS = ['broiler', 'pollita', 'ponedora', 'reproductora'] as const;
+export const SEXO_KEYS = ['hembras', 'machos', 'mixto', 'na'] as const;
+export const MUESTREO_KEYS = ['aleatorio', 'sistematico', 'zonas', 'conveniencia', 'ns'] as const;
 
 export async function fetchLotes(): Promise<LoteResumen[]> {
   const res = await fetch('/api/lotes');
