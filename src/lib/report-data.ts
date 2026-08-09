@@ -29,12 +29,6 @@ export const VARIANT_KEYS: Record<ReportVariant, string> = {
   academico: 'variantAcademic',
 };
 
-export const VARIANT_LABELS: Record<ReportVariant, string> = {
-  resumido: 'Resumido (administración)',
-  tecnico: 'Técnico',
-  academico: 'Académico (con metodología)',
-};
-
 export interface ReportContext {
   lote?: string;
   granja?: string;
@@ -74,18 +68,10 @@ export interface ReportData {
   pesos: number[];
 }
 
-const MUESTREO_TEXT: Record<string, string> = {
-  aleatorio: 'aleatorio',
-  sistematico: 'sistemático',
-  zonas: 'por zonas',
-  conveniencia: 'por conveniencia',
-  ns: 'no especificado',
-};
-
-export function muestreoLabel(v: string | undefined): string {
-  if (!v) return 'no especificado';
-  return MUESTREO_TEXT[v] ?? v;
-}
+/**
+ * El método de muestreo se guarda como identificador; su rótulo sale del
+ * catálogo (clave `sampling`), igual en interfaz, reporte y Excel.
+ */
 
 /**
  * Limitación detectada, SIN redactar: el generador del reporte compone el

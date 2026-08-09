@@ -86,9 +86,9 @@ export function buildDatasetReportHtml(
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const hist = valores.length >= 5
-    ? svgToDataUri(histogramSvg(valores, d.mean, d.sdSample, d.mean * 0.9, d.mean * 1.1))
+    ? svgToDataUri(histogramSvg(valores, d.mean, d.sdSample, d.mean * 0.9, d.mean * 1.1, t))
     : '';
-  const graficoCat = svgToDataUri(categoriasBarSvg(cl.bins, cl.unclassified, cl.n));
+  const graficoCat = svgToDataUri(categoriasBarSvg(cl.bins, cl.unclassified, cl.n, t));
 
   const meta: Array<[string, string]> = [
     [tr('metaVariable'), `${variable.label}${u ? ` (${u})` : ''}`],

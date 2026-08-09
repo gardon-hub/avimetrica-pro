@@ -72,7 +72,7 @@ export function buildPesajesComparisonReportHtml(
   const sem = (n: number) => tr('weeks', { n });
 
   const gMedias = svgToDataUri(
-    mediasComparadasSvg(a.stats.promedio, b.stats.promedio, a.ci, b.ci, a.etiqueta, b.etiqueta, 'g', 1),
+    mediasComparadasSvg(a.stats.promedio, b.stats.promedio, a.ci, b.ci, a.etiqueta, b.etiqueta, 'g', 1, t),
   );
 
   // La banda de uniformidad es una clasificación en tres clases: reutiliza el

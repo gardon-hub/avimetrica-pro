@@ -106,12 +106,8 @@ export function imrChart(values: number[]): IMRChart | null {
 export interface NelsonViolation {
   rule: 1 | 2 | 3;
   index: number; // índice del punto que completa la señal
-  /**
-   * Descripción en español. La interfaz NO la usa: compone el texto desde el
-   * catálogo de idiomas con los campos estructurados de abajo. Sobrevive
-   * porque los generadores de reportes aún no están traducidos.
-   */
-  description: string;
+  // El texto de la señal se compone en la interfaz desde el catálogo con los
+  // campos estructurados de abajo: aquí no se redacta nada.
   /** Valor del punto que disparó la regla 1. */
   value?: number;
   /** Regla 2: 'above' | 'below' de la línea central. */
@@ -135,7 +131,6 @@ export function nelsonRules(points: number[], center: number, ucl: number, lcl: 
         rule: 1,
         index: i,
         value: p,
-        description: `Punto ${i + 1} fuera de los límites de control (${p.toFixed(2)}).`,
       });
     }
   });
@@ -151,7 +146,6 @@ export function nelsonRules(points: number[], center: number, ucl: number, lcl: 
         rule: 2,
         index: i,
         side: side > 0 ? 'above' : 'below',
-        description: `Nueve puntos consecutivos ${side > 0 ? 'sobre' : 'bajo'} la línea central (hasta el punto ${i + 1}).`,
       });
     }
   });
@@ -167,7 +161,6 @@ export function nelsonRules(points: number[], center: number, ucl: number, lcl: 
         rule: 3,
         index: i,
         direction: trend > 0 ? 'up' : 'down',
-        description: `Seis puntos consecutivos en ${trend > 0 ? 'ascenso' : 'descenso'} sostenido (hasta el punto ${i + 1}).`,
       });
     }
   }

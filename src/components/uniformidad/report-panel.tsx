@@ -128,7 +128,7 @@ export function ReportPanel() {
             <Button onClick={handlePrint} className="flex-1 h-10 text-sm bg-gray-800 hover:bg-gray-900 text-white">
               <Printer className="h-4 w-4 mr-1.5" /> {tPanel('print')}
             </Button>
-            <Button onClick={() => downloadExcel(data)} variant="outline" className="flex-1 h-10 text-sm border-green-600 text-green-700 hover:bg-green-50 font-semibold">
+            <Button onClick={() => downloadExcel(data, { locale, t: tRaiz })} variant="outline" className="flex-1 h-10 text-sm border-green-600 text-green-700 hover:bg-green-50 font-semibold">
               <Sheet className="h-4 w-4 mr-1.5" /> {tPanel('excel')}
             </Button>
           </div>

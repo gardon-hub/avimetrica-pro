@@ -72,7 +72,7 @@ export function DatasetReportPanel({ store, domain }: { store: DatasetStore; dom
               <Printer className="h-4 w-4 mr-1.5" /> {t('print')}
             </Button>
             <Button
-              onClick={() => downloadDatasetExcel(entrada)}
+              onClick={() => downloadDatasetExcel(entrada, { locale, t: tRaiz })}
               variant="outline"
               className="flex-1 h-10 text-sm border-green-600 text-green-700 hover:bg-green-50 font-semibold"
             >

@@ -2,11 +2,15 @@
  * Gráficos SVG como cadenas para los reportes imprimibles (Fase 6).
  * Sin dependencias de DOM: funcionan en cualquier contexto y se incrustan
  * directamente en el HTML del reporte.
+ *
+ * Reciben el traductor como parámetro, igual que el resto de generadores
+ * (ver report-i18n.ts).
  */
 
 import { normalPdf } from '@/lib/statistics/distributions';
 import { buildHistogram } from '@/lib/statistics/histogram';
 import { median } from '@/lib/statistics/descriptive';
+import type { ReportTranslator } from '@/lib/report-i18n';
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -20,6 +24,7 @@ export function uniformityCurveSvg(
   limSup: number,
   uniformidad: number,
   criterioPct: number,
+  t: ReportTranslator,
 ): string {
   const sigma = desvEst > 0 ? desvEst : media * 0.05 || 50;
   const width = 620;
@@ -69,14 +74,21 @@ export function uniformityCurveSvg(
     parts.push(`<line x1="${toX(v).toFixed(1)}" y1="${toY(0).toFixed(1)}" x2="${toX(v).toFixed(1)}" y2="${(toY(0) + 5).toFixed(1)}" stroke="#999" stroke-width="1"/>`);
     parts.push(`<text x="${toX(v).toFixed(1)}" y="${(toY(0) + 18).toFixed(1)}" text-anchor="middle" fill="#555" font-size="10" font-family="Segoe UI, sans-serif">${v.toFixed(0)}</text>`);
   }
-  parts.push(`<text x="${width - padR}" y="${height - 8}" text-anchor="end" fill="#333" font-size="12" font-weight="bold" font-family="Segoe UI, sans-serif">Uniformidad: ${uniformidad.toFixed(1)}%</text>`);
-  parts.push(`<text x="${width / 2}" y="${height - 5}" text-anchor="middle" fill="#333" font-size="12" font-weight="bold" font-family="Segoe UI, sans-serif">Peso (g)</text>`);
+  parts.push(`<text x="${width - padR}" y="${height - 8}" text-anchor="end" fill="#333" font-size="12" font-weight="bold" font-family="Segoe UI, sans-serif">${esc(t('reports.charts.uniformityLabel', { pct: uniformidad.toFixed(1) }))}</text>`);
+  parts.push(`<text x="${width / 2}" y="${height - 5}" text-anchor="middle" fill="#333" font-size="12" font-weight="bold" font-family="Segoe UI, sans-serif">${esc(t('reports.charts.weightAxis'))}</text>`);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">${parts.join('')}</svg>`;
 }
 
 /** Histograma empírico con curva normal superpuesta (densidad). */
-export function histogramSvg(pesos: number[], media: number, desvEst: number, limInf: number, limSup: number): string {
+export function histogramSvg(
+  pesos: number[],
+  media: number,
+  desvEst: number,
+  limInf: number,
+  limSup: number,
+  t: ReportTranslator,
+): string {
   const hist = buildHistogram(pesos, 'auto');
   if (!hist) return '';
   const width = 620;
@@ -116,7 +128,7 @@ export function histogramSvg(pesos: number[], media: number, desvEst: number, li
   const med = median(pesos);
   const refs: Array<[number, string, string]> = [
     [media, '#333', 'μ'],
-    [med, '#7c3aed', 'Med'],
+    [med, '#7c3aed', t('reports.charts.medianAbbrev')],
     [limInf, '#e53935', '−'],
     [limSup, '#2E7D32', '+'],
   ];
@@ -131,7 +143,7 @@ export function histogramSvg(pesos: number[], media: number, desvEst: number, li
     const v = minX + ((maxX - minX) * i) / 7;
     parts.push(`<text x="${toX(v).toFixed(1)}" y="${(toY(0) + 14).toFixed(1)}" text-anchor="middle" fill="#666" font-size="9" font-family="Segoe UI, sans-serif">${v.toFixed(0)}</text>`);
   }
-  parts.push(`<text x="${width / 2}" y="${height - 4}" text-anchor="middle" fill="#444" font-size="11" font-weight="bold" font-family="Segoe UI, sans-serif">Histograma (${hist.bins.length} clases) con curva normal — μ, mediana y límites ±</text>`);
+  parts.push(`<text x="${width / 2}" y="${height - 4}" text-anchor="middle" fill="#444" font-size="11" font-weight="bold" font-family="Segoe UI, sans-serif">${esc(t('reports.charts.histogramFooter', { clases: hist.bins.length }))}</text>`);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">${parts.join('')}</svg>`;
 }

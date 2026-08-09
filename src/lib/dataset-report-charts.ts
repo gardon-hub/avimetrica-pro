@@ -5,9 +5,14 @@
  * Diferencia deliberada: aquí los colores van FIJOS y el fondo es blanco,
  * porque el destino es papel o PDF —no hay modo oscuro que respetar— y un
  * `currentColor` heredado no sobreviviría a la conversión a data URI.
+ *
+ * Los rótulos vienen del catálogo: como estos módulos viven fuera de React,
+ * cada generador RECIBE el traductor (ver report-i18n.ts). Va como último
+ * parámetro y sobre la raíz del catálogo, igual que en los reportes.
  */
 
-import type { BinResult, Bin } from '@/lib/classification';
+import type { BinResult } from '@/lib/classification';
+import type { ReportTranslator } from '@/lib/report-i18n';
 
 const COLOR_A = '#2563eb';
 const COLOR_B = '#f59e0b';
@@ -36,11 +41,16 @@ function envolver(width: number, height: number, contenido: string): string {
 }
 
 /** Barras del porcentaje por categoría de UN muestreo. */
-export function categoriasBarSvg(bins: BinResult[], sinClasificar: number, n: number): string {
+export function categoriasBarSvg(
+  bins: BinResult[],
+  sinClasificar: number,
+  n: number,
+  t: ReportTranslator,
+): string {
   const datos = [
     ...bins.map((b, i) => ({ label: b.label, pct: b.pct, color: b.color ?? PALETA[i % PALETA.length] })),
     ...(sinClasificar > 0 && n > 0
-      ? [{ label: 'Sin clasificar', pct: (sinClasificar / n) * 100, color: '#dc2626' }]
+      ? [{ label: t('reports.charts.unclassified'), pct: (sinClasificar / n) * 100, color: '#dc2626' }]
       : []),
   ];
   if (datos.length === 0) return '';
@@ -140,6 +150,7 @@ export function mediasComparadasSvg(
   nombreB: string,
   unidad: string,
   decimales: number,
+  t: ReportTranslator,
 ): string {
   const W = 620, H = 210, padL = 54, padR = 16, padT = 20, padB = 44;
   const chartH = H - padT - padB;
@@ -186,7 +197,7 @@ export function mediasComparadasSvg(
     ${barras}
     <line x1="${padL}" y1="${toY(minY).toFixed(1)}" x2="${W - padR}" y2="${toY(minY).toFixed(1)}" stroke="#9ca3af" stroke-width="1.5"/>
     <text x="10" y="${padT - 6}" font-size="9" fill="#6b7280">${esc(unidad)}</text>
-    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">Barras de error: IC 95 % de la media · escala sin origen en cero</text>
+    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(t('reports.charts.errorBarsMeans'))}</text>
   `);
 }
 
@@ -205,6 +216,7 @@ export function mediaVsObjetivoSvg(
   etiquetaObjetivo: string,
   unidad: string,
   decimales: number,
+  t: ReportTranslator,
 ): string {
   const W = 620, H = 200, padL = 58, padR = 120, padT = 20, padB = 40;
   const chartH = H - padT - padB;
@@ -251,10 +263,10 @@ export function mediaVsObjetivoSvg(
     <text x="${W - padR + 6}" y="${(yObj + 3).toFixed(1)}" font-size="9" font-weight="bold" fill="#1d4ed8">${esc(etiquetaObjetivo)}</text>
     <text x="${W - padR + 6}" y="${(yObj + 15).toFixed(1)}" font-size="9" fill="#1d4ed8">${f(objetivo)} ${esc(unidad)}</text>
     <text x="${cx}" y="${(toY(ci ? ci.upper : media) - 7).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="bold" fill="#111827">${f(media)} ${esc(unidad)}</text>
-    <text x="${cx}" y="${(toY(minY) + 14).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#6b7280">Media observada del lote</text>
+    <text x="${cx}" y="${(toY(minY) + 14).toFixed(1)}" text-anchor="middle" font-size="9.5" fill="#6b7280">${esc(t('reports.charts.observedFlockMean'))}</text>
     <line x1="${padL}" y1="${toY(minY).toFixed(1)}" x2="${W - padR}" y2="${toY(minY).toFixed(1)}" stroke="#9ca3af" stroke-width="1.5"/>
     <text x="10" y="${padT - 6}" font-size="9" fill="#6b7280">${esc(unidad)}</text>
-    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">Barra de error: IC 95 % · escala sin origen en cero</text>
+    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(t('reports.charts.errorBarSingle'))}</text>
   `);
 }
 
@@ -271,6 +283,7 @@ export function boxplotSvg(
   atipicos: number[],
   unidad: string,
   decimales: number,
+  t: ReportTranslator,
 ): string {
   const W = 620, H = 150, padL = 20, padR = 20, padT = 30, padB = 42;
   const iqr = q3 - q1;
@@ -310,11 +323,11 @@ export function boxplotSvg(
     <line x1="${toX(mediana).toFixed(1)}" y1="${yc - alto / 2}" x2="${toX(mediana).toFixed(1)}" y2="${yc + alto / 2}" stroke="#111827" stroke-width="2.2"/>
     ${puntos}
     <text x="${toX(q1).toFixed(1)}" y="${yc - alto / 2 - 6}" text-anchor="middle" font-size="8.5" fill="#374151">Q1 ${f(q1)}</text>
-    <text x="${toX(mediana).toFixed(1)}" y="${yc + alto / 2 + 12}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#111827">Mediana ${f(mediana)}</text>
+    <text x="${toX(mediana).toFixed(1)}" y="${yc + alto / 2 + 12}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#111827">${esc(t('reports.charts.boxMedian'))} ${f(mediana)}</text>
     <text x="${toX(q3).toFixed(1)}" y="${yc - alto / 2 - 6}" text-anchor="middle" font-size="8.5" fill="#374151">Q3 ${f(q3)}</text>
     <line x1="${padL}" y1="${H - padB + 4}" x2="${W - padR}" y2="${H - padB + 4}" stroke="#9ca3af" stroke-width="1.2"/>
     ${marcas}
-    <text x="${W - padR}" y="16" text-anchor="end" font-size="8.5" fill="#6b7280">Caja: Q1–Q3 · bigotes: cercos de 1.5×IQR · círculos: atípicos${unidad ? ` · ${esc(unidad)}` : ''}</text>
+    <text x="${W - padR}" y="16" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(t('reports.charts.boxFooter'))}${unidad ? ` · ${esc(unidad)}` : ''}</text>
   `);
 }
 
@@ -323,6 +336,7 @@ export function qqPlotSvg(
   puntos: Array<{ theoretical: number; observed: number }>,
   unidad: string,
   decimales: number,
+  t: ReportTranslator,
 ): string {
   if (puntos.length < 3) return '';
   const W = 620, H = 300, padL = 58, padR = 18, padT = 18, padB = 46;
@@ -359,9 +373,9 @@ export function qqPlotSvg(
     ${circulos}
     <line x1="${padL}" y1="${toY(min).toFixed(1)}" x2="${W - padR}" y2="${toY(min).toFixed(1)}" stroke="#9ca3af" stroke-width="1.2"/>
     <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${toY(min).toFixed(1)}" stroke="#9ca3af" stroke-width="1.2"/>
-    <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="#374151">Cuantiles teóricos de una normal${unidad ? ` (${esc(unidad)})` : ''}</text>
-    <text x="12" y="${padT + 10}" font-size="9.5" fill="#374151">Observado</text>
-    <text x="${W - padR}" y="${padT + 10}" text-anchor="end" font-size="8.5" fill="#1d4ed8">Línea: ajuste normal perfecto</text>
+    <text x="${W / 2}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="#374151">${esc(t('reports.charts.qqXAxis'))}${unidad ? ` (${esc(unidad)})` : ''}</text>
+    <text x="12" y="${padT + 10}" font-size="9.5" fill="#374151">${esc(t('reports.charts.qqYAxis'))}</text>
+    <text x="${W - padR}" y="${padT + 10}" text-anchor="end" font-size="8.5" fill="#1d4ed8">${esc(t('reports.charts.qqLine'))}</text>
   `);
 }
 
@@ -383,6 +397,7 @@ export function bandaVsIcSvg(
   criterioPct: number,
   unidad: string,
   decimales: number,
+  t: ReportTranslator,
 ): string {
   const W = 620, H = 190, padL = 118, padR = 24, padT = 26, padB = 44;
   let lo = Math.min(limInf, ciLower);
@@ -413,10 +428,10 @@ export function bandaVsIcSvg(
     ${barra(yBanda, limInf, limSup, '#2E7D32', 'rgba(76,175,80,0.30)')}
     ${barra(yIc, ciLower, ciUpper, '#1d4ed8', 'rgba(37,99,235,0.30)')}
     <line x1="${toX(media).toFixed(1)}" y1="${padT - 6}" x2="${toX(media).toFixed(1)}" y2="${H - padB + 6}" stroke="#111827" stroke-width="1.4" stroke-dasharray="5,4"/>
-    <text x="${toX(media).toFixed(1)}" y="${padT - 10}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#111827">media ${f(media)}</text>
-    <text x="${padL - 8}" y="${yBanda + 4}" text-anchor="end" font-size="9.5" font-weight="bold" fill="#2E7D32">Banda ±${criterioPct}%</text>
-    <text x="${padL - 8}" y="${yIc + 4}" text-anchor="end" font-size="9.5" font-weight="bold" fill="#1d4ed8">IC 95% de la media</text>
-    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">Ambos en la misma escala${unidad ? ` (${esc(unidad)})` : ''}</text>
+    <text x="${toX(media).toFixed(1)}" y="${padT - 10}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#111827">${esc(t('reports.charts.bandMean'))} ${f(media)}</text>
+    <text x="${padL - 8}" y="${yBanda + 4}" text-anchor="end" font-size="9.5" font-weight="bold" fill="#2E7D32">${esc(t('reports.charts.bandLabel', { pct: criterioPct }))}</text>
+    <text x="${padL - 8}" y="${yIc + 4}" text-anchor="end" font-size="9.5" font-weight="bold" fill="#1d4ed8">${esc(t('reports.charts.ciLabel'))}</text>
+    <text x="${W - padR}" y="${H - 6}" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(t('reports.charts.sameScale'))}${unidad ? ` (${esc(unidad)})` : ''}</text>
   `);
 }
 
@@ -441,6 +456,7 @@ export function lineasEvolucionSvg(
   unidad: string,
   decimales: number,
   titulo: string,
+  t: ReportTranslator,
 ): string {
   const puntos = series.flatMap((s) => s.valores).filter((v): v is number => v !== null && Number.isFinite(v));
   if (puntos.length === 0 || etiquetas.length === 0) return '';
@@ -502,7 +518,7 @@ export function lineasEvolucionSvg(
     ${ejeX}
     ${leyenda}
     <text x="10" y="${padT - 12}" font-size="9" fill="#6b7280">${esc(unidad)}</text>
-    <text x="${W - padR}" y="${H - 5}" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(titulo)} · escala sin origen en cero</text>
+    <text x="${W - padR}" y="${H - 5}" text-anchor="end" font-size="8.5" fill="#6b7280">${esc(t('reports.charts.trendFooter', { titulo }))}</text>
   `);
 }
 
@@ -510,6 +526,7 @@ export function lineasEvolucionSvg(
 export function gananciaDiariaBarSvg(
   periodos: Array<{ label: string; gDia: number | null }>,
   unidad: string,
+  t: ReportTranslator,
 ): string {
   const datos = periodos.filter((p): p is { label: string; gDia: number } => p.gDia !== null && Number.isFinite(p.gDia));
   if (datos.length === 0) return '';
@@ -553,19 +570,7 @@ export function gananciaDiariaBarSvg(
     ${rejilla}
     ${barras}
     <line x1="${padL}" y1="${yCero.toFixed(1)}" x2="${W - padR}" y2="${yCero.toFixed(1)}" stroke="#9ca3af" stroke-width="1.5"/>
-    <text x="10" y="${padT - 4}" font-size="9" fill="#6b7280">${esc(unidad)}/día</text>
+    <text x="10" y="${padT - 4}" font-size="9" fill="#6b7280">${esc(t('reports.charts.perDay', { unidad }))}</text>
   `);
 }
 
-/** Genera los cortes efectivos legibles para el pie de un gráfico. */
-export function describeBins(bins: Bin[], unidad: string, dec: number): string {
-  return bins
-    .map((b) => {
-      const f = (v: number) => v.toFixed(dec);
-      if (b.min === null && b.max === null) return `${b.label}: todos`;
-      if (b.min === null) return `${b.label}: < ${f(b.max!)}`;
-      if (b.max === null) return `${b.label}: ≥ ${f(b.min)}`;
-      return `${b.label}: ${f(b.min)}–${f(b.max)}`;
-    })
-    .join(' · ') + (unidad ? ` (${unidad})` : '');
-}

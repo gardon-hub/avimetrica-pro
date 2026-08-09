@@ -14,7 +14,6 @@ import {
 } from '@/lib/dataset-report-charts';
 import { classify } from '@/lib/classification';
 import { qqPoints } from '@/lib/statistics/normality';
-import { OUTLIER_METHOD_LABELS } from '@/lib/statistics/outliers';
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -252,7 +251,12 @@ function pesosTablaHtml(d: ReportData, t: ReportTranslator): string {
 <table><tr><th class="num">${esc(tr('colBird'))}</th><th class="num">${esc(tr('colWeight'))}</th><th>${esc(tr('colStatus', { pct: d.criterioPct }))}</th></tr>${rows}</table>`;
 }
 
-function metodologiaHtml(d: ReportData): string {
+/**
+ * La prosa de esta sección sigue en español por decisión del usuario; los
+ * gráficos, en cambio, se rotulan desde el catálogo, así que recibe el
+ * traductor de la raíz para pasárselo a los generadores.
+ */
+function metodologiaHtml(d: ReportData, t: ReportTranslator): string {
   // Gráficos didácticos: dan imagen a los conceptos que esta sección explica.
   // Se generan solo aquí, de modo que las variantes resumida y técnica no
   // pagan el coste de construirlos.
@@ -260,19 +264,19 @@ function metodologiaHtml(d: ReportData): string {
     ? svgToDataUri(
         bandaVsIcSvg(
           d.stats.promedio, d.stats.limiteInf, d.stats.limiteSup,
-          d.ci95.lower, d.ci95.upper, d.criterioPct, 'g', 1,
+          d.ci95.lower, d.ci95.upper, d.criterioPct, 'g', 1, t,
         ),
       )
     : '';
   const graficoCaja = svgToDataUri(
     boxplotSvg(
       d.descr.q1, d.descr.median, d.descr.q3, d.descr.min, d.descr.max,
-      d.outliers.flags.map((x) => x.value), 'g', 1,
+      d.outliers.flags.map((x) => x.value), 'g', 1, t,
     ),
   );
   const graficoQQ =
     d.pesos.length >= 3 && d.descr.sdSample > 0
-      ? svgToDataUri(qqPlotSvg(qqPoints(d.pesos, d.descr.mean, d.descr.sdSample), 'g', 0))
+      ? svgToDataUri(qqPlotSvg(qqPoints(d.pesos, d.descr.mean, d.descr.sdSample), 'g', 0, t))
       : '';
 
   return `<h2 class="pagebreak">Metodología y fórmulas (modo académico)</h2>
@@ -329,8 +333,8 @@ ${graficoQQ ? `<div class="chart"><img src="${graficoQQ}" alt="Gráfico Q-Q de l
 export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: ReportI18n): string {
   const { locale, t } = i18n;
   const tr = scoped(t);
-  const curve = svgToDataUri(uniformityCurveSvg(d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup, d.stats.uniformidad, d.criterioPct));
-  const hist = svgToDataUri(histogramSvg(d.pesos, d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup));
+  const curve = svgToDataUri(uniformityCurveSvg(d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup, d.stats.uniformidad, d.criterioPct, t));
+  const hist = svgToDataUri(histogramSvg(d.pesos, d.stats.promedio, d.stats.desvEst, d.stats.limiteInf, d.stats.limiteSup, t));
 
   // Barras de la banda de uniformidad. Se obtienen del MISMO motor de
   // clasificación que usan huevos y estadística: la prueba de equivalencia
@@ -350,6 +354,7 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: Rep
       clasif.bins.map((b, i) => ({ ...b, color: COLORES_BANDA[i] })),
       clasif.unclassified,
       clasif.n,
+      t,
     ),
   );
 
@@ -364,6 +369,7 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: Rep
           tr('targetLineLabel'),
           'g',
           1,
+          t,
         ),
       )
     : '';
@@ -412,7 +418,7 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: Rep
     body += limitacionesHtml(d, t);
     body += fuentesHtml(d, t);
     if (variant === 'academico') {
-      body += metodologiaHtml(d);
+      body += metodologiaHtml(d, t);
     }
     body += pesosTablaHtml(d, t);
   }

@@ -87,6 +87,7 @@ export function buildEvolucionReportHtml(
       'g',
       0,
       tr('weightChartTitle'),
+      t,
     ),
   );
 
@@ -100,6 +101,7 @@ export function buildEvolucionReportHtml(
       '%',
       1,
       tr('homogeneityChartTitle'),
+      t,
     ),
   );
 
@@ -107,6 +109,7 @@ export function buildEvolucionReportHtml(
     gananciaDiariaBarSvg(
       ganancias.map((g) => ({ label: `${g.desde}→${g.hasta}`, gDia: g.porDia })),
       'g',
+      t,
     ),
   );
 

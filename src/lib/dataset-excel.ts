@@ -1,6 +1,8 @@
 /**
  * Exportación a Excel de un muestreo genérico (huevos o docencia).
  * Hojas: Resumen, Categorías y Datos.
+ *
+ * Recibe el traductor igual que los generadores de HTML (ver report-i18n.ts).
  */
 
 import * as XLSX from 'xlsx';
@@ -10,6 +12,7 @@ import { shapiroWilk } from '@/lib/statistics/shapiro-wilk';
 import { detectOutliers } from '@/lib/statistics/outliers';
 import { classify } from '@/lib/classification';
 import type { DatasetReportInput } from '@/lib/dataset-report';
+import type { ReportI18n } from '@/lib/report-i18n';
 
 type Row = Array<string | number>;
 
@@ -17,86 +20,101 @@ function num(v: number, dec = 2): number | string {
   return Number.isFinite(v) ? Number(v.toFixed(dec)) : '—';
 }
 
-export function downloadDatasetExcel(input: DatasetReportInput): void {
+/**
+ * Arma el libro. Separado de la descarga para que las pruebas puedan
+ * inspeccionarlo sin tocar el sistema de archivos, igual que en export-excel.
+ */
+export function buildDatasetWorkbook(
+  input: DatasetReportInput,
+  { locale, t }: ReportI18n,
+): XLSX.WorkBook | null {
   const { valores, variable, scheme, contexto } = input;
   const d = describe(valores);
-  if (!d) return;
+  if (!d) return null;
 
+  const tr = (k: string, v?: Record<string, string | number>) => t(`excel.dataset.${k}`, v);
   const dec = variable.decimals;
   const u = variable.unit;
   const ci = meanConfidenceInterval(valores, 0.95);
   const sw = shapiroWilk(valores);
   const out = detectOutliers(valores);
   const cl = classify(valores, scheme);
+  const sinClasificar = tr('unclassified');
 
   const wb = XLSX.utils.book_new();
 
   const resumen: Row[] = [
-    [`Avimétrica Pro — ${input.tituloModulo}`],
-    ['Generado', new Date().toLocaleString()],
+    [tr('docTitle', { modulo: input.tituloModulo })],
+    [tr('generated'), new Date().toLocaleString(locale)],
     [],
-    ['Variable', `${variable.label}${u ? ` (${u})` : ''}`],
-    ['Muestreo', contexto.nombre || '—'],
-    ['Origen', contexto.origen || '—'],
-    ['Fecha', contexto.fecha || '—'],
-    ['Responsable', contexto.responsable || '—'],
+    [tr('variable'), `${variable.label}${u ? ` (${u})` : ''}`],
+    [tr('sampling'), contexto.nombre || '—'],
+    [tr('origin'), contexto.origen || '—'],
+    [tr('date'), contexto.fecha || '—'],
+    [tr('responsible'), contexto.responsable || '—'],
     [],
     ['n', d.n],
-    ['Media', num(d.mean, dec)],
-    ['Mediana', num(d.median, dec)],
-    ['Desv. estándar muestral (n−1)', num(d.sdSample, dec)],
-    ['Coeficiente de variación (%)', num(d.cv, 2)],
-    ['Error estándar de la media', num(d.sem, dec)],
-    ['Mínimo', num(d.min, dec)],
-    ['Máximo', num(d.max, dec)],
-    ['Rango', num(d.range, dec)],
+    [tr('mean'), num(d.mean, dec)],
+    [tr('median'), num(d.median, dec)],
+    [tr('sdSample'), num(d.sdSample, dec)],
+    [tr('cv'), num(d.cv, 2)],
+    [tr('sem'), num(d.sem, dec)],
+    [tr('min'), num(d.min, dec)],
+    [tr('max'), num(d.max, dec)],
+    [tr('range'), num(d.range, dec)],
     ['Q1', num(d.q1, dec)],
     ['Q3', num(d.q3, dec)],
     ['IQR', num(d.iqr, dec)],
-    ['Asimetría (G1)', d.skewness === null ? '—' : num(d.skewness, 4)],
-    ['Curtosis exceso (G2)', d.kurtosis === null ? '—' : num(d.kurtosis, 4)],
-    ['IC 95 % de la media', ci ? `${num(ci.lower, dec)} – ${num(ci.upper, dec)}` : '—'],
+    [tr('skewness'), d.skewness === null ? '—' : num(d.skewness, 4)],
+    [tr('kurtosis'), d.kurtosis === null ? '—' : num(d.kurtosis, 4)],
+    [tr('ci95'), ci ? `${num(ci.lower, dec)} – ${num(ci.upper, dec)}` : '—'],
     [],
-    ['Criterio de clasificación', input.criterioLabel],
-    ['Procedencia', input.criterioFuente],
-    ['Norma oficial', input.criterioOficial ? 'Sí' : 'No'],
+    [tr('criterion'), input.criterioLabel],
+    [tr('provenance'), input.criterioFuente],
+    [tr('officialStandard'), input.criterioOficial ? tr('yes') : tr('no')],
     [],
-    ['Normalidad (Shapiro-Wilk)', sw ? `W = ${num(sw.W, 4)}, p = ${sw.pValue < 0.0001 ? '< 0.0001' : num(sw.pValue, 4)}` : 'No evaluada'],
-    ['Posibles atípicos', out.flags.length],
+    [tr('shapiro'), sw ? `W = ${num(sw.W, 4)}, p = ${sw.pValue < 0.0001 ? '< 0.0001' : num(sw.pValue, 4)}` : tr('notRun')],
+    [tr('possibleOutliers'), out.flags.length],
   ];
   const wsR = XLSX.utils.aoa_to_sheet(resumen);
   wsR['!cols'] = [{ wch: 32 }, { wch: 46 }];
-  XLSX.utils.book_append_sheet(wb, wsR, 'Resumen');
+  XLSX.utils.book_append_sheet(wb, wsR, tr('sheetSummary'));
 
-  const cats: Row[] = [['Categoría', 'Mínimo', 'Máximo', 'n', '%']];
+  const cats: Row[] = [[tr('colCategory'), tr('colMin'), tr('colMax'), 'n', '%']];
   cl.bins.forEach((b, i) => {
     const eb = cl.effectiveBins[i];
     cats.push([
       b.label,
-      eb.min === null ? 'sin límite' : num(eb.min, dec),
-      eb.max === null ? 'sin límite' : num(eb.max, dec),
+      eb.min === null ? tr('noLimit') : num(eb.min, dec),
+      eb.max === null ? tr('noLimit') : num(eb.max, dec),
       b.count,
       num(b.pct, 1),
     ]);
   });
   if (cl.unclassified > 0) {
-    cats.push(['Sin clasificar', '', '', cl.unclassified, num((cl.unclassified / cl.n) * 100, 1)]);
+    cats.push([sinClasificar, '', '', cl.unclassified, num((cl.unclassified / cl.n) * 100, 1)]);
   }
   const wsC = XLSX.utils.aoa_to_sheet(cats);
   wsC['!cols'] = [{ wch: 28 }, { wch: 12 }, { wch: 12 }, { wch: 8 }, { wch: 8 }];
-  XLSX.utils.book_append_sheet(wb, wsC, 'Categorías');
+  XLSX.utils.book_append_sheet(wb, wsC, tr('sheetCategories'));
 
   const flagIdx = new Set(out.flags.map((x) => x.index));
-  const datos: Row[] = [['#', `${variable.label}${u ? ` (${u})` : ''}`, 'Categoría', 'Posible atípico']];
+  const datos: Row[] = [['#', `${variable.label}${u ? ` (${u})` : ''}`, tr('colCategory'), tr('colOutlier')]];
   valores.forEach((v, i) => {
     const bin = cl.bins.find((b) => b.indices.includes(i));
-    datos.push([i + 1, v, bin?.label ?? 'Sin clasificar', flagIdx.has(i) ? 'Sí' : '']);
+    datos.push([i + 1, v, bin?.label ?? sinClasificar, flagIdx.has(i) ? tr('yes') : '']);
   });
   const wsD = XLSX.utils.aoa_to_sheet(datos);
   wsD['!cols'] = [{ wch: 6 }, { wch: 16 }, { wch: 28 }, { wch: 14 }];
-  XLSX.utils.book_append_sheet(wb, wsD, 'Datos');
+  XLSX.utils.book_append_sheet(wb, wsD, tr('sheetData'));
 
+  return wb;
+}
+
+export function downloadDatasetExcel(input: DatasetReportInput, i18n: ReportI18n): void {
+  const wb = buildDatasetWorkbook(input, i18n);
+  if (!wb) return;
   const fecha = new Date().toISOString().slice(0, 10);
-  const base = (contexto.nombre || variable.label).replace(/[^\w-]+/g, '_');
+  const base = (input.contexto.nombre || input.variable.label).replace(/[^\w-]+/g, '_');
   XLSX.writeFile(wb, `${base}-${fecha}.xlsx`);
 }

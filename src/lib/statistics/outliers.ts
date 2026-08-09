@@ -91,18 +91,7 @@ export function detectOutliers(values: number[]): OutlierAnalysis {
 }
 
 /**
- * Rótulos en español de cada método.
- *
- * La interfaz NO usa esto: toma los rótulos del catálogo de idiomas (clave
- * `outlierMethods`, indexada por OutlierMethod). Esta constante sobrevive
- * únicamente porque los generadores de reportes (report-html.ts y
- * export-excel.ts) todavía no están traducidos; cuando lo estén, debe
- * borrarse. Si se traduce la interfaz y se olvida esto, los dos textos
- * divergen.
+ * Los rótulos de cada método viven en el catálogo de idiomas, clave
+ * `outlierMethods`, indexada por OutlierMethod: los usan tanto la interfaz
+ * como los reportes y el Excel. Aquí no hay texto a propósito.
  */
-export const OUTLIER_METHOD_LABELS: Record<OutlierMethod, string> = {
-  iqr15: '1.5×IQR (Tukey)',
-  iqr30: '3×IQR (extremo)',
-  zscore: '|Z| > 3',
-  modifiedZ: 'Z modificada (MAD) > 3.5',
-};

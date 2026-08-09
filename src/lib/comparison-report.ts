@@ -66,7 +66,7 @@ export function buildComparisonReportHtml(
   const disenoTexto = tr(DISENO_CLAVE[input.diseno]);
 
   const gMedias = svgToDataUri(
-    mediasComparadasSvg(dA.mean, dB.mean, input.ciA, input.ciB, input.nombreA, input.nombreB, u, dec),
+    mediasComparadasSvg(dA.mean, dB.mean, input.ciA, input.ciB, input.nombreA, input.nombreB, u, dec, t),
   );
   const gCategorias = input.categorias
     ? svgToDataUri(categoriasComparadasSvg(input.categorias, input.nombreA, input.nombreB))

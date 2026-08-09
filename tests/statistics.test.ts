@@ -372,9 +372,15 @@ suite('reportes (Fase 6)', () => {
       criterioPct: 10,
       contexto: {},
     })!;
-    const wb = buildWorkbook(d);
-    expect(wb.SheetNames).toEqual(['Resumen', 'Descriptiva', 'Pesos']);
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets['Pesos'], { header: 1 }) as unknown[][];
+    // Traductor de prueba: devuelve la clave, para no atar el test a la
+    // redacción de ningún idioma (los nombres de hoja ya se traducen).
+    const wb = buildWorkbook(d, { locale: 'es', t: (k: string) => k });
+    expect(wb.SheetNames).toEqual([
+      'excel.aves.sheetSummary',
+      'excel.aves.sheetDescriptive',
+      'excel.aves.sheetWeights',
+    ]);
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets['excel.aves.sheetWeights'], { header: 1 }) as unknown[][];
     expect(rows.length).toBe(31); // encabezado + 30 aves
     expect(rows[1][1]).toBe(2350);
   });
