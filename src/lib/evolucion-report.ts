@@ -12,6 +12,7 @@ import { REPORT_CSS } from '@/lib/report-html';
 import { APP_VERSION } from '@/lib/report-data';
 import { svgToDataUri } from '@/lib/report-charts';
 import { lineasEvolucionSvg, gananciaDiariaBarSvg } from '@/lib/dataset-report-charts';
+import type { ReportI18n } from '@/lib/report-i18n';
 
 export interface PuntoEvolucion {
   label: string;
@@ -46,15 +47,29 @@ function esc(s: string): string {
 }
 
 /** Describe la tendencia de una serie comparando su primer y último valor. */
-function tendencia(serie: number[], etiqueta: string, unidad: string, dec: number): string {
+function tendencia(
+  tr: (k: string, v?: Record<string, string | number>) => string,
+  serie: number[],
+  etiquetaClave: string,
+  unidadClave: string,
+  dec: number,
+): string {
   if (serie.length < 2) return '';
   const delta = serie[serie.length - 1] - serie[0];
-  const f = (v: number) => Math.abs(v).toFixed(dec);
-  if (Math.abs(delta) < 0.05) return `${etiqueta} se mantuvo prácticamente estable.`;
-  return `${etiqueta} ${delta > 0 ? 'aumentó' : 'disminuyó'} ${f(delta)} ${unidad} entre el primer y el último pesaje.`;
+  const etiqueta = tr(etiquetaClave);
+  if (Math.abs(delta) < 0.05) return tr('trendStable', { etiqueta });
+  return tr(delta > 0 ? 'trendUp' : 'trendDown', {
+    etiqueta,
+    delta: Math.abs(delta).toFixed(dec),
+    unidad: tr(unidadClave),
+  });
 }
 
-export function buildEvolucionReportHtml(input: EvolucionReportInput): string {
+export function buildEvolucionReportHtml(
+  input: EvolucionReportInput,
+  { locale, t }: ReportI18n,
+): string {
+  const tr = (k: string, v?: Record<string, string | number>) => t(`reports.evolution.${k}`, v);
   const { serie, ganancias, criterioPct } = input;
   const f = (v: number, k = 1) => (Number.isFinite(v) ? v.toFixed(k) : '—');
   const etiquetas = serie.map((p) => p.label);
@@ -64,14 +79,14 @@ export function buildEvolucionReportHtml(input: EvolucionReportInput): string {
     lineasEvolucionSvg(
       etiquetas,
       [
-        { label: 'Media del lote', color: '#2E7D32', valores: serie.map((p) => p.media) },
+        { label: tr('seriesMean'), color: '#2E7D32', valores: serie.map((p) => p.media) },
         ...(hayObjetivo
-          ? [{ label: 'Objetivo de la línea', color: '#1d4ed8', valores: serie.map((p) => p.objetivo), discontinua: true }]
+          ? [{ label: tr('seriesTarget'), color: '#1d4ed8', valores: serie.map((p) => p.objetivo), discontinua: true }]
           : []),
       ],
       'g',
       0,
-      'Peso promedio por fecha',
+      tr('weightChartTitle'),
     ),
   );
 
@@ -79,12 +94,12 @@ export function buildEvolucionReportHtml(input: EvolucionReportInput): string {
     lineasEvolucionSvg(
       etiquetas,
       [
-        { label: `Uniformidad (±${criterioPct}%)`, color: '#2E7D32', valores: serie.map((p) => p.uniformidad) },
-        { label: 'Coef. de variación', color: '#dc2626', valores: serie.map((p) => p.cv) },
+        { label: `${tr('seriesUniformity')} (±${criterioPct}%)`, color: '#2E7D32', valores: serie.map((p) => p.uniformidad) },
+        { label: tr('seriesCv'), color: '#dc2626', valores: serie.map((p) => p.cv) },
       ],
       '%',
       1,
-      'Homogeneidad por fecha',
+      tr('homogeneityChartTitle'),
     ),
   );
 
@@ -117,9 +132,9 @@ export function buildEvolucionReportHtml(input: EvolucionReportInput): string {
     <td class="num">${g.porDia === null ? '—' : f(g.porDia)}</td>
   </tr>`).join('');
 
-  const tendPeso = tendencia(serie.map((p) => p.media), 'El peso promedio', 'g', 1);
-  const tendCv = tendencia(serie.map((p) => p.cv), 'El coeficiente de variación', 'puntos porcentuales', 2);
-  const tendUnif = tendencia(serie.map((p) => p.uniformidad), 'La uniformidad', 'puntos porcentuales', 1);
+  const tendPeso = tendencia(tr, serie.map((p) => p.media), 'labelWeight', 'unitG', 1);
+  const tendCv = tendencia(tr, serie.map((p) => p.cv), 'labelCv', 'unitPoints', 2);
+  const tendUnif = tendencia(tr, serie.map((p) => p.uniformidad), 'labelUniformity', 'unitPoints', 1);
 
   // Lectura conjunta de CV y uniformidad. Se usa una tolerancia para tratar
   // como ESTABLE lo que apenas cambió: un indicador plano no contradice al
@@ -133,14 +148,15 @@ export function buildEvolucionReportHtml(input: EvolucionReportInput): string {
   const sCv = signo(dCv, TOL_CV);       // −1 mejora (CV baja), +1 empeora
   const sUnif = signo(dUnif, TOL_UNIF); // +1 mejora, −1 empeora
 
-  const lecturaHomogeneidad =
+  const lecturaHomogeneidad = tr(
     sCv === 0 && sUnif === 0
-      ? 'La homogeneidad del lote se mantuvo estable durante el período: ni el CV ni la uniformidad cambiaron de forma apreciable.'
-      : (sCv <= 0 && sUnif >= 0)
-        ? 'Los indicadores de homogeneidad son favorables o estables: el lote no se volvió más dispar durante el período.'
-        : (sCv >= 0 && sUnif <= 0)
-          ? 'Los indicadores de homogeneidad son desfavorables o estables: conviene revisar espacio de comedero y bebedero, densidad, ambiente y estado sanitario, además de cómo se seleccionaron las aves en cada muestreo.'
-          : 'Los indicadores se contradicen: uno mejoró y el otro empeoró. Conviene revisar el histograma de cada pesaje, porque un solo valor extremo puede mover el CV sin alterar la uniformidad, o al revés.';
+      ? 'homStable'
+      : sCv <= 0 && sUnif >= 0
+        ? 'homFavourable'
+        : sCv >= 0 && sUnif <= 0
+          ? 'homUnfavourable'
+          : 'homContradictory',
+  );
 
   const desviaciones = serie
     .filter((p) => p.objetivo !== null)
@@ -150,80 +166,69 @@ export function buildEvolucionReportHtml(input: EvolucionReportInput): string {
   const body = `
 <div class="header">
   <img src="${typeof window !== 'undefined' ? window.location.origin : ''}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
-  <h1>Evolución del lote</h1>
-  <div class="subtitle">Avimétrica Pro · Generado: ${esc(new Date().toLocaleString())} · v${esc(APP_VERSION)}</div>
+  <h1>${esc(tr('docTitle'))}</h1>
+  <div class="subtitle">${esc(t('reports.generated', { fecha: new Date().toLocaleString(locale), version: APP_VERSION }))}</div>
 </div>
 
 <div class="meta">
-  <div><b>Lote:</b> ${esc(input.lote)}</div>
-  <div><b>Línea genética:</b> ${esc(input.lineaGenetica)}</div>
-  <div><b>Granja / Galpón:</b> ${esc(input.granja || '—')} / ${esc(input.galpon || '—')}</div>
-  <div><b>Pesajes analizados:</b> ${serie.length}</div>
-  <div><b>Período:</b> ${esc(serie[0]?.label ?? '—')} a ${esc(serie[serie.length - 1]?.label ?? '—')}</div>
-  <div><b>Criterio de uniformidad:</b> media ±${criterioPct}%</div>
+  <div><b>${esc(tr('metaLot'))}</b> ${esc(input.lote)}</div>
+  <div><b>${esc(tr('metaLine'))}</b> ${esc(input.lineaGenetica)}</div>
+  <div><b>${esc(tr('metaFarmHouse'))}</b> ${esc(input.granja || '—')} / ${esc(input.galpon || '—')}</div>
+  <div><b>${esc(tr('metaWeighIns'))}</b> ${serie.length}</div>
+  <div><b>${esc(tr('metaPeriod'))}</b> ${esc(tr('periodValue', { desde: serie[0]?.label ?? '—', hasta: serie[serie.length - 1]?.label ?? '—' }))}</div>
+  <div><b>${esc(tr('metaCriterion'))}</b> ${esc(tr('criterionValue', { pct: criterioPct }))}</div>
 </div>
 
-<h2>Peso promedio frente al objetivo</h2>
-<div class="chart"><img src="${gPeso}" alt="Gráfico de líneas del peso promedio del lote por fecha, comparado con la curva objetivo de la línea genética"/></div>
-${!hayObjetivo ? '<p class="note">No se muestra la curva objetivo porque falta la edad en algún pesaje o la línea genética no tiene referencia para esas edades.</p>' : ''}
+<h2>${esc(tr('weightTitle'))}</h2>
+<div class="chart"><img src="${gPeso}" alt="${esc(tr('weightAlt'))}"/></div>
+${!hayObjetivo ? `<p class="note">${esc(tr('noTargetCurve'))}</p>` : ''}
 
-<h2>Homogeneidad del lote</h2>
-<div class="chart"><img src="${gUnifCv}" alt="Gráfico de líneas de la uniformidad y el coeficiente de variación por fecha"/></div>
-<p class="note">
-  Uniformidad y CV se leen en direcciones opuestas: un lote mejora cuando la uniformidad sube y el
-  CV baja. Ambos se calculan sobre la media de CADA pesaje, así que describen homogeneidad interna,
-  no cercanía al objetivo.
-</p>
+<h2>${esc(tr('homogeneityTitle'))}</h2>
+<div class="chart"><img src="${gUnifCv}" alt="${esc(tr('homogeneityAlt'))}"/></div>
+<p class="note">${esc(tr('homogeneityNote'))}</p>
 
-${gGanancia ? `<h2>Ganancia diaria entre pesajes</h2>
-<div class="chart"><img src="${gGanancia}" alt="Gráfico de barras de la ganancia diaria de peso entre pesajes consecutivos"/></div>
-<p class="note">
-  La ganancia se calcula entre las MEDIAS de dos pesajes, que son muestras distintas del lote y no
-  las mismas aves seguidas en el tiempo. Es por tanto una estimación sujeta al error de muestreo de
-  ambos pesajes: una barra baja puede reflejar una muestra poco representativa y no una caída real
-  del crecimiento.
-</p>` : ''}
+${gGanancia ? `<h2>${esc(tr('gainTitle'))}</h2>
+<div class="chart"><img src="${gGanancia}" alt="${esc(tr('gainAlt'))}"/></div>
+<p class="note">${esc(tr('gainNote'))}</p>` : ''}
 
-<h2>Detalle por pesaje</h2>
+<h2>${esc(tr('detailTitle'))}</h2>
 <table>
   <tr>
-    <th>Fecha</th><th class="num">Edad (sem)</th><th class="num">n</th>
-    <th class="num">Media (g)</th><th class="num">Objetivo (g)</th><th class="num">Diferencia</th>
-    <th class="num">CV (%)</th><th class="num">Unif. (%)</th>
+    <th>${esc(tr('colDate'))}</th><th class="num">${esc(tr('colAge'))}</th><th class="num">${esc(tr('colN'))}</th>
+    <th class="num">${esc(tr('colMean'))}</th><th class="num">${esc(tr('colTarget'))}</th><th class="num">${esc(tr('colDifference'))}</th>
+    <th class="num">${esc(tr('colCv'))}</th><th class="num">${esc(tr('colUniformity'))}</th>
   </tr>
   ${filasSerie}
 </table>
 
-${ganancias.length ? `<h2>Ganancia por período</h2>
+${ganancias.length ? `<h2>${esc(tr('gainPeriodTitle'))}</h2>
 <table>
-  <tr><th>Período</th><th class="num">Días</th><th class="num">Δ media (g)</th><th class="num">g/día</th></tr>
+  <tr><th>${esc(tr('colPeriod'))}</th><th class="num">${esc(tr('colDays'))}</th><th class="num">${esc(tr('colDelta'))}</th><th class="num">${esc(tr('colPerDay'))}</th></tr>
   ${filasGanancia}
 </table>` : ''}
 
-<h2>Lectura de la tendencia</h2>
+<h2>${esc(tr('trendTitle'))}</h2>
 <p>${esc(tendPeso)} ${esc(tendUnif)} ${esc(tendCv)}</p>
 <p>${esc(lecturaHomogeneidad)}</p>
-${desvUltima !== null ? `<p>En el último pesaje el lote está ${
+${desvUltima !== null ? `<p>${esc(
   Math.abs(desvUltima) < 0.05
-    ? 'prácticamente sobre el objetivo'
-    : desvUltima > 0
-      ? `un ${f(desvUltima, 1)}% por encima del objetivo`
-      : `un ${f(Math.abs(desvUltima), 1)}% por debajo del objetivo`
-} de la línea genética.</p>` : ''}
+    ? tr('lastOnTarget')
+    : tr(desvUltima > 0 ? 'lastAbove' : 'lastBelow', { pct: f(Math.abs(desvUltima), 1) }),
+)}</p>` : ''}
 
-<h2>Limitaciones</h2>
+<h2>${esc(tr('limitationsTitle'))}</h2>
 <ul>
-  <li>Cada punto es una muestra distinta del lote, no un seguimiento de las mismas aves: las variaciones entre fechas incluyen error de muestreo además del cambio real.</li>
-  <li>La comparación con el objetivo depende de que la edad registrada sea correcta y de que la línea genética seleccionada corresponda al lote.</li>
-  ${serie.some((p) => p.n < 30) ? '<li>Algún pesaje tiene menos de 30 aves: sus estimaciones son especialmente imprecisas y pueden distorsionar la tendencia.</li>' : ''}
-  <li>Este reporte describe los pesajes registrados; no sustituye el criterio del profesional a cargo del lote.</li>
+  <li>${esc(tr('limSampling'))}</li>
+  <li>${esc(tr('limTarget'))}</li>
+  ${serie.some((p) => p.n < 30) ? `<li>${esc(tr('limSmall'))}</li>` : ''}
+  <li>${esc(tr('limProfessional'))}</li>
 </ul>
 
 <div class="footer">
-  <span class="name">Gustavo Alonso Ardón</span><br/>
-  Profesor Investigador en Ciencias Avícolas<br/>
-  Universidad Nacional de Agricultura, Honduras, Centro América
+  <span class="name">${esc(t('credits.author'))}</span><br/>
+  ${esc(t('credits.role'))}<br/>
+  ${esc(t('credits.institution'))}
 </div>`;
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Evolución del lote</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(tr('docTitle'))}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

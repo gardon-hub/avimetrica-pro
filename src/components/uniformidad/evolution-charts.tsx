@@ -6,7 +6,7 @@
  */
 
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { PesajeFull } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { getTargetWeight } from '@/lib/diagnostic-engine';
@@ -138,6 +138,9 @@ export function EvolutionCharts({
   lote?: { codigo: string; granja: string | null; galpon: string | null };
 }) {
   const t = useTranslations('evolution');
+  // El generador del reporte necesita el traductor de la raíz (report-i18n).
+  const tRaiz = useTranslations();
+  const locale = useLocale();
   const serie = useMemo(() => buildSeries(pesajes, lineaGenetica), [pesajes, lineaGenetica]);
 
   const puntoTooltip = (p: SeriesPoint, valor: number, serieLabel: string) =>
@@ -186,7 +189,7 @@ export function EvolutionCharts({
         objetivo: p.objetivo,
       })),
       ganancias: gains,
-    });
+    }, { locale, t: tRaiz });
     const w = window.open('', '_blank');
     if (!w) return;
     w.document.write(html);
