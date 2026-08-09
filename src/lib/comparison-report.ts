@@ -39,8 +39,13 @@ function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/**
+ * Devuelve TEXTO PLANO, no HTML: el «<» se escapa donde se inserta, igual que
+ * el resto de cadenas. Devolver aquí la entidad `&lt;` provocaba doble
+ * escapado y el documento mostraba «p = &lt; 0.0001» literal.
+ */
 function fmtP(p: number): string {
-  return p < 0.0001 ? '&lt; 0.0001' : p.toFixed(4);
+  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
 /** Clave del catálogo para cada diseño declarado. */
@@ -124,19 +129,21 @@ ${test ? `
   <tr>
     <td class="num">${f(test.t, 4)}</td>
     <td class="num">${test.df.toFixed(input.pareada ? 0 : 1)}</td>
-    <td class="num">${fmtP(test.pValue)}</td>
+    <td class="num">${esc(fmtP(test.pValue))}</td>
     <td class="num">${test.diff >= 0 ? '+' : ''}${f(test.diff)} ${esc(u)}</td>
     <td class="num">${f(test.ciLower)} a ${f(test.ciUpper)}</td>
     <td class="num">${Number.isFinite(test.cohenD) ? test.cohenD.toFixed(2) : '—'}</td>
   </tr>
 </table>
-<p>${tr(test.rejectNull ? 'reject' : 'notReject', { p: fmtP(test.pValue) })}</p>
+<p>${esc(tr(test.rejectNull ? 'reject' : 'notReject', { p: fmtP(test.pValue) }))}${
+  test.rejectNull ? '' : ` <b>${esc(tr('notRejectCaveat'))}</b>`
+}</p>
 ` : `<h2>${esc(tr('testTitle'))}</h2><p class="note">${esc(tr('notRun'))}</p>`}
 
 <h2>${esc(tr('limitationsTitle'))}</h2>
 <ul>
   <li>${esc(disenoTexto)}</li>
-  ${muestraPequena ? `<li>${tr('limSmallSample')}</li>` : ''}
+  ${muestraPequena ? `<li>${esc(tr('limSmallSample'))}</li>` : ''}
   <li>${esc(tr('limIndependence'))}</li>
   <li>${esc(tr('limPractical'))}</li>
   <li>${esc(tr('limProfessional'))}</li>

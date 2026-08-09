@@ -16,32 +16,30 @@ export function DatasetReportPanel({ store, domain }: { store: DatasetStore; dom
   const { valores, variable, scheme, presetId, contexto, muHipotetica } = store();
   const t = useTranslations('datasetReport');
   const tNav = useTranslations('nav');
+  // El generador necesita el traductor de la raíz del catálogo (ver report-i18n).
+  const tRaiz = useTranslations();
   const locale = useLocale();
   const [mostrar, setMostrar] = useState(false);
 
-  // El documento generado sigue en español mientras no se traduzcan los
-  // generadores de lib/: estas cadenas viajan dentro de él, así que se dejan
-  // en español a propósito. Mezclar idiomas dentro del mismo documento sería
-  // peor que emitirlo entero en uno solo.
   const entrada: DatasetReportInput | null = useMemo(() => {
     if (valores.length === 0) return null;
     const preset = findPreset(domain, presetId);
     return {
-      tituloModulo: `Reporte — ${domain.label}`,
+      tituloModulo: t('docTitle', { modulo: tNav(`${domain.id}.long`) }),
       valores,
       variable,
       scheme,
-      criterioLabel: preset?.label ?? 'Personalizado',
-      criterioFuente: preset?.source ?? 'Cortes definidos por el usuario.',
+      criterioLabel: preset?.label ?? t('customCriterion'),
+      criterioFuente: preset?.source ?? t('customCriterionSource'),
       criterioOficial: preset?.official ?? false,
       contexto,
       muHipotetica,
     };
-  }, [valores, variable, scheme, presetId, contexto, muHipotetica, domain]);
+  }, [valores, variable, scheme, presetId, contexto, muHipotetica, domain, t, tNav]);
 
   const html = useMemo(
-    () => (mostrar && entrada ? buildDatasetReportHtml(entrada) : ''),
-    [mostrar, entrada],
+    () => (mostrar && entrada ? buildDatasetReportHtml(entrada, { locale, t: tRaiz }) : ''),
+    [mostrar, entrada, locale, tRaiz],
   );
 
   const imprimir = () => {

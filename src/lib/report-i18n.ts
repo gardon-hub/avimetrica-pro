@@ -32,13 +32,21 @@ export interface ReportI18n {
 }
 
 /**
- * CONVENCIÓN DE ESCAPADO en los generadores, para no tener que adivinar:
+ * REGLA DE ORO: los mensajes del espacio `reports` son TEXTO PLANO. Nunca
+ * llevan `<b>` ni ninguna otra etiqueta, y siempre se insertan con `esc(...)`.
  *
- * - Una cadena del catálogo que es TEXTO PLANO se inserta con `esc(...)`.
- * - Una cadena que contiene marcado —`<b>` para enfatizar, o entidades como
- *   `&lt;` en «n &lt; 30»— se inserta CRUDA, sin `esc`, porque escaparla
- *   mostraría las etiquetas literales al lector.
+ * No es una preferencia de estilo. next-intl interpreta cualquier etiqueta
+ * dentro de un mensaje como *rich text*, que exige `t.rich` y devuelve nodos
+ * de React —inservibles dentro de una plantilla de cadena—. El traductor
+ * plano no sabe resolverla y devuelve LA CLAVE LITERAL: el reporte acaba
+ * imprimiendo «reports.dataset.shapiro» en mitad del documento. Ocurrió, y no
+ * lo detectan typecheck, lint ni las pruebas: solo se ve leyendo el HTML
+ * generado.
  *
- * Los valores que vienen de datos del usuario (nombres de conjunto, de lote,
- * de granja) se escapan SIEMPRE: son la única entrada no controlada.
+ * Cuando haga falta resaltar algo, el marcado va en la PLANTILLA, envolviendo
+ * el valor o la frase: `<b>${esc(tr('clave'))}</b>`. Si la frase mezcla texto
+ * normal y texto resaltado, se parte en dos claves.
+ *
+ * Los datos del usuario (nombres de conjunto, de lote, de granja) se escapan
+ * siempre: son la única entrada no controlada.
  */
