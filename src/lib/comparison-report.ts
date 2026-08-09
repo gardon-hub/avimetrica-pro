@@ -16,6 +16,7 @@ import {
   mediasComparadasSvg,
   type CategoriaComparadaSvg,
 } from '@/lib/dataset-report-charts';
+import type { ReportI18n } from '@/lib/report-i18n';
 
 export interface ComparisonReportInput {
   tituloModulo: string;
@@ -42,16 +43,22 @@ function fmtP(p: number): string {
   return p < 0.0001 ? '&lt; 0.0001' : p.toFixed(4);
 }
 
-const DISENO_TEXTO: Record<ComparisonReportInput['diseno'], string> = {
-  independientes: 'Muestras independientes: unidades distintas en cada muestreo.',
-  pareadas: 'Muestras pareadas: las mismas unidades medidas dos veces, en el mismo orden.',
-  repeticiones:
-    'Repeticiones del mismo grupo: mismo lote en fechas distintas, sin identificar unidades. La independencia entre muestras es cuestionable, por lo que el valor p es orientativo.',
+/** Clave del catálogo para cada diseño declarado. */
+const DISENO_CLAVE: Record<ComparisonReportInput['diseno'], string> = {
+  independientes: 'designIndependent',
+  pareadas: 'designPaired',
+  repeticiones: 'designRepeated',
 };
 
-export function buildComparisonReportHtml(input: ComparisonReportInput): string {
+export function buildComparisonReportHtml(
+  input: ComparisonReportInput,
+  { locale, t }: ReportI18n,
+): string {
   const { dA, dB, test, unidad: u, decimales: dec } = input;
   const f = (v: number, k = dec) => (Number.isFinite(v) ? v.toFixed(k) : v > 0 ? '+∞' : '−∞');
+  /** Atajo al espacio de este reporte. */
+  const tr = (k: string, v?: Record<string, string | number>) => t(`reports.comparison.${k}`, v);
+  const disenoTexto = tr(DISENO_CLAVE[input.diseno]);
 
   const gMedias = svgToDataUri(
     mediasComparadasSvg(dA.mean, dB.mean, input.ciA, input.ciB, input.nombreA, input.nombreB, u, dec),
@@ -61,14 +68,14 @@ export function buildComparisonReportHtml(input: ComparisonReportInput): string 
     : '';
 
   const filas: Array<[string, string, string, string]> = [
-    ['n', String(dA.n), String(dB.n), '—'],
-    ['Media', f(dA.mean), f(dB.mean), f(dA.mean - dB.mean)],
-    ['Mediana', f(dA.median), f(dB.median), f(dA.median - dB.median)],
-    ['Desv. estándar (n−1)', f(dA.sdSample), f(dB.sdSample), f(dA.sdSample - dB.sdSample)],
-    ['Coef. de variación (%)', f(dA.cv, 2), f(dB.cv, 2), f(dA.cv - dB.cv, 2)],
-    ['Mínimo', f(dA.min), f(dB.min), '—'],
-    ['Máximo', f(dA.max), f(dB.max), '—'],
-    ['IC 95 % de la media', input.ciA ? `${f(input.ciA.lower)} – ${f(input.ciA.upper)}` : '—',
+    [tr('metricN'), String(dA.n), String(dB.n), '—'],
+    [tr('metricMean'), f(dA.mean), f(dB.mean), f(dA.mean - dB.mean)],
+    [tr('metricMedian'), f(dA.median), f(dB.median), f(dA.median - dB.median)],
+    [tr('metricSd'), f(dA.sdSample), f(dB.sdSample), f(dA.sdSample - dB.sdSample)],
+    [tr('metricCv'), f(dA.cv, 2), f(dB.cv, 2), f(dA.cv - dB.cv, 2)],
+    [tr('metricMin'), f(dA.min), f(dB.min), '—'],
+    [tr('metricMax'), f(dA.max), f(dB.max), '—'],
+    [tr('metricCi'), input.ciA ? `${f(input.ciA.lower)} – ${f(input.ciA.upper)}` : '—',
       input.ciB ? `${f(input.ciB.lower)} – ${f(input.ciB.upper)}` : '—', '—'],
   ];
 
@@ -77,51 +84,43 @@ export function buildComparisonReportHtml(input: ComparisonReportInput): string 
   const body = `
 <div class="header">
   <img src="${typeof window !== 'undefined' ? window.location.origin : ''}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
-  <h1>Comparación de muestreos — ${esc(input.tituloModulo)}</h1>
-  <div class="subtitle">Avimétrica Pro · Generado: ${esc(new Date().toLocaleString())} · v${esc(APP_VERSION)}</div>
+  <h1>${esc(tr('title', { modulo: input.tituloModulo }))}</h1>
+  <div class="subtitle">${esc(t('reports.generated', { fecha: new Date().toLocaleString(locale), version: APP_VERSION }))}</div>
 </div>
 
 <div class="meta">
-  <div><b>Muestreo A:</b> ${esc(input.nombreA)}</div>
-  <div><b>Muestreo B:</b> ${esc(input.nombreB)}</div>
-  <div><b>Diseño declarado:</b> ${esc(DISENO_TEXTO[input.diseno])}</div>
-  <div><b>Unidad:</b> ${esc(u || '—')}</div>
+  <div><b>${esc(tr('samplingA'))}</b> ${esc(input.nombreA)}</div>
+  <div><b>${esc(tr('samplingB'))}</b> ${esc(input.nombreB)}</div>
+  <div><b>${esc(tr('declaredDesign'))}</b> ${esc(disenoTexto)}</div>
+  <div><b>${esc(tr('unit'))}</b> ${esc(u || '—')}</div>
 </div>
 
-<h2>Medias comparadas</h2>
-<div class="chart"><img src="${gMedias}" alt="Gráfico de barras de las medias de ambos muestreos con barras de error del intervalo de confianza del 95 %"/></div>
-<p class="note">
-  Las barras de error muestran el IC 95 % de cada media. Si se solapan ampliamente, la diferencia es
-  dudosa; el valor p de la prueba es el criterio formal. La escala no arranca en cero para no aplanar
-  diferencias pequeñas: leer los valores del eje, no solo la altura relativa.
-</p>
+<h2>${esc(tr('meansTitle'))}</h2>
+<div class="chart"><img src="${gMedias}" alt="${esc(tr('meansAlt'))}"/></div>
+<p class="note">${esc(tr('meansNote'))}</p>
 
-<h2>Resumen comparativo</h2>
+<h2>${esc(tr('summaryTitle'))}</h2>
 <table>
-  <tr><th>Métrica</th><th class="num">A</th><th class="num">B</th><th class="num">A − B</th></tr>
+  <tr><th>${esc(tr('colMetric'))}</th><th class="num">A</th><th class="num">B</th><th class="num">${esc(tr('colDiff'))}</th></tr>
   ${filas.map(([m, x, y, z]) => `<tr><td>${esc(m)}</td><td class="num">${x}</td><td class="num">${y}</td><td class="num"><b>${z}</b></td></tr>`).join('')}
 </table>
 
 ${input.categorias ? `
-<h2>Distribución por categorías</h2>
-<div class="chart"><img src="${gCategorias}" alt="Gráfico de barras agrupadas comparando el porcentaje por categoría entre ambos muestreos"/></div>
+<h2>${esc(tr('categoriesTitle'))}</h2>
+<div class="chart"><img src="${gCategorias}" alt="${esc(tr('categoriesAlt'))}"/></div>
 <table>
-  <tr><th>Categoría</th><th class="num">A (n)</th><th class="num">A (%)</th><th class="num">B (n)</th><th class="num">B (%)</th><th class="num">Δ %</th></tr>
+  <tr><th>${esc(tr('colCategory'))}</th><th class="num">${esc(tr('colAn'))}</th><th class="num">${esc(tr('colApct'))}</th><th class="num">${esc(tr('colBn'))}</th><th class="num">${esc(tr('colBpct'))}</th><th class="num">${esc(tr('colDelta'))}</th></tr>
   ${input.categorias.map((c) => {
     const delta = c.pctB - c.pctA;
     return `<tr><td>${esc(c.label)}</td><td class="num">${c.nA}</td><td class="num">${c.pctA.toFixed(1)}</td><td class="num">${c.nB}</td><td class="num">${c.pctB.toFixed(1)}</td><td class="num"><b>${delta >= 0 ? '+' : ''}${delta.toFixed(1)}</b></td></tr>`;
   }).join('')}
 </table>
-<p class="note">
-  Se aplicó a ambos muestreos el criterio de clasificación del muestreo A. Δ % es el cambio en la
-  proporción de B respecto de A: es descriptivo y no constituye una prueba de hipótesis sobre
-  proporciones.
-</p>` : ''}
+<p class="note">${esc(tr('categoriesNote'))}</p>` : ''}
 
 ${test ? `
-<h2>${input.pareada ? 'Prueba t pareada' : 'Prueba t de dos muestras (Welch)'}</h2>
+<h2>${esc(tr(input.pareada ? 'pairedTest' : 'welchTest'))}</h2>
 <table>
-  <tr><th class="num">t</th><th class="num">gl</th><th class="num">Valor p</th><th class="num">Diferencia</th><th class="num">IC 95 % de la diferencia</th><th class="num">d de Cohen</th></tr>
+  <tr><th class="num">${esc(tr('colT'))}</th><th class="num">${esc(tr('colDf'))}</th><th class="num">${esc(tr('colP'))}</th><th class="num">${esc(tr('colDifference'))}</th><th class="num">${esc(tr('colCi'))}</th><th class="num">${esc(tr('colCohenD'))}</th></tr>
   <tr>
     <td class="num">${f(test.t, 4)}</td>
     <td class="num">${test.df.toFixed(input.pareada ? 0 : 1)}</td>
@@ -131,25 +130,23 @@ ${test ? `
     <td class="num">${Number.isFinite(test.cohenD) ? test.cohenD.toFixed(2) : '—'}</td>
   </tr>
 </table>
-<p>${test.rejectNull
-  ? `Con α = 0.05, existe evidencia estadística de una diferencia entre los dos muestreos (p = ${fmtP(test.pValue)}).`
-  : `Con α = 0.05, no se encontró evidencia suficiente de diferencia entre los dos muestreos (p = ${fmtP(test.pValue)}). Esto <b>no</b> demuestra que sean iguales: puede deberse a una muestra pequeña.`}</p>
-` : '<h2>Prueba de hipótesis</h2><p class="note">No ejecutada: se requieren al menos 2 observaciones con variabilidad en ambos muestreos, y en el diseño pareado, igual número de observaciones.</p>'}
+<p>${tr(test.rejectNull ? 'reject' : 'notReject', { p: fmtP(test.pValue) })}</p>
+` : `<h2>${esc(tr('testTitle'))}</h2><p class="note">${esc(tr('notRun'))}</p>`}
 
-<h2>Limitaciones</h2>
+<h2>${esc(tr('limitationsTitle'))}</h2>
 <ul>
-  <li>${esc(DISENO_TEXTO[input.diseno])}</li>
-  ${muestraPequena ? `<li>Al menos un muestreo tiene n &lt; 30: verificar normalidad y valores atípicos antes de confiar en el resultado.</li>` : ''}
-  <li>La prueba asume observaciones independientes dentro de cada muestreo: revisar cómo se seleccionaron las unidades.</li>
-  <li>Una diferencia estadísticamente significativa no implica, por sí sola, relevancia práctica: valorar la magnitud junto al contexto productivo.</li>
-  <li>Este reporte compara las muestras analizadas; no sustituye el criterio del profesional a cargo.</li>
+  <li>${esc(disenoTexto)}</li>
+  ${muestraPequena ? `<li>${tr('limSmallSample')}</li>` : ''}
+  <li>${esc(tr('limIndependence'))}</li>
+  <li>${esc(tr('limPractical'))}</li>
+  <li>${esc(tr('limProfessional'))}</li>
 </ul>
 
 <div class="footer">
-  <span class="name">Gustavo Alonso Ardón</span><br/>
-  Profesor Investigador en Ciencias Avícolas<br/>
-  Universidad Nacional de Agricultura, Honduras, Centro América
+  <span class="name">${esc(t('credits.author'))}</span><br/>
+  ${esc(t('credits.role'))}<br/>
+  ${esc(t('credits.institution'))}
 </div>`;
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Comparación de muestreos</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(tr('docTitle'))}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

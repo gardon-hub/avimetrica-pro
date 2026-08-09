@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { GitCompare, AlertTriangle, Info } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 type Design = 'independientes' | 'pareadas' | 'repeticiones' | 'ns';
 
@@ -60,6 +60,10 @@ export function DatasetComparison({
   refrescarToken?: number;
 }) {
   const t = useTranslations('datasetComparison');
+  // El generador del reporte necesita el traductor de la RAÍZ del catálogo y
+  // el idioma activo: así el documento sale en el idioma elegido.
+  const tRaiz = useTranslations();
+  const locale = useLocale();
   const [lista, setLista] = useState<Array<{ id: string; nombre: string; variableUnit: string }>>([]);
   const [idA, setIdA] = useState('');
   const [idB, setIdB] = useState('');
@@ -145,7 +149,7 @@ export function DatasetComparison({
   const imprimir = () => {
     if (!a || !b || !resultado || !design || design === 'ns') return;
     const html = buildComparisonReportHtml({
-      tituloModulo: dominio === 'huevos' ? 'Peso y clasificación de huevo' : 'Modo Estadística',
+      tituloModulo: tRaiz(dominio === 'huevos' ? 'nav.huevos.long' : 'nav.generico.long'),
       nombreA: a.nombre,
       nombreB: b.nombre,
       dA: resultado.dA,
@@ -158,7 +162,7 @@ export function DatasetComparison({
       categorias,
       unidad: a.unidad,
       decimales: a.decimales,
-    });
+    }, { locale, t: tRaiz });
     const w = window.open('', '_blank');
     if (!w) return;
     w.document.write(html);
