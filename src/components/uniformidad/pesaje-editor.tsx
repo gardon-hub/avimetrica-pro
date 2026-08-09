@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { PesajeFull, BirdWeightRow } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
+  const t = useTranslations('weighInEditor');
   const [rows, setRows] = useState<BirdWeightRow[]>([]);
   const [dirty, setDirty] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -66,7 +68,7 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
       if (res.ok) ok++;
     }
     setSaving(false);
-    toast({ title: `${ok} peso(s) actualizado(s)` });
+    toast({ title: t('updated', { n: ok }) });
     setDirty(new Set());
     onSaved();
     onOpenChange(false);
@@ -76,23 +78,22 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar pesaje del {new Date(pesaje.fecha).toLocaleDateString()}</DialogTitle>
+          <DialogTitle>{t('title', { fecha: new Date(pesaje.fecha).toLocaleDateString() })}</DialogTitle>
         </DialogHeader>
 
         <Alert className="border-blue-200 bg-blue-50">
           <Info className="h-4 w-4" />
           <AlertDescription className="text-[11px] text-blue-900 leading-snug">
-            Excluir un ave <b>no borra el dato</b>: lo marca como excluido con su motivo y lo saca de los
-            cálculos, conservando la trazabilidad. Corrige el peso solo si hubo un error de digitación o báscula.
+            {t.rich('caveat', { b: (c) => <b>{c}</b> })}
           </AlertDescription>
         </Alert>
 
         {stats && (
           <div className="text-[11px] text-muted-foreground bg-muted/50 rounded-md px-2.5 py-1.5 flex flex-wrap gap-x-3">
-            <span>Activas: <b>{stats.totalAves}</b></span>
-            <span>Media: <b>{stats.promedio.toFixed(1)} g</b></span>
-            <span>CV: <b>{stats.cv.toFixed(2)}%</b></span>
-            <span>Unif.: <b>{stats.uniformidad.toFixed(1)}%</b></span>
+            <span>{t('active')} <b>{stats.totalAves}</b></span>
+            <span>{t('mean')} <b>{stats.promedio.toFixed(1)} g</b></span>
+            <span>{t('cv')} <b>{stats.cv.toFixed(2)}%</b></span>
+            <span>{t('unif')} <b>{stats.uniformidad.toFixed(1)}%</b></span>
           </div>
         )}
 
@@ -100,11 +101,11 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
           <table className="w-full text-[11px] border-collapse">
             <thead className="sticky top-0 bg-background">
               <tr className="border-b font-bold text-muted-foreground">
-                <th className="py-1 text-left">#</th>
-                <th className="py-1 text-right">Peso (g)</th>
-                <th className="py-1 text-left pl-2">Sector</th>
-                <th className="py-1 text-center">Excluir</th>
-                <th className="py-1 text-left pl-2">Motivo</th>
+                <th className="py-1 text-left">{t('colOrder')}</th>
+                <th className="py-1 text-right">{t('colWeight')}</th>
+                <th className="py-1 text-left pl-2">{t('colSector')}</th>
+                <th className="py-1 text-center">{t('colExclude')}</th>
+                <th className="py-1 text-left pl-2">{t('colReason')}</th>
               </tr>
             </thead>
             <tbody>
@@ -131,7 +132,7 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
                     <Checkbox
                       checked={r.excluido}
                       onCheckedChange={(v) => patch(r.id, { excluido: v === true })}
-                      aria-label={`Excluir ave ${r.orden}`}
+                      aria-label={t('excludeAria', { n: r.orden })}
                     />
                   </td>
                   <td className="py-1 pl-2">
@@ -139,7 +140,7 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
                       value={r.motivoExcl ?? ''}
                       onChange={(e) => patch(r.id, { motivoExcl: e.target.value })}
                       className="h-7 text-[11px]"
-                      placeholder={r.excluido ? 'Motivo de exclusión' : ''}
+                      placeholder={r.excluido ? t('reasonPlaceholder') : ''}
                       disabled={!r.excluido}
                     />
                   </td>
@@ -150,13 +151,13 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
         </div>
 
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
           <Button
             onClick={handleSave}
             disabled={saving || dirty.size === 0}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
-            {saving ? 'Guardando…' : `Guardar ${dirty.size} cambio(s)`}
+            {saving ? t('saving') : t('save', { n: dirty.size })}
           </Button>
         </div>
       </DialogContent>

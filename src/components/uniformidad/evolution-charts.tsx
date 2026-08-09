@@ -6,6 +6,7 @@
  */
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { PesajeFull } from '@/lib/lotes-api';
 import { calculateStats } from '@/lib/calculations';
 import { getTargetWeight } from '@/lib/diagnostic-engine';
@@ -50,7 +51,9 @@ function LineChartSVG({
   series,
   yLabel,
   ariaLabel,
+  puntoTooltip,
 }: {
+  puntoTooltip: (p: SeriesPoint, valor: number, serie: string) => string;
   points: SeriesPoint[];
   series: Array<{ key: 'media' | 'cv' | 'uniformidad' | 'objetivo'; color: string; label: string; dash?: string }>;
   yLabel: string;
@@ -101,7 +104,7 @@ function LineChartSVG({
             <path d={path} fill="none" stroke={s.color} strokeWidth={2} strokeDasharray={s.dash ?? 'none'} strokeLinejoin="round" />
             {pts.map((q) => (
               <circle key={q.i} cx={toX(q.i)} cy={toY(q.v)} r={3.2} fill={s.color}>
-                <title>{`${points[q.i].label}${points[q.i].edadSemanas ? ` (sem ${points[q.i].edadSemanas})` : ''}: ${q.v.toFixed(1)} — ${s.label}`}</title>
+                <title>{puntoTooltip(points[q.i], q.v, s.label)}</title>
               </circle>
             ))}
           </g>
@@ -134,7 +137,13 @@ export function EvolutionCharts({
   /** Datos del lote para el encabezado del reporte imprimible. */
   lote?: { codigo: string; granja: string | null; galpon: string | null };
 }) {
+  const t = useTranslations('evolution');
   const serie = useMemo(() => buildSeries(pesajes, lineaGenetica), [pesajes, lineaGenetica]);
+
+  const puntoTooltip = (p: SeriesPoint, valor: number, serieLabel: string) =>
+    p.edadSemanas
+      ? t('pointTooltipAge', { fecha: p.label, semanas: p.edadSemanas, valor: valor.toFixed(1), serie: serieLabel })
+      : t('pointTooltip', { fecha: p.label, valor: valor.toFixed(1), serie: serieLabel });
 
   const gains = useMemo(() => {
     const out: Array<{ desde: string; hasta: string; dias: number; deltaG: number; porDia: number | null }> = [];
@@ -154,9 +163,7 @@ export function EvolutionCharts({
 
   if (serie.length < 2) {
     return (
-      <p className="text-xs text-muted-foreground">
-        Se necesitan al menos 2 pesajes con fechas distintas para ver la evolución.
-      </p>
+      <p className="text-xs text-muted-foreground">{t('needTwo')}</p>
     );
   }
 
@@ -190,39 +197,41 @@ export function EvolutionCharts({
   return (
     <div className="space-y-4">
       <div>
-        <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Peso promedio por fecha</div>
+        <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{t('weightChart')}</div>
         <LineChartSVG
           points={serie}
+          puntoTooltip={puntoTooltip}
           series={[
-            { key: 'media', color: '#2E7D32', label: 'Media del lote (g)' },
-            ...(hasObjetivo ? [{ key: 'objetivo' as const, color: '#1d4ed8', label: 'Objetivo de la línea (g)', dash: '6,4' }] : []),
+            { key: 'media', color: '#2E7D32', label: t('seriesMean') },
+            ...(hasObjetivo ? [{ key: 'objetivo' as const, color: '#1d4ed8', label: t('seriesTarget'), dash: '6,4' }] : []),
           ]}
-          yLabel="Peso (g)"
-          ariaLabel="Evolución del peso promedio del lote comparado con el objetivo de la línea genética"
+          yLabel={t('yWeight')}
+          ariaLabel={t('weightAlt')}
         />
       </div>
       <div>
-        <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Uniformidad y CV por fecha</div>
+        <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{t('unifChart')}</div>
         <LineChartSVG
           points={serie}
+          puntoTooltip={puntoTooltip}
           series={[
-            { key: 'uniformidad', color: '#2E7D32', label: 'Uniformidad (%)' },
-            { key: 'cv', color: '#dc2626', label: 'CV (%)' },
+            { key: 'uniformidad', color: '#2E7D32', label: t('seriesUnif') },
+            { key: 'cv', color: '#dc2626', label: t('seriesCv') },
           ]}
           yLabel="%"
-          ariaLabel="Evolución de la uniformidad y el coeficiente de variación del lote"
+          ariaLabel={t('unifAlt')}
         />
       </div>
       {gains.length > 0 && (
         <div className="overflow-x-auto">
-          <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Ganancia entre pesajes</div>
+          <div className="text-[10px] uppercase font-bold text-muted-foreground mb-1">{t('gainsTitle')}</div>
           <table className="w-full text-[11px] border-collapse">
             <thead>
               <tr className="border-b font-bold text-muted-foreground">
-                <th className="py-1 text-left">Período</th>
-                <th className="py-1 text-right">Días</th>
-                <th className="py-1 text-right">Δ media (g)</th>
-                <th className="py-1 text-right">g/día</th>
+                <th className="py-1 text-left">{t('colPeriod')}</th>
+                <th className="py-1 text-right">{t('colDays')}</th>
+                <th className="py-1 text-right">{t('colDelta')}</th>
+                <th className="py-1 text-right">{t('colPerDay')}</th>
               </tr>
             </thead>
             <tbody>
@@ -236,15 +245,12 @@ export function EvolutionCharts({
               ))}
             </tbody>
           </table>
-          <p className="text-[10px] text-muted-foreground mt-1 leading-snug">
-            La ganancia se calcula entre medias de pesajes (muestras distintas), no entre aves individuales:
-            interpretarla como estimación, sujeta al error de muestreo de ambos pesajes.
-          </p>
+          <p className="text-[10px] text-muted-foreground mt-1 leading-snug">{t('gainsNote')}</p>
         </div>
       )}
 
       <Button onClick={imprimir} className="w-full h-10 text-sm bg-gray-800 hover:bg-gray-900 text-white">
-        <Printer className="h-4 w-4 mr-1.5" /> Imprimir evolución / PDF
+        <Printer className="h-4 w-4 mr-1.5" /> {t('print')}
       </Button>
     </div>
   );
