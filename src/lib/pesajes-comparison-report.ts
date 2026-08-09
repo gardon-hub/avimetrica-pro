@@ -7,7 +7,8 @@
  * clasificación con cortes relativos a la media— y por eso encaja en el
  * gráfico de categorías agrupadas sin código nuevo.
  *
- * Como el resto de reportes, SOLO formatea resultados ya calculados.
+ * Como el resto de reportes, SOLO formatea resultados ya calculados, y recibe
+ * el traductor como parámetro (ver report-i18n.ts).
  */
 
 import type { FlockStats } from '@/lib/calculations';
@@ -37,40 +38,38 @@ export interface PesajesComparisonInput {
   diseno: 'independientes' | 'pareadas' | 'repeticiones';
   /** true si los pesajes pertenecen a lotes distintos. */
   entreLotes: boolean;
-  /** Advertencia si las líneas genéticas difieren entre lotes. */
-  lineasDistintas?: string;
+  /**
+   * Nombres de las dos líneas genéticas cuando difieren. Llegan los datos, no
+   * la frase ya redactada: la advertencia se compone aquí para que exista en
+   * los tres idiomas.
+   */
+  lineasDistintas?: { a: string; b: string };
 }
 
 function esc(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Texto plano: quien lo inserta en el HTML lo escapa. */
 function fmtP(p: number): string {
-  return p < 0.0001 ? '&lt; 0.0001' : p.toFixed(4);
+  return p < 0.0001 ? '< 0.0001' : p.toFixed(4);
 }
 
-const DISENO_TEXTO: Record<PesajesComparisonInput['diseno'], string> = {
-  independientes: 'Muestras independientes: aves distintas en cada pesaje.',
-  pareadas: 'Muestras pareadas: las mismas aves pesadas dos veces, en el mismo orden.',
-  repeticiones:
-    'Repeticiones del mismo grupo: mismo lote en fechas distintas, sin identificar aves. La independencia entre muestras es cuestionable, por lo que el valor p es orientativo.',
+const DISENO_CLAVE: Record<PesajesComparisonInput['diseno'], string> = {
+  independientes: 'designIndependent',
+  pareadas: 'designPaired',
+  repeticiones: 'designRepeated',
 };
 
-/**
- * PENDIENTE DE TRADUCIR: el cuerpo de este reporte sigue en español. Recibe
- * ya el traductor porque el pie de autoría es compartido —el grado académico
- * debe ser correcto en los cuatro reportes— y para avisar al lector cuando el
- * idioma elegido no es español.
- */
 export function buildPesajesComparisonReportHtml(
   input: PesajesComparisonInput,
   { locale, t }: ReportI18n,
 ): string {
+  const tr = (k: string, v?: Record<string, string | number>) => t(`reports.pesajesComparison.${k}`, v);
   const { a, b, test } = input;
-  const avisoIdioma = locale === 'es'
-    ? ''
-    : `<p class="note"><b>${esc(t('reports.pesajesComparison.spanishOnly'))}</b></p>`;
   const f = (v: number, k = 1) => (Number.isFinite(v) ? v.toFixed(k) : v > 0 ? '+∞' : '−∞');
+  const disenoTexto = tr(DISENO_CLAVE[input.diseno]);
+  const sem = (n: number) => tr('weeks', { n });
 
   const gMedias = svgToDataUri(
     mediasComparadasSvg(a.stats.promedio, b.stats.promedio, a.ci, b.ci, a.etiqueta, b.etiqueta, 'g', 1),
@@ -81,18 +80,18 @@ export function buildPesajesComparisonReportHtml(
   const pct = a.stats.criterioPct;
   const categorias = [
     {
-      label: `Bajo −${pct}%`,
+      label: tr('catBelow', { pct }),
       pctA: (a.stats.countDebajo / a.stats.totalAves) * 100,
       pctB: (b.stats.countDebajo / b.stats.totalAves) * 100,
       nA: a.stats.countDebajo, nB: b.stats.countDebajo,
     },
     {
-      label: `Dentro de ±${pct}%`,
+      label: tr('catWithin', { pct }),
       pctA: a.stats.uniformidad, pctB: b.stats.uniformidad,
       nA: a.stats.countDentro, nB: b.stats.countDentro,
     },
     {
-      label: `Sobre +${pct}%`,
+      label: tr('catAbove', { pct }),
       pctA: (a.stats.countEncima / a.stats.totalAves) * 100,
       pctB: (b.stats.countEncima / b.stats.totalAves) * 100,
       nA: a.stats.countEncima, nB: b.stats.countEncima,
@@ -101,110 +100,121 @@ export function buildPesajesComparisonReportHtml(
   const gCategorias = svgToDataUri(categoriasComparadasSvg(categorias, a.etiqueta, b.etiqueta));
 
   const filas: Array<[string, string, string, string]> = [
-    ['Aves pesadas (n)', String(a.stats.totalAves), String(b.stats.totalAves), '—'],
-    ['Media', `${f(a.stats.promedio)} g`, `${f(b.stats.promedio)} g`, `${f(a.stats.promedio - b.stats.promedio)} g`],
-    ['Mediana', `${f(a.mediana)} g`, `${f(b.mediana)} g`, `${f(a.mediana - b.mediana)} g`],
-    ['Desv. estándar (n−1)', `${f(a.stats.desvEst)} g`, `${f(b.stats.desvEst)} g`, `${f(a.stats.desvEst - b.stats.desvEst)} g`],
-    ['Coef. de variación', `${f(a.stats.cv, 2)} %`, `${f(b.stats.cv, 2)} %`, `${f(a.stats.cv - b.stats.cv, 2)} %`],
-    [`Uniformidad (±${pct}%)`, `${f(a.stats.uniformidad)} %`, `${f(b.stats.uniformidad)} %`, `${f(a.stats.uniformidad - b.stats.uniformidad)} %`],
-    ['IC 95 % de la media', a.ci ? `${f(a.ci.lower)} – ${f(a.ci.upper)}` : '—', b.ci ? `${f(b.ci.lower)} – ${f(b.ci.upper)}` : '—', '—'],
+    [tr('metricN'), String(a.stats.totalAves), String(b.stats.totalAves), '—'],
+    [tr('metricMean'), `${f(a.stats.promedio)} g`, `${f(b.stats.promedio)} g`, `${f(a.stats.promedio - b.stats.promedio)} g`],
+    [tr('metricMedian'), `${f(a.mediana)} g`, `${f(b.mediana)} g`, `${f(a.mediana - b.mediana)} g`],
+    [tr('metricSd'), `${f(a.stats.desvEst)} g`, `${f(b.stats.desvEst)} g`, `${f(a.stats.desvEst - b.stats.desvEst)} g`],
+    [tr('metricCv'), `${f(a.stats.cv, 2)} %`, `${f(b.stats.cv, 2)} %`, `${f(a.stats.cv - b.stats.cv, 2)} %`],
+    [tr('metricUniformity', { pct }), `${f(a.stats.uniformidad)} %`, `${f(b.stats.uniformidad)} %`, `${f(a.stats.uniformidad - b.stats.uniformidad)} %`],
+    [tr('metricCi'), a.ci ? `${f(a.ci.lower)} – ${f(a.ci.upper)}` : '—', b.ci ? `${f(b.ci.lower)} – ${f(b.ci.upper)}` : '—', '—'],
   ];
 
   const muestraPequena = a.stats.totalAves < 30 || b.stats.totalAves < 30;
   const deltaCv = b.stats.cv - a.stats.cv;
   const deltaUnif = b.stats.uniformidad - a.stats.uniformidad;
 
+  // Cada frase de la lectura es un mensaje COMPLETO: concatenar un verbo a una
+  // frase se rompe al traducir, porque el orden de palabras cambia.
+  const fraseCv = Math.abs(deltaCv) < 0.05
+    ? tr('cvStable')
+    : tr(deltaCv < 0 ? 'cvDown' : 'cvUp', { delta: f(Math.abs(deltaCv), 2) });
+  const fraseUnif = Math.abs(deltaUnif) < 0.05
+    ? tr('uniformityStable')
+    : tr(deltaUnif > 0 ? 'uniformityUp' : 'uniformityDown', { delta: f(Math.abs(deltaUnif)) });
+
+  // Misma tolerancia que el reporte de evolución, y por la misma razón: un
+  // indicador que apenas se movió no CONTRADICE al otro, simplemente no aporta
+  // información. Sin esto, un CV que baja 0.01 puntos y una uniformidad
+  // idéntica producían «no apuntan en la misma dirección», que es engañoso.
+  const TOL_CV = 0.25;   // puntos porcentuales de CV
+  const TOL_UNIF = 1.0;  // puntos porcentuales de uniformidad
+  const signo = (d: number, tol: number) => (Math.abs(d) < tol ? 0 : Math.sign(d));
+  const sCv = signo(deltaCv, TOL_CV);       // −1 mejora (CV baja), +1 empeora
+  const sUnif = signo(deltaUnif, TOL_UNIF); // +1 mejora, −1 empeora
+  const lectura = tr(
+    sCv === 0 && sUnif === 0
+      ? 'readingStable'
+      : sCv <= 0 && sUnif >= 0
+        ? 'readingFavourable'
+        : sCv >= 0 && sUnif <= 0
+          ? 'readingUnfavourable'
+          : 'readingContradictory',
+  );
+
   const body = `
 <div class="header">
   <img src="${typeof window !== 'undefined' ? window.location.origin : ''}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
-  <h1>Comparación de pesajes</h1>
-  <div class="subtitle">Avimétrica Pro · Generado: ${esc(new Date().toLocaleString())} · v${esc(APP_VERSION)}</div>
+  <h1>${esc(tr('docTitle'))}</h1>
+  <div class="subtitle">${esc(t('reports.generated', { fecha: new Date().toLocaleString(locale), version: APP_VERSION }))}</div>
 </div>
 
 <div class="meta">
-  <div><b>Pesaje A:</b> ${esc(a.etiqueta)}</div>
-  <div><b>Pesaje B:</b> ${esc(b.etiqueta)}</div>
-  <div><b>Lote A:</b> ${esc(a.lote)}${a.edadSemanas ? ` · ${a.edadSemanas} sem` : ''}</div>
-  <div><b>Lote B:</b> ${esc(b.lote)}${b.edadSemanas ? ` · ${b.edadSemanas} sem` : ''}</div>
-  <div><b>Línea genética:</b> ${esc(input.lineaGenetica)}</div>
-  <div><b>Diseño declarado:</b> ${esc(DISENO_TEXTO[input.diseno])}</div>
+  <div><b>${esc(tr('metaWeighInA'))}</b> ${esc(a.etiqueta)}</div>
+  <div><b>${esc(tr('metaWeighInB'))}</b> ${esc(b.etiqueta)}</div>
+  <div><b>${esc(tr('metaLotA'))}</b> ${esc(a.lote)}${a.edadSemanas ? ` · ${esc(sem(a.edadSemanas))}` : ''}</div>
+  <div><b>${esc(tr('metaLotB'))}</b> ${esc(b.lote)}${b.edadSemanas ? ` · ${esc(sem(b.edadSemanas))}` : ''}</div>
+  <div><b>${esc(tr('metaLine'))}</b> ${esc(input.lineaGenetica)}</div>
+  <div><b>${esc(tr('metaDesign'))}</b> ${esc(disenoTexto)}</div>
 </div>
-${avisoIdioma}
 
-${input.lineasDistintas ? `<div class="alert"><b>Atención:</b> ${esc(input.lineasDistintas)} Una diferencia de peso puede deberse a la genética y no al manejo.</div>` : ''}
+${input.lineasDistintas ? `<div class="alert"><b>${esc(tr('warning'))}</b> ${esc(tr('linesDiffer', { a: input.lineasDistintas.a, b: input.lineasDistintas.b }))}</div>` : ''}
 
-<h2>Peso promedio comparado</h2>
-<div class="chart"><img src="${gMedias}" alt="Gráfico de barras del peso promedio de ambos pesajes con barras de error del intervalo de confianza del 95 %"/></div>
-<p class="note">
-  Las barras de error son el IC 95 % de cada media. Si se solapan ampliamente, la diferencia es
-  dudosa; el valor p de la prueba es el criterio formal. La escala no arranca en cero para no
-  aplanar diferencias pequeñas: leer los valores del eje, no solo la altura relativa.
-</p>
+<h2>${esc(tr('meansTitle'))}</h2>
+<div class="chart"><img src="${gMedias}" alt="${esc(tr('meansAlt'))}"/></div>
+<p class="note">${esc(tr('meansNote'))}</p>
 
-<h2>Resumen comparativo</h2>
+<h2>${esc(tr('summaryTitle'))}</h2>
 <table>
-  <tr><th>Métrica</th><th class="num">A</th><th class="num">B</th><th class="num">A − B</th></tr>
+  <tr><th>${esc(tr('colMetric'))}</th><th class="num">A</th><th class="num">B</th><th class="num">${esc(tr('colDiff'))}</th></tr>
   ${filas.map(([m, x, y, z]) => `<tr><td>${esc(m)}</td><td class="num">${x}</td><td class="num">${y}</td><td class="num"><b>${z}</b></td></tr>`).join('')}
 </table>
 
-<h2>Distribución respecto a la banda de uniformidad</h2>
-<div class="chart"><img src="${gCategorias}" alt="Gráfico de barras agrupadas comparando el porcentaje de aves por debajo, dentro y por encima de la banda de uniformidad en ambos pesajes"/></div>
+<h2>${esc(tr('bandTitle'))}</h2>
+<div class="chart"><img src="${gCategorias}" alt="${esc(tr('bandAlt'))}"/></div>
 <table>
-  <tr><th>Categoría</th><th class="num">A (aves)</th><th class="num">A (%)</th><th class="num">B (aves)</th><th class="num">B (%)</th><th class="num">Δ %</th></tr>
+  <tr><th>${esc(tr('colCategory'))}</th><th class="num">${esc(tr('colAn'))}</th><th class="num">${esc(tr('colApct'))}</th><th class="num">${esc(tr('colBn'))}</th><th class="num">${esc(tr('colBpct'))}</th><th class="num">${esc(tr('colDelta'))}</th></tr>
   ${categorias.map((c) => {
     const d = c.pctB - c.pctA;
     return `<tr><td>${esc(c.label)}</td><td class="num">${c.nA}</td><td class="num">${c.pctA.toFixed(1)}</td><td class="num">${c.nB}</td><td class="num">${c.pctB.toFixed(1)}</td><td class="num"><b>${d >= 0 ? '+' : ''}${d.toFixed(1)}</b></td></tr>`;
   }).join('')}
 </table>
-<p class="note">
-  La banda se recalcula sobre la media de CADA pesaje, así que es un criterio de homogeneidad
-  interna, no un rango de pesos fijo: dos pesajes con medias distintas tienen bandas distintas.
-  Δ % es descriptivo y no constituye una prueba de hipótesis sobre proporciones.
-</p>
+<p class="note">${esc(tr('bandNote'))}</p>
 
-<h2>Evolución de la homogeneidad</h2>
-<p>
-  Entre A y B, el coeficiente de variación ${deltaCv === 0 ? 'no cambió' : deltaCv < 0 ? `bajó ${f(Math.abs(deltaCv), 2)} puntos` : `subió ${f(deltaCv, 2)} puntos`}
-  y la uniformidad ${deltaUnif === 0 ? 'se mantuvo' : deltaUnif > 0 ? `mejoró ${f(deltaUnif)} puntos` : `empeoró ${f(Math.abs(deltaUnif))} puntos`}.
-  ${deltaCv < 0 && deltaUnif > 0
-    ? 'Ambos indicadores apuntan a un lote más parejo en B.'
-    : deltaCv > 0 && deltaUnif < 0
-      ? 'Ambos indicadores apuntan a un lote más dispar en B: conviene revisar comedero, bebedero, densidad y estado sanitario.'
-      : 'Los dos indicadores no apuntan en la misma dirección; conviene revisar el histograma de cada pesaje antes de concluir.'}
-</p>
+<h2>${esc(tr('homogeneityTitle'))}</h2>
+<p>${esc(fraseCv)} ${esc(fraseUnif)} ${esc(lectura)}</p>
 
 ${test ? `
-<h2>${input.pareada ? 'Prueba t pareada' : 'Prueba t de dos muestras (Welch)'}</h2>
+<h2>${esc(tr(input.pareada ? 'pairedTest' : 'welchTest'))}</h2>
 <table>
-  <tr><th class="num">t</th><th class="num">gl</th><th class="num">Valor p</th><th class="num">Diferencia</th><th class="num">IC 95 % de la diferencia</th><th class="num">d de Cohen</th></tr>
+  <tr><th class="num">${esc(tr('colT'))}</th><th class="num">${esc(tr('colDf'))}</th><th class="num">${esc(tr('colP'))}</th><th class="num">${esc(tr('colDifference'))}</th><th class="num">${esc(tr('colCi'))}</th><th class="num">${esc(tr('colCohenD'))}</th></tr>
   <tr>
     <td class="num">${f(test.t, 4)}</td>
     <td class="num">${test.df.toFixed(input.pareada ? 0 : 1)}</td>
-    <td class="num">${fmtP(test.pValue)}</td>
+    <td class="num">${esc(fmtP(test.pValue))}</td>
     <td class="num">${test.diff >= 0 ? '+' : ''}${f(test.diff)} g</td>
-    <td class="num">${f(test.ciLower)} a ${f(test.ciUpper)} g</td>
+    <td class="num">${f(test.ciLower)} – ${f(test.ciUpper)} g</td>
     <td class="num">${Number.isFinite(test.cohenD) ? test.cohenD.toFixed(2) : '—'}</td>
   </tr>
 </table>
 <p>${test.rejectNull
-  ? `Con α = 0.05, existe evidencia estadística de una diferencia de peso promedio entre los dos pesajes (p = ${fmtP(test.pValue)}).`
-  : `Con α = 0.05, no se encontró evidencia suficiente de diferencia entre los dos pesajes (p = ${fmtP(test.pValue)}). Esto <b>no</b> demuestra que sean iguales: puede deberse a una muestra pequeña.`}</p>
-` : '<h2>Prueba de hipótesis</h2><p class="note">No ejecutada: se requieren al menos 2 aves con variabilidad en ambos pesajes y, en el diseño pareado, igual número de aves.</p>'}
+  ? esc(tr('reject', { p: fmtP(test.pValue) }))
+  : `${esc(tr('notReject', { p: fmtP(test.pValue) }))} ${esc(tr('notRejectCaveat'))}`}</p>
+` : `<h2>${esc(tr('testTitle'))}</h2><p class="note">${esc(tr('notRun'))}</p>`}
 
-<h2>Limitaciones</h2>
+<h2>${esc(tr('limitationsTitle'))}</h2>
 <ul>
-  <li>${esc(DISENO_TEXTO[input.diseno])}</li>
-  ${input.entreLotes ? '<li>Los pesajes pertenecen a lotes distintos: las diferencias pueden deberse al lote, al manejo o a la edad, no solo al factor que se quiera evaluar.</li>' : ''}
+  <li>${esc(disenoTexto)}</li>
+  ${input.entreLotes ? `<li>${esc(tr('limCrossLot'))}</li>` : ''}
   ${a.edadSemanas !== null && b.edadSemanas !== null && a.edadSemanas !== b.edadSemanas
-    ? `<li>Las edades difieren (${a.edadSemanas} vs. ${b.edadSemanas} semanas): en aves en crecimiento buena parte de la diferencia de peso es el crecimiento normal esperado, no un efecto del manejo.</li>`
+    ? `<li>${esc(tr('limAges', { a: a.edadSemanas, b: b.edadSemanas }))}</li>`
     : ''}
-  ${muestraPequena ? '<li>Al menos un pesaje tiene n &lt; 30: verificar normalidad y valores atípicos antes de confiar en el resultado.</li>' : ''}
-  <li>La prueba asume observaciones independientes dentro de cada pesaje: revisar cómo se seleccionaron las aves.</li>
-  <li>Una diferencia estadísticamente significativa no implica, por sí sola, relevancia zootécnica: valorar la magnitud junto al objetivo de la línea y al contexto productivo.</li>
-  <li>Este reporte compara las muestras analizadas; no sustituye el criterio del profesional a cargo del lote.</li>
+  ${muestraPequena ? `<li>${esc(tr('limSmallSample'))}</li>` : ''}
+  <li>${esc(tr('limIndependence'))}</li>
+  <li>${esc(tr('limPractical'))}</li>
+  <li>${esc(tr('limProfessional'))}</li>
 </ul>
 
 ${reportFooterHtml(t)}`;
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"/><title>Comparación de pesajes</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
+  return `<!DOCTYPE html><html lang="${esc(locale)}"><head><meta charset="utf-8"/><title>${esc(tr('docTitle'))}</title><style>${REPORT_CSS}</style></head><body>${body}</body></html>`;
 }

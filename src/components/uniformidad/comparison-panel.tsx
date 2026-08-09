@@ -28,10 +28,10 @@ function fmtP(p: number): string {
 
 type Traductor = ReturnType<typeof useTranslations<'comparison'>>;
 
-function pesajeLabel(p: PesajeConLote, withLote: boolean, t: Traductor): string {
+function pesajeLabel(p: PesajeConLote, withLote: boolean, t: Traductor, locale: string): string {
   return t('weighInLabel', {
     lote: withLote && p.lote ? `${p.lote.codigo} · ` : '',
-    fecha: new Date(p.fecha).toLocaleDateString(),
+    fecha: new Date(p.fecha).toLocaleDateString(locale),
     semanas: p.edadSemanas ? t('weeks', { n: p.edadSemanas }) : '',
     n: p.pesos.length,
   });
@@ -114,8 +114,8 @@ export function ComparisonPanel({
   const imprimir = () => {
     if (!pesajeA || !pesajeB || !result || !design || design === 'ns') return;
     const resumen = (p: PesajeConLote, stats: typeof result.descr.statsA, mediana: number, ci: { lower: number; upper: number } | null) => ({
-      etiqueta: pesajeLabel(p, showLote, t),
-      fecha: new Date(p.fecha).toLocaleDateString(),
+      etiqueta: pesajeLabel(p, showLote, t, locale),
+      fecha: new Date(p.fecha).toLocaleDateString(locale),
       edadSemanas: p.edadSemanas,
       lote: p.lote?.codigo ?? loteActual?.codigo ?? '—',
       stats,
@@ -132,7 +132,7 @@ export function ComparisonPanel({
       entreLotes: crossLote,
       lineasDistintas:
         pesajeA.lote && pesajeB.lote && pesajeA.lote.lineaGenetica !== pesajeB.lote.lineaGenetica
-          ? `Las líneas genéticas difieren (${pesajeA.lote.lineaGenetica} vs. ${pesajeB.lote.lineaGenetica}).`
+          ? { a: pesajeA.lote.lineaGenetica, b: pesajeB.lote.lineaGenetica }
           : undefined,
     }, { locale, t: tRaiz });
     const w = window.open('', '_blank');
@@ -155,7 +155,7 @@ export function ComparisonPanel({
             <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('select')} /></SelectTrigger>
             <SelectContent>
               {pesajes.map((p) => (
-                <SelectItem key={p.id} value={p.id} disabled={p.id === idB}>{pesajeLabel(p, showLote, t)}</SelectItem>
+                <SelectItem key={p.id} value={p.id} disabled={p.id === idB}>{pesajeLabel(p, showLote, t, locale)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -166,7 +166,7 @@ export function ComparisonPanel({
             <SelectTrigger className="h-9 text-xs"><SelectValue placeholder={t('select')} /></SelectTrigger>
             <SelectContent>
               {pesajes.map((p) => (
-                <SelectItem key={p.id} value={p.id} disabled={p.id === idA}>{pesajeLabel(p, showLote, t)}</SelectItem>
+                <SelectItem key={p.id} value={p.id} disabled={p.id === idA}>{pesajeLabel(p, showLote, t, locale)}</SelectItem>
               ))}
             </SelectContent>
           </Select>

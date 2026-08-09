@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { pdf } from '@/lib/calculations';
 import {
@@ -27,6 +28,12 @@ interface ChartMeta {
   uniformidad: number;
   desvEst: number;
   criterioPct: number;
+  /**
+   * Rótulo ya traducido. El plugin se registra a nivel de módulo, fuera de
+   * React, así que no puede usar `useTranslations`: el texto viaja con los
+   * datos del gráfico, que es lo único que el plugin ve.
+   */
+  uniformidadLabel: string;
 }
 
 const referenceLinesPlugin: Plugin<ChartType> = {
@@ -106,7 +113,7 @@ const referenceLinesPlugin: Plugin<ChartType> = {
       ctx.fillStyle = '#333';
       ctx.font = "bold 12px 'Segoe UI', sans-serif";
       ctx.textAlign = 'right';
-      ctx.fillText(`Uniformidad: ${meta.uniformidad.toFixed(1)}%`, xAxis.right, yAxis.bottom + 18);
+      ctx.fillText(meta.uniformidadLabel, xAxis.right, yAxis.bottom + 18);
       ctx.restore();
     }
   },
@@ -121,6 +128,7 @@ if (!pluginRegistered) {
 
 export function DistributionChart() {
   const { pesos, stats } = useUniformidadStore();
+  const t = useTranslations('distributionChart');
   const chartRef = useRef<ChartJS<'line'> | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -164,6 +172,7 @@ export function DistributionChart() {
       chartRef.current.data.datasets[1].data = shadedData;
       (chartRef.current as unknown as Record<string, ChartMeta>)[META_KEY] = {
         media, limInf, limSup, uniformidad, desvEst: safeDesvEst, criterioPct,
+        uniformidadLabel: t('uniformityLabel', { pct: uniformidad.toFixed(1) }),
       };
       chartRef.current.update('none');
       return;
@@ -212,7 +221,7 @@ export function DistributionChart() {
           x: {
             title: {
               display: true,
-              text: 'Peso (g)',
+              text: t('axisWeight'),
               font: { size: 14, weight: 'bold' as const },
               color: '#333',
             },
@@ -233,9 +242,10 @@ export function DistributionChart() {
 
     (chart as unknown as Record<string, ChartMeta>)[META_KEY] = {
       media, limInf, limSup, uniformidad, desvEst: safeDesvEst, criterioPct,
+      uniformidadLabel: t('uniformityLabel', { pct: uniformidad.toFixed(1) }),
     };
     chartRef.current = chart;
-  }, [pesos, stats]);
+  }, [pesos, stats, t]);
 
   useEffect(() => {
     updateChart();
@@ -250,7 +260,7 @@ export function DistributionChart() {
   if (pesos.length < 2) {
     return (
       <div className="bg-card rounded-lg border shadow-sm py-5 px-5 text-center text-muted-foreground mb-4 text-sm">
-        Ingresa al menos 2 pesos para ver la gráfica
+        {t('needTwo')}
       </div>
     );
   }
