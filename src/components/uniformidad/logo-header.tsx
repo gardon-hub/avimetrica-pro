@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { ThemeToggle } from './theme-toggle';
 import { LanguageSwitcher } from '@/components/shell/language-switcher';
+import { BASE_PATH } from '@/lib/base-path';
 
 export function LogoHeader() {
   const t = useTranslations('app');
@@ -16,7 +17,9 @@ export function LogoHeader() {
       </div>
       <div className="bg-white rounded-xl px-4 py-2 shadow-sm">
         <Image
-          src="/logo-avimetrica.png"
+          // Con images.unoptimized, next/image NO antepone el basePath: se
+          // hace a mano (descubierto con el logo roto en GitHub Pages).
+          src={`${BASE_PATH}/logo-avimetrica.png`}
           alt={t('logoAlt')}
           width={280}
           height={192}
