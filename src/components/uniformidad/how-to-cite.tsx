@@ -7,9 +7,9 @@
  * para que la cita en APA y el BibTeX no puedan divergir entre sí ni respecto
  * de CITATION.cff.
  *
- * El DOI está pendiente: se obtiene al hacer público el repositorio y activarlo
- * en Zenodo. Mientras no exista, la sección lo DICE en vez de mostrar un
- * enlace roto o inventarse un identificador.
+ * El DOI es el de CONCEPTO de Zenodo (2026-08-18): apunta siempre a la última
+ * versión archivada, así que sobrevive a las releases futuras sin tocarlo.
+ * El de una versión concreta (p. ej. …22005612 para v0.7.1) NO va aquí.
  */
 
 import { useState } from 'react';
@@ -27,8 +27,8 @@ const CITATION = {
   editor: 'Universidad Nacional de Agricultura',
   orcid: '0000-0002-1982-4507',
   repo: 'https://github.com/gardon-hub/avimetrica-pro',
-  /** Se rellena cuando Zenodo emita el DOI de concepto. */
-  doi: null as string | null,
+  /** DOI de concepto emitido por Zenodo — resuelve a la última versión. */
+  doi: '10.5281/zenodo.22005611' as string | null,
 };
 
 function apa(tipoSoftware: string, version: string): string {

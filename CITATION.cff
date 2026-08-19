@@ -1,9 +1,9 @@
 # Formato estándar que GitHub y Zenodo leen para generar la cita.
 #
-# El DOI está PENDIENTE: se obtiene al hacer público el repositorio, activarlo
-# en Zenodo (Settings → GitHub) y publicar una release. Cuando Zenodo lo emita,
-# descomentar el campo `doi` y poner el DOI de CONCEPTO —el que apunta siempre
-# a la última versión—, no el de una release concreta.
+# El `doi` es el DOI de CONCEPTO de Zenodo (emitido el 2026-08-18 al archivar
+# la release v0.7.1): apunta siempre a la última versión archivada, así que no
+# hay que cambiarlo en releases futuras. El de una versión concreta (p. ej.
+# 10.5281/zenodo.22005612 para v0.7.1) no va aquí.
 cff-version: 1.2.0
 message: "Si utiliza este software, por favor cítelo como se indica a continuación."
 title: "Avimétrica Pro"
@@ -31,4 +31,4 @@ keywords:
   - poultry science
   - flock uniformity
   - estadística aplicada
-# doi: "10.5281/zenodo.XXXXXXX"
+doi: "10.5281/zenodo.22005611"
