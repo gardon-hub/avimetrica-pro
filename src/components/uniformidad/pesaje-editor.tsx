@@ -52,20 +52,19 @@ export function PesajeEditor({ pesaje, open, onOpenChange, onSaved }: Props) {
   const handleSave = async () => {
     setSaving(true);
     let ok = 0;
+    const { patchPeso } = await import('@/lib/local-api');
     for (const id of dirty) {
       const row = rows.find((r) => r.id === id);
       if (!row) continue;
-      const res = await fetch(`/api/pesos?id=${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        await patchPeso(id, {
           gramos: row.gramos,
           sector: row.sector ?? '',
           excluido: row.excluido,
           motivoExcl: row.motivoExcl ?? '',
-        }),
-      });
-      if (res.ok) ok++;
+        });
+        ok++;
+      } catch { /* se refleja en el conteo del toast */ }
     }
     setSaving(false);
     toast({ title: t('updated', { n: ok }) });

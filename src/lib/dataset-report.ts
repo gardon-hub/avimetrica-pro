@@ -21,6 +21,7 @@ import { APP_VERSION } from '@/lib/report-data';
 import type { VariableDefinition } from '@/lib/domains/types';
 import type { DatasetContext } from '@/lib/dataset-store';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
+import { logoUrl } from '@/lib/base-path';
 import { fmtP, fmtPFrase } from '@/lib/p-value';
 
 export interface DatasetReportInput {
@@ -80,7 +81,7 @@ export function buildDatasetReportHtml(
     ? oneSampleTTest(valores, input.muHipotetica, 'two-sided', 0.95)
     : null;
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  
   const hist = valores.length >= 5
     ? svgToDataUri(histogramSvg(valores, d.mean, d.sdSample, d.mean * 0.9, d.mean * 1.1, t))
     : '';
@@ -135,7 +136,7 @@ export function buildDatasetReportHtml(
 
   const body = `
 <div class="header">
-  <img src="${origin}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
+  <img src="${logoUrl()}" class="logo" alt="Avimétrica Pro"/>
   <h1>${esc(input.tituloModulo)}</h1>
   <div class="subtitle">${esc(t('reports.generated', { fecha: new Date().toLocaleString(locale), version: APP_VERSION }))}</div>
 </div>

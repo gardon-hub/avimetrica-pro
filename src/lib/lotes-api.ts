@@ -55,16 +55,18 @@ export const TIPO_AVE_KEYS = ['broiler', 'pollita', 'ponedora', 'reproductora'] 
 export const SEXO_KEYS = ['hembras', 'machos', 'mixto', 'na'] as const;
 export const MUESTREO_KEYS = ['aleatorio', 'sistematico', 'zonas', 'conveniencia', 'ns'] as const;
 
+// Desde 2026-08-18 los datos viven en IndexedDB (ver local-db.ts): estas
+// funciones delegan en la API local en vez de llamar a rutas de servidor.
+// La importación es dinámica para no evaluar Dexie durante el prerenderizado.
+
 export async function fetchLotes(): Promise<LoteResumen[]> {
-  const res = await fetch('/api/lotes');
-  if (!res.ok) throw new Error('Error al cargar lotes');
-  return res.json();
+  const { listLotes } = await import('@/lib/local-api');
+  return listLotes();
 }
 
 export async function fetchPesajes(loteId: string): Promise<PesajeFull[]> {
-  const res = await fetch(`/api/pesajes?loteId=${encodeURIComponent(loteId)}`);
-  if (!res.ok) throw new Error('Error al cargar pesajes');
-  return res.json();
+  const { listPesajesByLote } = await import('@/lib/local-api');
+  return listPesajesByLote(loteId);
 }
 
 export interface PesajeConLote extends PesajeFull {
@@ -78,7 +80,6 @@ export interface PesajeConLote extends PesajeFull {
 }
 
 export async function fetchAllPesajes(): Promise<PesajeConLote[]> {
-  const res = await fetch('/api/pesajes?all=1');
-  if (!res.ok) throw new Error('Error al cargar pesajes');
-  return res.json();
+  const { listAllPesajes } = await import('@/lib/local-api');
+  return listAllPesajes();
 }

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
+import { LocaleProvider } from "@/components/shell/locale-provider";
+import { BASE_PATH } from "@/lib/base-path";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ServiceWorkerRegistrar } from "@/components/uniformidad/sw-registrar";
@@ -22,11 +22,12 @@ export const metadata: Metadata = {
   description: "Analítica de peso, uniformidad y desempeño avícola. Por Gustavo Alonso Ardón, MSc. — Universidad Nacional de Agricultura, Honduras.",
   keywords: ["avimétrica", "uniformidad", "aves", "avicultura", "Ardón", "poultry", "Honduras"],
   authors: [{ name: "Gustavo Alonso Ardón, MSc." }],
+  // El basePath no se aplica solo a los metadatos: se antepone a mano.
   icons: {
-    icon: "/icon-192.png",
-    apple: "/icon-192.png",
+    icon: `${BASE_PATH}/icon-192.png`,
+    apple: `${BASE_PATH}/icon-192.png`,
   },
-  manifest: "/manifest.json",
+  manifest: `${BASE_PATH}/manifest.json`,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -42,28 +43,26 @@ export const viewport: Viewport = {
   // La app está llena de tablas de cifras y gráficos SVG que se leen ampliando.
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // El idioma sale de la cookie que lee src/i18n/request.ts; `lang` del <html>
-  // debe seguirlo para que lectores de pantalla y correctores acierten.
-  const locale = await getLocale();
-  const messages = await getMessages();
-
+  // El idioma lo resuelve LocaleProvider en el navegador (cookie
+  // avimetrica-locale); el lang inicial es el del HTML prerenderizado y el
+  // proveedor lo actualiza al montar.
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <LocaleProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             {children}
             <ServiceWorkerRegistrar />
             <Toaster />
           </ThemeProvider>
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

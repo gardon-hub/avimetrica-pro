@@ -72,8 +72,9 @@ export function DatasetComparison({
     let cancelado = false;
     (async () => {
       try {
-        const res = await fetch(`/api/datasets?dominio=${dominio}`);
-        if (!cancelado && res.ok) setLista(await res.json());
+        const { listDatasets } = await import('@/lib/local-api');
+        const datos = await listDatasets(dominio);
+        if (!cancelado) setLista(datos);
       } catch { /* opcional */ }
     })();
     return () => { cancelado = true; };
@@ -82,9 +83,8 @@ export function DatasetComparison({
   const cargar = useCallback(async (id: string): Promise<Cargado | null> => {
     if (!id) return null;
     try {
-      const res = await fetch(`/api/datasets?id=${id}`);
-      if (!res.ok) return null;
-      const d = await res.json();
+      const { getDataset } = await import('@/lib/local-api');
+      const d = await getDataset(id);
       return {
         id: d.id,
         nombre: d.nombre,

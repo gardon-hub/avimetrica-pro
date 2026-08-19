@@ -58,22 +58,22 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
   /** Recarga tras guardar o borrar (acciones del usuario, no del montaje). */
   const refrescar = useCallback(async () => {
     try {
-      const res = await fetch(`/api/datasets?dominio=${dominio}`);
-      if (res.ok) setLista(await res.json());
+      const { listDatasets } = await import('@/lib/local-api');
+      setLista(await listDatasets(dominio));
     } catch {
       /* la biblioteca es opcional: si falla, el análisis en pantalla sigue */
     }
   }, [dominio]);
 
-  // Carga inicial: el setState ocurre en el callback del await, no en el
-  // cuerpo del efecto, y se descarta si el componente se desmonta antes de
-  // que llegue la respuesta.
+  // Carga inicial: el setState ocurre tras el await, no en el cuerpo del
+  // efecto, y se descarta si el componente se desmonta antes de terminar.
   useEffect(() => {
     let cancelado = false;
     (async () => {
       try {
-        const res = await fetch(`/api/datasets?dominio=${dominio}`);
-        if (!cancelado && res.ok) setLista(await res.json());
+        const { listDatasets } = await import('@/lib/local-api');
+        const datos = await listDatasets(dominio);
+        if (!cancelado) setLista(datos);
       } catch {
         /* biblioteca opcional */
       }
@@ -86,10 +86,9 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
       toast({ title: t('missingNameTitle'), description: t('missingNameBody'), variant: 'destructive' });
       return;
     }
-    const res = await fetch('/api/datasets', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const { createDataset } = await import('@/lib/local-api');
+      await createDataset({
         nombre,
         descripcion,
         dominio,
@@ -101,19 +100,17 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
         scheme: s.scheme,
         origen: s.contexto.origen,
         responsable: s.contexto.responsable,
-        fecha: s.contexto.fecha || null,
+        fecha: s.contexto.fecha || undefined,
         observaciones: s.contexto.observaciones,
         muHipotetica: s.muHipotetica,
-      }),
-    });
-    if (res.ok) {
+      });
       toast({ title: t('savedTitle'), description: t('savedBody', { nombre, n: s.valores.length }) });
       setGuardarAbierto(false);
       setNombre('');
       setDescripcion('');
       refrescar();
       onCambio?.();
-    } else {
+    } catch {
       toast({ title: t('errorTitle'), description: t('saveError'), variant: 'destructive' });
     }
   };
@@ -121,9 +118,8 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
   const cargar = async (item: DatasetListItem) => {
     setCargando(true);
     try {
-      const res = await fetch(`/api/datasets?id=${item.id}`);
-      if (!res.ok) throw new Error();
-      const d = await res.json();
+      const { getDataset } = await import('@/lib/local-api');
+      const d = await getDataset(item.id);
       const valores: number[] = JSON.parse(d.valores);
       const scheme: ClassificationScheme | undefined = d.scheme ? JSON.parse(d.scheme) : undefined;
       s.cargar({
@@ -150,12 +146,13 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
 
   const confirmarBorrado = async () => {
     if (!borrar) return;
-    const res = await fetch(`/api/datasets?id=${borrar.id}`, { method: 'DELETE' });
-    if (res.ok) {
+    try {
+      const { deleteDataset } = await import('@/lib/local-api');
+      await deleteDataset(borrar.id);
       toast({ title: t('deletedTitle') });
       refrescar();
       onCambio?.();
-    }
+    } catch { /* la lista no cambia si falla */ }
     setBorrar(null);
   };
 

@@ -1,8 +1,14 @@
-const CACHE_NAME = 'avimetrica-pro-v6';
+const CACHE_NAME = 'avimetrica-pro-v7';
+
+// Base del despliegue, derivada de la URL del propio SW: '' cuando vive en
+// la raíz (desarrollo local) y '/avimetrica-pro' en GitHub Pages. Así el
+// mismo archivo sirve en ambos sin editarlo.
+const BASE = self.location.pathname.replace(/\/sw\.js$/, '');
+
 const OFFLINE_URLS = [
-  '/',
-  '/logo-avimetrica.png',
-  '/icon-192.png',
+  `${BASE}/`,
+  `${BASE}/logo-avimetrica.png`,
+  `${BASE}/icon-192.png`,
 ];
 
 // Extensions that should always be fetched from network first (code updates)
@@ -82,7 +88,7 @@ self.addEventListener('fetch', (event) => {
           // Sin red: la propia página si se visitó antes (ignorando la query,
           // que no cambia el HTML servido), y si no, el índice precargado.
           return caches.match(event.request, { ignoreSearch: true })
-            .then((cached) => cached || caches.match('/'));
+            .then((cached) => cached || caches.match(`${BASE}/`));
         })
     );
     return;

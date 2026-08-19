@@ -67,4 +67,4 @@ server.log
 /download/
 /examples/
 /mini-services/
-/.zscripts/
+/.zscripts//db/*.json

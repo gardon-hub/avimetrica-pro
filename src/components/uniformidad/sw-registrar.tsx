@@ -1,14 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
+import { BASE_PATH } from '@/lib/base-path';
 
 const REQUIRED_SW_VERSION = 3;
+// En GitHub Pages el SW vive bajo el basePath; en local, en la raíz.
+const SW_URL = `${BASE_PATH}/sw.js`;
 
 export function ServiceWorkerRegistrar() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       // First, check if there's an old service worker and force update
-      navigator.serviceWorker.getRegistration('/sw.js').then(async (existingReg) => {
+      navigator.serviceWorker.getRegistration(SW_URL).then(async (existingReg) => {
         if (existingReg) {
           // Force the service worker to update
           await existingReg.update();
@@ -19,7 +22,7 @@ export function ServiceWorkerRegistrar() {
         }
 
         // Register the service worker
-        const registration = await navigator.serviceWorker.register('/sw.js', {
+        const registration = await navigator.serviceWorker.register(SW_URL, {
           updateViaCache: 'none',
         });
 

@@ -33,11 +33,8 @@ export function SessionManager() {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch('/api/sessions');
-      if (res.ok) {
-        const data = await res.json();
-        setSessions(data);
-      }
+      const { listFlockSessions } = await import('@/lib/local-api');
+      setSessions(await listFlockSessions());
     } catch (err) {
       console.error('Error fetching sessions:', err);
     }
@@ -54,15 +51,10 @@ export function SessionManager() {
       return;
     }
     try {
-      const res = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lineaGenetica, edadSemanas, pesos }),
-      });
-      if (res.ok) {
-        toast({ title: t('savedTitle'), description: t('savedBody') });
-        fetchSessions();
-      }
+      const { createFlockSession } = await import('@/lib/local-api');
+      await createFlockSession({ lineaGenetica, edadSemanas, pesos });
+      toast({ title: t('savedTitle'), description: t('savedBody') });
+      fetchSessions();
     } catch (err) {
       console.error('Error saving session:', err);
       toast({ title: t('saveErrorTitle'), description: t('saveErrorBody'), variant: 'destructive' });
@@ -80,11 +72,10 @@ export function SessionManager() {
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/sessions?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        toast({ title: t('deletedTitle') });
-        fetchSessions();
-      }
+      const { deleteFlockSession } = await import('@/lib/local-api');
+      await deleteFlockSession(id);
+      toast({ title: t('deletedTitle') });
+      fetchSessions();
     } catch (err) {
       console.error('Error deleting session:', err);
     }

@@ -13,6 +13,7 @@ import { APP_VERSION } from '@/lib/report-data';
 import { svgToDataUri } from '@/lib/report-charts';
 import { lineasEvolucionSvg, gananciaDiariaBarSvg } from '@/lib/dataset-report-charts';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
+import { logoUrl } from '@/lib/base-path';
 
 export interface PuntoEvolucion {
   label: string;
@@ -168,7 +169,7 @@ export function buildEvolucionReportHtml(
 
   const body = `
 <div class="header">
-  <img src="${typeof window !== 'undefined' ? window.location.origin : ''}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
+  <img src="${logoUrl()}" class="logo" alt="Avimétrica Pro"/>
   <h1>${esc(tr('docTitle'))}</h1>
   <div class="subtitle">${esc(t('reports.generated', { fecha: new Date().toLocaleString(locale), version: APP_VERSION }))}</div>
 </div>

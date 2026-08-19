@@ -8,6 +8,7 @@
 
 import { ReportData, ReportVariant, VARIANT_KEYS } from '@/lib/report-data';
 import { reportFooterHtml, type ReportI18n, type ReportTranslator } from '@/lib/report-i18n';
+import { logoUrl } from '@/lib/base-path';
 import { uniformityCurveSvg, histogramSvg, svgToDataUri } from '@/lib/report-charts';
 import {
   categoriasBarSvg, mediaVsObjetivoSvg, boxplotSvg, qqPlotSvg, bandaVsIcSvg,
@@ -66,10 +67,10 @@ function scoped(t: ReportTranslator): ReportTranslator {
 
 function headerHtml(d: ReportData, variant: ReportVariant, { locale, t }: ReportI18n): string {
   const tr = scoped(t);
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  
   return `
 <div class="header">
-  <img src="${origin}/logo-avimetrica.png" class="logo" alt="Avimétrica Pro"/>
+  <img src="${logoUrl()}" class="logo" alt="Avimétrica Pro"/>
   <h1>${esc(tr('title', { variante: tr(VARIANT_KEYS[variant]) }))}</h1>
   <div class="subtitle">${esc(tr('subtitle', { fecha: new Date(d.generadoEnMs).toLocaleString(locale), version: d.appVersion }))}</div>
 </div>`;

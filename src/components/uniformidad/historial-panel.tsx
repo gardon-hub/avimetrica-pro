@@ -112,22 +112,18 @@ export function HistorialPanel() {
       toast({ title: t('missingCodeTitle'), description: t('missingCodeBody'), variant: 'destructive' });
       return;
     }
-    const res = await fetch('/api/lotes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const { createLote } = await import('@/lib/local-api');
+      const nuevo = await createLote({
         codigo: fCodigo, granja: fGranja, galpon: fGalpon, tipoAve: fTipoAve,
         lineaGenetica: fLinea, sexo: fSexo, tamanoEstimado: fTamano, observaciones: fObs,
-      }),
-    });
-    if (res.ok) {
-      const nuevo = await res.json();
+      });
       toast({ title: t('createdTitle'), description: t('createdBody', { codigo: nuevo.codigo }) });
       setCreateOpen(false);
       setFCodigo(''); setFGranja(''); setFGalpon(''); setFTamano(''); setFObs('');
       await refreshLotes();
       setSelectedLoteId(nuevo.id);
-    } else {
+    } catch {
       toast({ title: t('errorTitle'), description: t('errorCreate'), variant: 'destructive' });
     }
   };
@@ -158,10 +154,9 @@ export function HistorialPanel() {
 
   const handleSavePesaje = async () => {
     if (!selectedLoteId || pesos.length === 0) return;
-    const res = await fetch('/api/pesajes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const { createPesaje } = await import('@/lib/local-api');
+      await createPesaje({
         loteId: selectedLoteId,
         fecha: pFecha,
         edadSemanas: pEdad,
@@ -171,15 +166,13 @@ export function HistorialPanel() {
         criterioPct: uniformityPct,
         unidadOriginal: 'g',
         pesos,
-      }),
-    });
-    if (res.ok) {
+      });
       toast({ title: t('savedTitle'), description: t('savedBody', { n: pesos.length, codigo: selectedLote?.codigo ?? '' }) });
       setSaveOpen(false);
       setPObs('');
       refreshPesajes(selectedLoteId);
       refreshLotes();
-    } else {
+    } catch {
       toast({ title: t('errorTitle'), description: t('errorSave'), variant: 'destructive' });
     }
   };
@@ -197,9 +190,10 @@ export function HistorialPanel() {
 
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    const url = deleteTarget.kind === 'lote' ? `/api/lotes?id=${deleteTarget.id}` : `/api/pesajes?id=${deleteTarget.id}`;
-    const res = await fetch(url, { method: 'DELETE' });
-    if (res.ok) {
+    try {
+      const { deleteLote, deletePesaje } = await import('@/lib/local-api');
+      if (deleteTarget.kind === 'lote') await deleteLote(deleteTarget.id);
+      else await deletePesaje(deleteTarget.id);
       toast({ title: t(deleteTarget.kind === 'lote' ? 'deletedFlock' : 'deletedWeighIn') });
       if (deleteTarget.kind === 'lote') {
         setSelectedLoteId('');
@@ -208,7 +202,7 @@ export function HistorialPanel() {
         refreshPesajes(selectedLoteId);
         refreshLotes();
       }
-    }
+    } catch { /* el estado en pantalla no cambia si falla */ }
     setDeleteTarget(null);
   };
 
