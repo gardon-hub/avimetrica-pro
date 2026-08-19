@@ -2,9 +2,19 @@
 
 **Analítica de peso, uniformidad y desempeño avícola.**
 
+**Úsala ahora, gratis y sin instalar nada:**
+👉 **https://gardon-hub.github.io/avimetrica-pro/**
+
+Se abre en cualquier navegador (computadora o teléfono) y puede **instalarse
+como aplicación** desde el menú del navegador («Instalar» / «Agregar a pantalla
+de inicio»). Funciona sin conexión después de la primera visita. **Todos los
+datos se guardan en tu propio dispositivo**: nada se envía a ningún servidor.
+Interfaz en español, inglés y portugués.
+
 Aplicación web para registrar pesos individuales de aves, evaluar la uniformidad
 del lote, compararlo con los objetivos de su línea genética y analizar la
-distribución con herramientas estadísticas verificables.
+distribución con herramientas estadísticas verificables. Incluye módulos de
+clasificación de huevos (norma USDA) y de estadística general para docencia.
 
 Desarrollada para docencia, investigación y prácticas profesionales supervisadas
 en la Universidad Nacional de Agricultura, Honduras.
@@ -52,8 +62,6 @@ en la Universidad Nacional de Agricultura, Honduras.
 **Interpretación**
 - Modo académico local y determinista: explica qué se calculó, con qué fórmula,
   cómo se interpreta y qué errores comunes evitar
-- Asistente de IA opcional que redacta la interpretación **a partir de
-  resultados ya calculados** — nunca calcula ni inventa valores
 
 ---
 
@@ -76,8 +84,9 @@ servicios externos. Decisiones documentadas en el código:
   investigar, no causas únicas, y separan hallazgos estadísticos de
   interpretación, causas posibles, recomendaciones y limitaciones.
 
-53 pruebas automatizadas contrastan los resultados con valores de referencia de
-R y SciPy (`npm test`).
+81 pruebas automatizadas contrastan los resultados con valores de referencia de
+R y SciPy, y verifican que reportes, gráficos y libros de Excel salgan
+íntegros en los tres idiomas (`npm test`).
 
 ---
 
@@ -98,18 +107,20 @@ datos oficiales.
 
 ---
 
-## Instalación
+## Uso y desarrollo local
 
-Requiere Node.js 20 o superior.
+Para **usarla** no hace falta instalar nada: entra a
+https://gardon-hub.github.io/avimetrica-pro/.
+
+Para **desarrollarla** se requiere Node.js 20 o superior:
 
 ```bash
 npm install
-cp .env.example .env
-npx prisma db push
 npm run dev
 ```
 
-La aplicación queda en `http://localhost:3000`.
+La aplicación queda en `http://localhost:3000`. No hay base de datos que
+configurar: la persistencia vive en el navegador (IndexedDB).
 
 ### Comandos
 
@@ -124,23 +135,22 @@ npm test         # batería estadística (Vitest)
 
 ## Tecnología
 
-Next.js 16 · React 19 · TypeScript · Tailwind CSS · shadcn/ui · Zustand ·
-Prisma + SQLite · Vitest · SheetJS
+Next.js 16 (exportación estática) · React 19 · TypeScript · Tailwind CSS ·
+shadcn/ui · Zustand · Dexie (IndexedDB) · next-intl · Vitest · SheetJS
 
-Los datos se guardan localmente en SQLite y no se envían a ningún servidor
-externo.
-
-El asistente de IA es la única excepción y está desactivado mientras no se
-configure `ANTHROPIC_API_KEY`. Cuando se usa, envía a la API de Anthropic el
-resumen de resultados ya calculados: estadísticos agregados, resultados de las
-pruebas y —por ser parte del análisis— algunos pesos individuales (mínimo,
-máximo, mediana y los atípicos marcados con su número de ave). No envía la lista
-completa de pesos ni los datos de granja, galpón o responsable.
+Los datos se guardan en el navegador de cada usuario (IndexedDB) y **no se
+envían a ningún servidor**. Los cálculos estadísticos también son locales.
+Para conservar o trasladar los datos, usa la exportación a Excel de cada
+módulo.
 
 ---
 
 ## Autor
 
-**Gustavo Alonso Ardón**
-Profesor Investigador en Ciencias Avícolas
-Universidad Nacional de Agricultura, Honduras
+**Gustavo Alonso Ardón, MSc.** — candidato a Doctor
+Profesor Investigador · Centro Integral de Aprendizaje Avícola (CIAA)
+Facultad de Medicina Veterinaria y Zootecnia (FMVZ)
+Universidad Nacional de Agricultura, Catacamas, Olancho, Honduras
+
+ORCID: [0000-0002-1982-4507](https://orcid.org/0000-0002-1982-4507) ·
+DOI: [10.5281/zenodo.22005611](https://doi.org/10.5281/zenodo.22005611)
