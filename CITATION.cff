@@ -21,8 +21,8 @@ authors:
       Centro Integral de Aprendizaje Avícola (CIAA), Facultad de Medicina
       Veterinaria y Zootecnia, Universidad Nacional de Agricultura, Catacamas,
       Olancho, Honduras
-version: "0.7.0"
-date-released: "2026-08-09"
+version: "0.7.1"
+date-released: "2026-08-18"
 license: MIT
 repository-code: "https://github.com/gardon-hub/avimetrica-pro"
 keywords:
