@@ -7,7 +7,6 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useUniformidadStore } from '@/lib/store';
 import { describe } from '@/lib/statistics/descriptive';
 import { dagostinoPearson, qqPoints } from '@/lib/statistics/normality';
 import { shapiroWilk } from '@/lib/statistics/shapiro-wilk';
@@ -20,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { AlertTriangle, Info } from 'lucide-react';
 import { fmtPFrase } from '@/lib/p-value';
 
-function BoxplotSVG({ pesos }: { pesos: number[] }) {
+function BoxplotSVG({ pesos, etiqueta }: { pesos: number[]; etiqueta: string }) {
   const t = useTranslations('diagnostics');
   const d = describe(pesos)!;
   const out = detectOutliers(pesos);
@@ -68,13 +67,14 @@ function BoxplotSVG({ pesos }: { pesos: number[] }) {
       {[minX, d.q1, d.median, d.q3, maxX].map((v, i) => (
         <text key={i} x={toX(v)} y={height - 14} textAnchor="middle" fontSize={9.5} fill="#666">{v.toFixed(0)}</text>
       ))}
-      <text x={width / 2} y={height - 2} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444">{t('boxplotCaption')}</text>
+      <text x={width / 2} y={height - 2} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444">{t('boxplotCaption', { etiqueta })}</text>
     </svg>
   );
 }
 
-function QQPlotSVG({ pesos }: { pesos: number[] }) {
+function QQPlotSVG({ pesos, unidad }: { pesos: number[]; unidad: string }) {
   const t = useTranslations('diagnostics');
+  const u = unidad ? `(${unidad})` : '';
   const d = describe(pesos)!;
   const sd = Number.isFinite(d.sdSample) && d.sdSample > 0 ? d.sdSample : 1;
   const pts = qqPoints(pesos, d.mean, sd);
@@ -100,36 +100,60 @@ function QQPlotSVG({ pesos }: { pesos: number[] }) {
           <title>{t('qqPoint', { esperado: p.theoretical.toFixed(1), observado: p.observed.toFixed(1) })}</title>
         </circle>
       ))}
-      <text x={width / 2} y={height - 6} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444">{t('qqXAxis')}</text>
-      <text x={12} y={height / 2} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444" transform={`rotate(-90 12 ${height / 2})`}>{t('qqYAxis')}</text>
+      <text x={width / 2} y={height - 6} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444">{t('qqXAxis', { unidad: u })}</text>
+      <text x={12} y={height / 2} textAnchor="middle" fontSize={11} fontWeight="bold" fill="#444" transform={`rotate(-90 12 ${height / 2})`}>{t('qqYAxis', { unidad: u })}</text>
     </svg>
   );
 }
 
-export function DistributionDiagnostics() {
-  const { pesos, stats, lineaGenetica, edadSemanas } = useUniformidadStore();
+/**
+ * Genérico para cualquier variable. Lo avícola es opcional: la columna
+ * «vs. objetivo» aparece solo si se pasa `objetivo`, y la fila de
+ * uniformidad de la tabla con/sin atípicos solo si se pasa `bandaPct`.
+ */
+export function DistributionDiagnostics({
+  valores,
+  unidad,
+  idColLabel,
+  valorColLabel,
+  objetivo,
+  bandaPct,
+}: {
+  valores: number[];
+  unidad: string;
+  /** Rótulo de la columna identificadora («# Ave» / «# Obs»). */
+  idColLabel: string;
+  /** Rótulo de la columna de valor («Peso (g)» / «Estatura (cm)»). */
+  valorColLabel: string;
+  /** Solo aves: línea y edad para la columna «vs. objetivo». */
+  objetivo?: { linea: string; semanas: string };
+  /** Solo aves: criterio ±% para la fila de uniformidad. */
+  bandaPct?: number;
+}) {
   const t = useTranslations('diagnostics');
   const tMetodos = useTranslations('outlierMethods');
   const [excluded, setExcluded] = useState<Set<number>>(new Set());
 
-  const normality = useMemo(() => dagostinoPearson(pesos), [pesos]);
-  const sw = useMemo(() => shapiroWilk(pesos), [pesos]);
-  const outliers = useMemo(() => detectOutliers(pesos), [pesos]);
-  const d = useMemo(() => describe(pesos), [pesos]);
+  const normality = useMemo(() => dagostinoPearson(valores), [valores]);
+  const sw = useMemo(() => shapiroWilk(valores), [valores]);
+  const outliers = useMemo(() => detectOutliers(valores), [valores]);
+  const d = useMemo(() => describe(valores), [valores]);
 
   const target = useMemo(() => {
-    const sem = parseInt(edadSemanas, 10);
-    return Number.isFinite(sem) ? getTargetWeight(lineaGenetica, sem) : null;
-  }, [lineaGenetica, edadSemanas]);
+    if (!objetivo) return null;
+    const sem = parseInt(objetivo.semanas, 10);
+    return Number.isFinite(sem) ? getTargetWeight(objetivo.linea, sem) : null;
+  }, [objetivo]);
 
+  const statsCon = useMemo(() => calculateStats(valores, bandaPct), [valores, bandaPct]);
   const statsWithout = useMemo(() => {
     if (excluded.size === 0) return null;
-    const filtered = pesos.filter((_, i) => !excluded.has(i));
+    const filtered = valores.filter((_, i) => !excluded.has(i));
     if (filtered.length < 2) return null;
-    return calculateStats(filtered, stats.criterioPct);
-  }, [pesos, excluded, stats.criterioPct]);
+    return calculateStats(filtered, bandaPct);
+  }, [valores, excluded, bandaPct]);
 
-  if (pesos.length < 4 || !d) {
+  if (valores.length < 4 || !d) {
     return <p className="text-sm text-muted-foreground text-center py-4">{t('needFour')}</p>;
   }
 
@@ -148,12 +172,12 @@ export function DistributionDiagnostics() {
     <div className="space-y-5">
       <div>
         <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">{t('boxplot')}</div>
-        <BoxplotSVG pesos={pesos} />
+        <BoxplotSVG pesos={valores} etiqueta={valorColLabel} />
       </div>
 
       <div>
         <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">{t('qq')}</div>
-        <QQPlotSVG pesos={pesos} />
+        <QQPlotSVG pesos={valores} unidad={unidad} />
       </div>
 
       <div className="bg-muted/50 rounded-md p-3 text-xs space-y-1.5">
@@ -210,8 +234,8 @@ export function DistributionDiagnostics() {
                 <thead>
                   <tr className="border-b font-bold text-muted-foreground">
                     <th className="py-1 text-left">{t('colExclude')}</th>
-                    <th className="py-1 text-left">{t('colBird')}</th>
-                    <th className="py-1 text-right">{t('colWeight')}</th>
+                    <th className="py-1 text-left">{idColLabel}</th>
+                    <th className="py-1 text-right">{valorColLabel}</th>
                     <th className="py-1 text-right">{t('colVsMean')}</th>
                     {target && <th className="py-1 text-right">{t('colVsTarget')}</th>}
                     <th className="py-1 text-left pl-3">{t('colMethods')}</th>
@@ -234,10 +258,10 @@ export function DistributionDiagnostics() {
                       </td>
                       <td className="py-1.5">{f.index + 1}</td>
                       <td className="py-1.5 text-right font-semibold tabular-nums">{f.value.toFixed(1)}</td>
-                      <td className="py-1.5 text-right tabular-nums">{f.deviationFromMean >= 0 ? '+' : ''}{f.deviationFromMean.toFixed(1)} g</td>
+                      <td className="py-1.5 text-right tabular-nums">{f.deviationFromMean >= 0 ? '+' : ''}{f.deviationFromMean.toFixed(1)}{unidad ? ` ${unidad}` : ''}</td>
                       {target && (
                         <td className="py-1.5 text-right tabular-nums">
-                          {f.value - target.pesoOptimo >= 0 ? '+' : ''}{(f.value - target.pesoOptimo).toFixed(1)} g
+                          {f.value - target.pesoOptimo >= 0 ? '+' : ''}{(f.value - target.pesoOptimo).toFixed(1)}{unidad ? ` ${unidad}` : ''}
                         </td>
                       )}
                       <td className="py-1.5 pl-3">{f.methods.map((m) => tMetodos(m)).join(' · ')}</td>
@@ -258,16 +282,18 @@ export function DistributionDiagnostics() {
                   <thead>
                     <tr className="border-b font-bold text-muted-foreground">
                       <th className="py-1 text-left">{t('colMetric')}</th>
-                      <th className="py-1 text-right">{t('colWithAll', { n: stats.totalAves })}</th>
+                      <th className="py-1 text-right">{t('colWithAll', { n: statsCon.totalAves })}</th>
                       <th className="py-1 text-right">{t('colWithout', { n: statsWithout.totalAves })}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {([
-                      [t('metricMean'), stats.promedio.toFixed(1), statsWithout.promedio.toFixed(1)],
-                      [t('metricSd'), stats.desvEst.toFixed(2), statsWithout.desvEst.toFixed(2)],
-                      [t('metricCv'), stats.cv.toFixed(2), statsWithout.cv.toFixed(2)],
-                      [t('metricUniformity', { pct: stats.criterioPct }), stats.uniformidad.toFixed(1), statsWithout.uniformidad.toFixed(1)],
+                      [t('metricMean'), statsCon.promedio.toFixed(1), statsWithout.promedio.toFixed(1)],
+                      [t('metricSd'), statsCon.desvEst.toFixed(2), statsWithout.desvEst.toFixed(2)],
+                      [t('metricCv'), statsCon.cv.toFixed(2), statsWithout.cv.toFixed(2)],
+                      ...(bandaPct !== undefined
+                        ? [[t('metricUniformity', { pct: bandaPct }), statsCon.uniformidad.toFixed(1), statsWithout.uniformidad.toFixed(1)] as [string, string, string]]
+                        : []),
                     ] as Array<[string, string, string]>).map(([label, a, b]) => (
                       <tr key={label} className="border-b border-border/50">
                         <td className="py-1">{label}</td>

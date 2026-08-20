@@ -10,7 +10,7 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useUniformidadStore } from '@/lib/store';
+import { describe } from '@/lib/statistics/descriptive';
 import {
   TailMode,
   normalTailFromP,
@@ -40,10 +40,26 @@ function fmtNum(v: number, dec = 4): string {
   return v.toFixed(dec);
 }
 
-export function ProbabilityCalculator() {
-  const { pesos, stats } = useUniformidadStore();
+/**
+ * Genérico para cualquier variable: recibe los valores y su unidad. En
+ * `contexto: 'aves'` la explicación añade la lectura zootécnica («~X% de las
+ * aves pesaría…»); en `'datos'` se omite y la opción se llama «Normal de los
+ * datos».
+ */
+export function ProbabilityCalculator({
+  valores,
+  unidad,
+  contexto,
+}: {
+  valores: number[];
+  unidad: string;
+  contexto: 'aves' | 'datos';
+}) {
   const t = useTranslations('probability');
-  const hasLote = pesos.length >= 2 && stats.desvEst > 0;
+  const d = useMemo(() => describe(valores), [valores]);
+  const dataMu = d?.mean ?? 0;
+  const dataSd = d && Number.isFinite(d.sdSample) ? d.sdSample : 0;
+  const hasLote = valores.length >= 2 && dataSd > 0;
 
   const [dist, setDist] = useState<DistChoice>(hasLote ? 'lote' : 'normal-estandar');
   const [tail, setTail] = useState<TailMode>('right');
@@ -55,18 +71,21 @@ export function ProbabilityCalculator() {
   const [sigmaInput, setSigmaInput] = useState('85');
   const [dfInput, setDfInput] = useState('10');
 
-  const { mu, sigma, df, isT, unit } = useMemo(() => {
+  // «Escala de datos»: la X del cálculo está en la unidad de la variable
+  // (lote/manual); si no, es la escala Z o t adimensional.
+  const { mu, sigma, df, isT, escalaDatos } = useMemo(() => {
     switch (dist) {
       case 'lote':
-        return { mu: stats.promedio, sigma: stats.desvEst, df: 0, isT: false, unit: 'g' };
+        return { mu: dataMu, sigma: dataSd, df: 0, isT: false, escalaDatos: true };
       case 'normal-manual':
-        return { mu: parseFloat(muInput), sigma: parseFloat(sigmaInput), df: 0, isT: false, unit: 'g' };
+        return { mu: parseFloat(muInput), sigma: parseFloat(sigmaInput), df: 0, isT: false, escalaDatos: true };
       case 'normal-estandar':
-        return { mu: 0, sigma: 1, df: 0, isT: false, unit: 'Z' };
+        return { mu: 0, sigma: 1, df: 0, isT: false, escalaDatos: false };
       case 't':
-        return { mu: 0, sigma: 1, df: parseFloat(dfInput), isT: true, unit: 't' };
+        return { mu: 0, sigma: 1, df: parseFloat(dfInput), isT: true, escalaDatos: false };
     }
-  }, [dist, stats, muInput, sigmaInput, dfInput]);
+  }, [dist, dataMu, dataSd, muInput, sigmaInput, dfInput]);
+  const escalaLabel = isT ? 't' : 'Z';
 
   const result = useMemo(() => {
     if (isT) {
@@ -119,14 +138,16 @@ export function ProbabilityCalculator() {
     if (!result) return '';
     const [a, b] = result.bounds;
     const pct = (result.probability * 100).toFixed(2);
-    const vUnit = unit === 'g' ? ' g' : '';
-    const dec = unit === 'g' ? 1 : 4;
+    const vUnit = escalaDatos && unidad ? ` ${unidad}` : '';
+    const dec = escalaDatos ? 1 : 4;
     const nombre = isT
       ? t('nameT', { df })
       : dist === 'normal-estandar'
         ? t('nameStandard')
         : t('nameNormal', { mu: fmtNum(mu, 1), sigma: fmtNum(sigma, 1) });
-    const esLote = dist === 'lote';
+    // La lectura zootécnica («~X% de las aves pesaría…») solo aplica cuando
+    // la distribución viene de los datos Y estamos en el módulo de aves.
+    const esLote = dist === 'lote' && contexto === 'aves';
     switch (tail) {
       case 'right':
         return `${t('explainRight', { nombre, pct, valor: fmtNum(a, dec), unidad: vUnit })}${esLote ? ' ' + t('flockRight', { pct, valor: fmtNum(a, 1) }) : ''}`;
@@ -137,7 +158,7 @@ export function ProbabilityCalculator() {
       case 'center':
         return `${t('explainCenter', { nombre, pct, a: fmtNum(a, dec), b: fmtNum(b, dec), unidad: vUnit })}${esLote ? ' ' + t('flockCenter', { pct }) : ''}`;
     }
-  }, [result, tail, unit, isT, df, dist, mu, sigma, t]);
+  }, [result, tail, escalaDatos, unidad, isT, df, dist, mu, sigma, contexto, t]);
 
   return (
     <div className="space-y-4">
@@ -148,9 +169,9 @@ export function ProbabilityCalculator() {
             <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="lote" disabled={!hasLote}>
-                {t('distFlock', {
+                {t(contexto === 'aves' ? 'distFlock' : 'distData', {
                   params: hasLote
-                    ? t('distFlockParams', { mu: stats.promedio.toFixed(1), sigma: stats.desvEst.toFixed(1) })
+                    ? t('distFlockParams', { mu: dataMu.toFixed(1), sigma: dataSd.toFixed(1) })
                     : t('distFlockEmpty'),
                 })}
               </SelectItem>
@@ -176,11 +197,11 @@ export function ProbabilityCalculator() {
       {dist === 'normal-manual' && (
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('meanG')}</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('meanUnit', { unidad: unidad || '—' })}</Label>
             <Input type="number" value={muInput} onChange={(e) => setMuInput(e.target.value)} className="h-9 text-xs" />
           </div>
           <div className="flex flex-col gap-1">
-            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('sdG')}</Label>
+            <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('sdUnit', { unidad: unidad || '—' })}</Label>
             <Input type="number" min={0.001} value={sigmaInput} onChange={(e) => setSigmaInput(e.target.value)} className="h-9 text-xs" />
           </div>
         </div>
@@ -203,7 +224,7 @@ export function ProbabilityCalculator() {
         </div>
         <div className="flex items-center gap-1.5">
           <RadioGroupItem value="x" id="by-x" />
-          <Label htmlFor="by-x" className="text-xs cursor-pointer">{t('byValue', { unidad: unit === 'g' ? 'X (g)' : unit })}</Label>
+          <Label htmlFor="by-x" className="text-xs cursor-pointer">{t('byValue', { unidad: escalaDatos ? (unidad ? `X (${unidad})` : 'X') : escalaLabel })}</Label>
         </div>
       </RadioGroup>
 
@@ -216,7 +237,7 @@ export function ProbabilityCalculator() {
         <div className="flex gap-3">
           <div className="flex flex-col gap-1 max-w-40">
             <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t(tail === 'center' ? 'valueX1' : 'valueX')}</Label>
-            <Input type="number" value={x1Input} onChange={(e) => setX1Input(e.target.value)} className="h-9 text-xs" placeholder={t(unit === 'g' ? 'placeholderG' : 'placeholderZ')} />
+            <Input type="number" value={x1Input} onChange={(e) => setX1Input(e.target.value)} className="h-9 text-xs" placeholder={t(escalaDatos ? 'placeholderG' : 'placeholderZ')} />
           </div>
           {tail === 'center' && (
             <div className="flex flex-col gap-1 max-w-40">
@@ -238,10 +259,10 @@ export function ProbabilityCalculator() {
               })}
             </div>
             <div className="tabular-nums text-xs text-muted-foreground">
-              {tail === 'right' && <>{t('criticalValue')} <b>{fmtNum(result.bounds[0], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>}
-              {tail === 'left' && <>{t('criticalValue')} <b>{fmtNum(result.bounds[1], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>}
+              {tail === 'right' && <>{t('criticalValue')} <b>{fmtNum(result.bounds[0], escalaDatos ? 2 : 5)}</b>{escalaDatos ? (unidad ? ` ${unidad}` : '') : ` (${escalaLabel})`}</>}
+              {tail === 'left' && <>{t('criticalValue')} <b>{fmtNum(result.bounds[1], escalaDatos ? 2 : 5)}</b>{escalaDatos ? (unidad ? ` ${unidad}` : '') : ` (${escalaLabel})`}</>}
               {(tail === 'both' || tail === 'center') && (
-                <>{t('bounds')} <b>{fmtNum(result.bounds[0], unit === 'g' ? 2 : 5)}</b> · <b>{fmtNum(result.bounds[1], unit === 'g' ? 2 : 5)}</b>{unit === 'g' ? ' g' : ` (${unit})`}</>
+                <>{t('bounds')} <b>{fmtNum(result.bounds[0], escalaDatos ? 2 : 5)}</b> · <b>{fmtNum(result.bounds[1], escalaDatos ? 2 : 5)}</b>{escalaDatos ? (unidad ? ` ${unidad}` : '') : ` (${escalaLabel})`}</>
               )}
             </div>
             <p className="text-xs leading-snug">{explanation}</p>
@@ -255,17 +276,19 @@ export function ProbabilityCalculator() {
             markers={
               tail === 'both' || tail === 'center'
                 ? [
-                    { x: result.bounds[0], label: fmtNum(result.bounds[0], unit === 'g' ? 0 : 3) },
-                    { x: result.bounds[1], label: fmtNum(result.bounds[1], unit === 'g' ? 0 : 3) },
+                    { x: result.bounds[0], label: fmtNum(result.bounds[0], escalaDatos ? 0 : 3) },
+                    { x: result.bounds[1], label: fmtNum(result.bounds[1], escalaDatos ? 0 : 3) },
                   ]
                 : [
                     {
                       x: tail === 'right' ? result.bounds[0] : result.bounds[1],
-                      label: fmtNum(tail === 'right' ? result.bounds[0] : result.bounds[1], unit === 'g' ? 0 : 3),
+                      label: fmtNum(tail === 'right' ? result.bounds[0] : result.bounds[1], escalaDatos ? 0 : 3),
                     },
                   ]
             }
-            xLabel={unit === 'g' ? t('xLabelWeight') : unit === 'Z' ? 'Z' : t('xLabelT', { df })}
+            xLabel={escalaDatos
+              ? (contexto === 'aves' ? t('xLabelWeight') : (unidad ? `${t('xLabelValue')} (${unidad})` : t('xLabelValue')))
+              : !isT ? 'Z' : t('xLabelT', { df })}
             ariaLabel={explanation}
           />
         </>

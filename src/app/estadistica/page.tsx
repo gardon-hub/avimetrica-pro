@@ -7,7 +7,7 @@ import { HowToCite } from '@/components/uniformidad/how-to-cite';
 import { BackupPanel } from '@/components/shell/backup-panel';
 import { VariableForm } from '@/components/dataset/variable-form';
 import { ValueInput } from '@/components/dataset/value-input';
-import { DescriptivePanel } from '@/components/dataset/descriptive-panel';
+import { DatasetAnalysis } from '@/components/dataset/dataset-analysis';
 import { ClassificationPanel } from '@/components/dataset/classification-panel';
 import { InferencePanel } from '@/components/dataset/inference-panel';
 import { DatasetContextForm } from '@/components/dataset/context-form';
@@ -42,7 +42,7 @@ export default function EstadisticaPage() {
         <VariableForm store={useEstadisticaStore} />
         <DatasetContextForm store={useEstadisticaStore} />
         <ValueInput store={useEstadisticaStore} domain={DOMINIO_GENERICO} />
-        <DescriptivePanel valores={valores} variable={variable} />
+        <DatasetAnalysis valores={valores} variable={variable} />
         <InferencePanel store={useEstadisticaStore} />
         <ClassificationPanel store={useEstadisticaStore} domain={DOMINIO_GENERICO} />
         <DatasetReportPanel store={useEstadisticaStore} domain={DOMINIO_GENERICO} />

@@ -121,7 +121,9 @@
   },
   "descriptive": {
     "censusLabel": "Pesou-se <b>todo o lote</b> (censo) — usar fórmulas populacionais (n). Se for uma amostra, deixar desmarcado (fórmulas amostrais, n−1).",
+    "censusLabelGeneric": "Mediu-se <b>toda a população</b> (censo) — usar fórmulas populacionais (n). Se for uma amostra, deixar desmarcado (fórmulas amostrais, n−1).",
     "n": "n (aves pesadas)",
+    "nObs": "n (observações)",
     "sum": "Soma",
     "mean": "Média",
     "median": "Mediana",
@@ -172,7 +174,8 @@
     "caption": "Peso (g) — {modo}, {clases} classes ({regla})",
     "legendBars": "Barras: distribuição empírica real dos {n} pesos.",
     "legendCurve": "Linha azul: normal teórica ajustada com a média e o DP amostral do lote.",
-    "legendLines": "Linhas pontilhadas: média (μ), mediana e limites do critério de uniformidade."
+    "legendLines": "Linhas pontilhadas: média (μ), mediana e limites do critério de uniformidade.",
+    "legendLinesNoBand": "Linhas pontilhadas: média (μ) e mediana."
   },
   "tTest": {
     "needTwo": "São necessários pelo menos 2 pesos.",
@@ -222,12 +225,12 @@
     "boxplot": "Boxplot",
     "boxplotAlt": "Boxplot: mediana {mediana} g, quartis {q1} e {q3} g, {atipicos} atípicos",
     "boxplotOutlier": "Atípico: {valor} g",
-    "boxplotCaption": "Peso (g) — caixa: Q1–Q3, linha: mediana, ponto azul: média, círculos vermelhos: atípicos",
+    "boxplotCaption": "{etiqueta} — caixa: Q1–Q3, linha: mediana, ponto azul: média, círculos vermelhos: atípicos",
     "qq": "Gráfico Q-Q normal",
     "qqAlt": "Gráfico Q-Q normal: pontos próximos da diagonal indicam compatibilidade com a normal",
     "qqPoint": "Esperado: {esperado} g · Observado: {observado} g",
-    "qqXAxis": "Quantis teóricos normais (g)",
-    "qqYAxis": "Pesos observados (g)",
+    "qqXAxis": "Quantis teóricos normais {unidad}",
+    "qqYAxis": "Valores observados {unidad}",
     "normality": "Normalidade",
     "shapiro": "Shapiro-Wilk: W = <b>{w}</b>, valor p <b>{p}</b>",
     "dagostino": "{metodo}: K² = <b>{k}</b>, valor p <b>{p}</b>",
@@ -245,6 +248,7 @@
     "noOutliers": "Nenhum peso marcado pelas regras 1,5×IQR, 3×IQR, |Z|>3 nem Z modificado (MAD).",
     "colExclude": "Excluir",
     "colBird": "Ave nº",
+    "colObservation": "Obs. nº",
     "colWeight": "Peso (g)",
     "colVsMean": "vs. média",
     "colVsTarget": "vs. meta",
@@ -268,6 +272,7 @@
   "probability": {
     "distribution": "Distribuição",
     "distFlock": "Normal do lote {params}",
+    "distData": "Normal dos dados {params}",
     "distFlockParams": "(μ={mu}, σ={sigma})",
     "distFlockEmpty": "(sem dados suficientes)",
     "distManual": "Normal com parâmetros manuais",
@@ -278,8 +283,8 @@
     "tailLeft": "Cauda esquerda",
     "tailBoth": "Ambas as caudas",
     "tailCenter": "Região central",
-    "meanG": "Média (g)",
-    "sdG": "Desvio padrão (g)",
+    "meanUnit": "Média ({unidad})",
+    "sdUnit": "Desvio padrão ({unidad})",
     "df": "Graus de liberdade",
     "byProbability": "Definir por probabilidade",
     "byValue": "Definir por valor {unidad}",
@@ -304,6 +309,7 @@
     "flockLeft": "Ou seja, teoricamente ~{pct}% das aves pesaria menos de {valor} g.",
     "flockCenter": "Ou seja, teoricamente ~{pct}% das aves pesaria nessa faixa.",
     "xLabelWeight": "Peso (g)",
+    "xLabelValue": "Valor",
     "xLabelT": "t (gl={df})"
   },
   "sources": {
@@ -830,6 +836,7 @@
       "outliersTitleN": "Valores atípicos ({n})",
       "outliersNone": "Nenhuma observação marcada pelas regras 1,5×IQR, 3×IQR, |Z|>3 nem Z modificado (MAD).",
       "colBird": "Ave nº",
+    "colObservation": "Obs. nº",
       "colWeight": "Peso (g)",
       "colVsMean": "vs. média (g)",
       "colMethods": "Métodos que o marcam",

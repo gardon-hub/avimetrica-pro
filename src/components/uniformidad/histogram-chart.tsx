@@ -8,10 +8,9 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { useUniformidadStore } from '@/lib/store';
 import { buildHistogram, BinRule } from '@/lib/statistics/histogram';
 import { normalPdf } from '@/lib/statistics/distributions';
-import { median } from '@/lib/statistics/descriptive';
+import { median, mean, sdSample } from '@/lib/statistics/descriptive';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,8 +18,18 @@ import { Label } from '@/components/ui/label';
 
 type DisplayMode = 'count' | 'percent' | 'density';
 
-export function HistogramChart() {
-  const { pesos, stats } = useUniformidadStore();
+/**
+ * Genérico para cualquier variable: recibe los valores. Las líneas de la
+ * banda de uniformidad (−X% / +X%) solo se dibujan si quien lo monta pasa
+ * `banda` — es un concepto del módulo de aves.
+ */
+export function HistogramChart({
+  valores,
+  banda,
+}: {
+  valores: number[];
+  banda?: { inf: number; sup: number; pct: number };
+}) {
   const t = useTranslations('histogram');
   const [rule, setRule] = useState<BinRule>('auto');
   const [manualBins, setManualBins] = useState('8');
@@ -28,16 +37,18 @@ export function HistogramChart() {
   const [overlay, setOverlay] = useState(true);
 
   const hist = useMemo(
-    () => buildHistogram(pesos, rule, parseInt(manualBins, 10) || 8),
-    [pesos, rule, manualBins],
+    () => buildHistogram(valores, rule, parseInt(manualBins, 10) || 8),
+    [valores, rule, manualBins],
   );
-  const med = useMemo(() => median(pesos), [pesos]);
+  const med = useMemo(() => median(valores), [valores]);
 
-  if (!hist || pesos.length < 2) {
+  if (!hist || valores.length < 2) {
     return <p className="text-sm text-muted-foreground text-center py-4">{t('needTwo')}</p>;
   }
 
-  const { promedio: mu, desvEst: sigma, limiteInf, limiteSup, criterioPct } = stats;
+  const mu = mean(valores);
+  const sigmaMuestral = sdSample(valores);
+  const sigma = Number.isFinite(sigmaMuestral) ? sigmaMuestral : 0;
 
   // Geometría SVG
   const width = 560;
@@ -86,8 +97,12 @@ export function HistogramChart() {
   const refLines: Array<{ x: number; color: string; label: string }> = [
     { x: mu, color: '#333', label: `μ ${mu.toFixed(0)}` },
     { x: med, color: '#7c3aed', label: `${t('median')} ${med.toFixed(0)}` },
-    { x: limiteInf, color: '#e53935', label: `−${criterioPct}%` },
-    { x: limiteSup, color: '#2E7D32', label: `+${criterioPct}%` },
+    ...(banda
+      ? [
+          { x: banda.inf, color: '#e53935', label: `−${banda.pct}%` },
+          { x: banda.sup, color: '#2E7D32', label: `+${banda.pct}%` },
+        ]
+      : []),
   ];
 
   return (
@@ -210,7 +225,7 @@ export function HistogramChart() {
       </svg>
       <p className="text-[11px] text-muted-foreground leading-snug">
         {t('legendBars', { n: hist.n })} {overlay && `${t('legendCurve')} `}
-        {t('legendLines')}
+        {t(banda ? 'legendLines' : 'legendLinesNoBand')}
       </p>
     </div>
   );

@@ -17,12 +17,16 @@ import { ProbabilityCalculator } from './probability-calculator';
 import { TTestPanel } from './t-test-panel';
 
 export function AnalysisPanel() {
-  const { pesos } = useUniformidadStore();
+  const { pesos, stats, lineaGenetica, edadSemanas } = useUniformidadStore();
   const t = useTranslations('analysis');
+  const tDescr = useTranslations('descriptive');
+  const tDiag = useTranslations('diagnostics');
 
   if (pesos.length === 0) {
     return null;
   }
+
+  const objetivo = { linea: lineaGenetica, semanas: edadSemanas };
 
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
@@ -38,16 +42,26 @@ export function AnalysisPanel() {
           <TabsTrigger value="prueba-t" className="text-xs flex-1">{t('tabs.tTest')}</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="pt-3">
-          <DescriptiveTable />
+          <DescriptiveTable valores={pesos} unidad="g" nLabel={tDescr('n')} objetivo={objetivo} />
         </TabsContent>
         <TabsContent value="histograma" className="pt-3">
-          <HistogramChart />
+          <HistogramChart
+            valores={pesos}
+            banda={{ inf: stats.limiteInf, sup: stats.limiteSup, pct: stats.criterioPct }}
+          />
         </TabsContent>
         <TabsContent value="diagnostico" className="pt-3">
-          <DistributionDiagnostics />
+          <DistributionDiagnostics
+            valores={pesos}
+            unidad="g"
+            idColLabel={tDiag('colBird')}
+            valorColLabel={tDiag('colWeight')}
+            objetivo={objetivo}
+            bandaPct={stats.criterioPct}
+          />
         </TabsContent>
         <TabsContent value="probabilidades" className="pt-3">
-          <ProbabilityCalculator />
+          <ProbabilityCalculator valores={pesos} unidad="g" contexto="aves" />
         </TabsContent>
         <TabsContent value="prueba-t" className="pt-3">
           <TTestPanel />

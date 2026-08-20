@@ -121,7 +121,9 @@
   },
   "descriptive": {
     "censusLabel": "The <b>whole flock</b> was weighed (census) — use population formulas (n). If it is a sample, leave unchecked (sample formulas, n−1).",
+    "censusLabelGeneric": "The <b>entire population</b> was measured (census) — use population formulas (n). If it is a sample, leave unchecked (sample formulas, n−1).",
     "n": "n (birds weighed)",
+    "nObs": "n (observations)",
     "sum": "Sum",
     "mean": "Mean",
     "median": "Median",
@@ -172,7 +174,8 @@
     "caption": "Weight (g) — {modo}, {clases} bins ({regla})",
     "legendBars": "Bars: actual empirical distribution of the {n} weights.",
     "legendCurve": "Blue line: theoretical normal fitted with the flock's mean and sample SD.",
-    "legendLines": "Dashed lines: mean (μ), median and the uniformity criterion limits."
+    "legendLines": "Dashed lines: mean (μ), median and the uniformity criterion limits.",
+    "legendLinesNoBand": "Dashed lines: mean (μ) and median."
   },
   "tTest": {
     "needTwo": "At least 2 weights are needed.",
@@ -222,12 +225,12 @@
     "boxplot": "Box plot",
     "boxplotAlt": "Box plot: median {mediana} g, quartiles {q1} and {q3} g, {atipicos} outliers",
     "boxplotOutlier": "Outlier: {valor} g",
-    "boxplotCaption": "Weight (g) — box: Q1–Q3, line: median, blue dot: mean, red circles: outliers",
+    "boxplotCaption": "{etiqueta} — box: Q1–Q3, line: median, blue dot: mean, red circles: outliers",
     "qq": "Normal Q-Q plot",
     "qqAlt": "Normal Q-Q plot: points close to the diagonal indicate compatibility with the normal distribution",
     "qqPoint": "Expected: {esperado} g · Observed: {observado} g",
-    "qqXAxis": "Theoretical normal quantiles (g)",
-    "qqYAxis": "Observed weights (g)",
+    "qqXAxis": "Theoretical normal quantiles {unidad}",
+    "qqYAxis": "Observed values {unidad}",
     "normality": "Normality",
     "shapiro": "Shapiro-Wilk: W = <b>{w}</b>, p-value <b>{p}</b>",
     "dagostino": "{metodo}: K² = <b>{k}</b>, p-value <b>{p}</b>",
@@ -245,6 +248,7 @@
     "noOutliers": "No weight flagged by the 1.5×IQR, 3×IQR, |Z|>3 or modified-Z (MAD) rules.",
     "colExclude": "Exclude",
     "colBird": "Bird #",
+    "colObservation": "Obs. #",
     "colWeight": "Weight (g)",
     "colVsMean": "vs. mean",
     "colVsTarget": "vs. target",
@@ -268,6 +272,7 @@
   "probability": {
     "distribution": "Distribution",
     "distFlock": "Flock normal {params}",
+    "distData": "Normal of the data {params}",
     "distFlockParams": "(μ={mu}, σ={sigma})",
     "distFlockEmpty": "(not enough data)",
     "distManual": "Normal with manual parameters",
@@ -278,8 +283,8 @@
     "tailLeft": "Left tail",
     "tailBoth": "Both tails",
     "tailCenter": "Central region",
-    "meanG": "Mean (g)",
-    "sdG": "Standard deviation (g)",
+    "meanUnit": "Mean ({unidad})",
+    "sdUnit": "Standard deviation ({unidad})",
     "df": "Degrees of freedom",
     "byProbability": "Define by probability",
     "byValue": "Define by value {unidad}",
@@ -304,6 +309,7 @@
     "flockLeft": "That is, theoretically ~{pct}% of the birds would weigh less than {valor} g.",
     "flockCenter": "That is, theoretically ~{pct}% of the birds would weigh within that range.",
     "xLabelWeight": "Weight (g)",
+    "xLabelValue": "Value",
     "xLabelT": "t (df={df})"
   },
   "sources": {
@@ -830,6 +836,7 @@
       "outliersTitleN": "Outliers ({n})",
       "outliersNone": "No observation flagged by the 1.5×IQR, 3×IQR, |Z|>3 or modified-Z (MAD) rules.",
       "colBird": "Bird #",
+    "colObservation": "Obs. #",
       "colWeight": "Weight (g)",
       "colVsMean": "vs. mean (g)",
       "colMethods": "Flagging methods",

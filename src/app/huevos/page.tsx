@@ -7,7 +7,8 @@ import { Credits } from '@/components/uniformidad/credits';
 import { HowToCite } from '@/components/uniformidad/how-to-cite';
 import { BackupPanel } from '@/components/shell/backup-panel';
 import { ValueInput } from '@/components/dataset/value-input';
-import { DescriptivePanel } from '@/components/dataset/descriptive-panel';
+import { DatasetAnalysis } from '@/components/dataset/dataset-analysis';
+import { InferencePanel } from '@/components/dataset/inference-panel';
 import { ClassificationPanel } from '@/components/dataset/classification-panel';
 import { DatasetContextForm } from '@/components/dataset/context-form';
 import { DatasetLibrary } from '@/components/dataset/dataset-library';
@@ -42,7 +43,8 @@ export default function HuevosPage() {
         <DatasetContextForm store={useHuevosStore} />
         <ValueInput store={useHuevosStore} domain={DOMINIO_HUEVOS} />
         <ClassificationPanel store={useHuevosStore} domain={DOMINIO_HUEVOS} />
-        <DescriptivePanel valores={valores} variable={variable} />
+        <DatasetAnalysis valores={valores} variable={variable} />
+        <InferencePanel store={useHuevosStore} />
         <DatasetReportPanel store={useHuevosStore} domain={DOMINIO_HUEVOS} />
         <DatasetLibrary
           store={useHuevosStore}
