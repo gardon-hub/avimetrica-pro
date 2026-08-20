@@ -67,4 +67,7 @@ server.log
 /download/
 /examples/
 /mini-services/
-/.zscripts//db/*.json
+/.zscripts/
+
+# Respaldos locales de datos (nunca al repo)
+/db/*.json
