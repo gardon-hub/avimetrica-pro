@@ -1,26 +1,61 @@
-const CACHE_NAME = 'avimetrica-pro-v7';
+// Service worker de Avimétrica Pro.
+//
+// DISEÑO PARA USO EN CAMPO (sin internet):
+// - En la primera visita con conexión se PRECARGA el sitio completo (los
+//   tres módulos con todos sus chunks): la lista la inyecta el build en
+//   PRECACHE (scripts/generar-precache.mjs). Desde entonces la app abre
+//   sin señal, incluidas rutas que nunca se visitaron en línea.
+// - Las NAVEGACIONES van network-first con límite de 3 s y caché de
+//   respaldo. NO cambiar a cache-first: servía shells viejos con chunks
+//   muertos tras cada despliegue (la página no hidrataba); y sin el límite,
+//   un wifi flojo que no responde deja la página en blanco.
+// - Los assets de /_next/static llevan hash en el nombre (inmutables) y la
+//   caché se estrena por build (BUILD_ID): ahí cache-first es correcto y
+//   más rápido en galera con señal floja.
+//
+// En desarrollo (next dev) los marcadores quedan vacíos: sin precarga.
+
+const PRECACHE = [];
+const BUILD_ID = 'dev';
+const CACHE_NAME = `avimetrica-pro-${BUILD_ID}`;
 
 // Base del despliegue, derivada de la URL del propio SW: '' cuando vive en
 // la raíz (desarrollo local) y '/avimetrica-pro' en GitHub Pages. Así el
 // mismo archivo sirve en ambos sin editarlo.
 const BASE = self.location.pathname.replace(/\/sw\.js$/, '');
 
-const OFFLINE_URLS = [
-  `${BASE}/`,
-  `${BASE}/logo-avimetrica.png`,
-  `${BASE}/icon-192.png`,
-];
-
-// Extensions that should always be fetched from network first (code updates)
-const NETWORK_FIRST_EXTENSIONS = ['.js', '.mjs', '.css', '.ts', '.tsx'];
-
 // Límite de espera de la red al navegar antes de recurrir a la caché.
 const NAVIGATION_TIMEOUT_MS = 3000;
 
+/**
+ * Descarga y guarda re-empaquetando la respuesta. El re-empaquetado NO es
+ * adorno: algunos servidores (p. ej. `serve` con cleanUrls) responden a
+ * «ruta/index.html» con una redirección a la URL limpia, y una respuesta
+ * con redirected=true servida a una navegación produce un error de red por
+ * seguridad. Crear una Response nueva con el mismo cuerpo limpia la marca.
+ */
+async function precargarUno(cache, ruta) {
+  const resp = await fetch(ruta, { cache: 'no-cache' });
+  if (!resp.ok) return;
+  const cuerpo = await resp.blob();
+  await cache.put(ruta, new Response(cuerpo, {
+    status: 200,
+    headers: { 'Content-Type': resp.headers.get('Content-Type') || '' },
+  }));
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(OFFLINE_URLS);
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Por lotes y tolerando fallos por archivo: un tropiezo no debe dejar
+      // la app sin el resto de la precarga.
+      const rutas = PRECACHE.map((r) => `${BASE}/${r}`);
+      const LOTE = 10;
+      for (let i = 0; i < rutas.length; i += LOTE) {
+        await Promise.all(
+          rutas.slice(i, i + LOTE).map((ruta) => precargarUno(cache, ruta).catch(() => {})),
+        );
+      }
     })
   );
   self.skipWaiting();
@@ -39,7 +74,6 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Handle SKIP_WAITING message from the app
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -47,25 +81,13 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip API calls - they need network
-  if (event.request.url.includes('/api/')) return;
-
   const url = new URL(event.request.url);
+  // Solo nuestro propio origen: sin opinar sobre peticiones externas.
+  if (url.origin !== self.location.origin) return;
 
-  // Network-first for page navigations.
-  //
-  // Antes se atendían con cache-first y eso servía un shell HTML viejo tras
-  // cada despliegue: el HTML en caché apuntaba a chunks que ya no existían,
-  // la página no hidrataba y solo se arreglaba recargando por segunda vez.
-  // Ahora la red manda y la caché es solo el respaldo sin conexión.
-  //
-  // El tiempo límite existe porque la app se usa en galera con wifi flojo:
-  // sin él, una conexión que no responde deja la página colgada en blanco.
-  // 3 s es holgado para la red local (una carga real toma ~120 ms) y corto
-  // frente a una conexión muerta.
+  // Network-first para navegaciones (ver cabecera del archivo).
   if (event.request.mode === 'navigate') {
     event.respondWith(
       new Promise((resolve, reject) => {
@@ -84,46 +106,47 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
-          // Sin red: la propia página si se visitó antes (ignorando la query,
-          // que no cambia el HTML servido), y si no, el índice precargado.
-          return caches.match(event.request, { ignoreSearch: true })
-            .then((cached) => cached || caches.match(`${BASE}/`));
+        .catch(async () => {
+          // Sin red: la propia página (ignorando la query, que no cambia el
+          // HTML), su variante export (/ruta → ruta.html) y, como último
+          // recurso, el índice.
+          const porUrl = await caches.match(event.request, { ignoreSearch: true });
+          if (porUrl) return porUrl;
+          // La exportación escribe /ruta como ruta/index.html (o ruta.html):
+          // mapear la URL navegada al archivo precargado.
+          const limpio = url.pathname.replace(/\/$/, '');
+          const porHtml = (await caches.match(`${limpio}/index.html`))
+            || (await caches.match(`${limpio}.html`));
+          if (porHtml) return porHtml;
+          return (await caches.match(`${BASE}/`)) || caches.match(`${BASE}/index.html`);
         })
     );
     return;
   }
 
-  // Network-first for JS/CSS bundles (ensures code updates are always fresh)
-  const isCodeAsset = NETWORK_FIRST_EXTENSIONS.some(ext => url.pathname.endsWith(ext)) ||
-    url.pathname.includes('/_next/') ||
-    url.pathname.includes('/chunks/');
-
-  if (isCodeAsset) {
+  // Cache-first para los assets con hash de /_next/static: son inmutables
+  // y están precargados; la red solo entra si faltara alguno.
+  if (url.pathname.includes('/_next/static/')) {
     event.respondWith(
-      fetch(event.request)
-        .then((networkResponse) => {
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
           }
           return networkResponse;
-        })
-        .catch(() => {
-          return caches.match(event.request);
-        })
+        });
+      })
     );
     return;
   }
 
-  // Cache-first for static assets (images, fonts, etc.) — aquí ya no llegan
-  // navegaciones ni código: las atienden las dos ramas de arriba.
+  // Resto (imágenes, manifest, payloads .txt del router): cache-first con
+  // actualización en segundo plano.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cache, but also update cache in background
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => {
