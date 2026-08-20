@@ -1214,6 +1214,31 @@
   "footer": {
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },
+  "backup": {
+    "title": "Respaldo de datos",
+    "intro": "Tus datos viven solo en este navegador y en este dispositivo. Exporta un respaldo completo (lotes, pesajes, muestreos y conjuntos) a un archivo, y restáuralo aquí o en otro equipo.",
+    "warning": "Si borras los datos de navegación de este sitio sin un respaldo, tus registros se pierden. Exporta con regularidad.",
+    "currentData": "Guardado en este navegador:",
+    "summary": "{lotes} lote(s), {pesajes} pesaje(s) con {pesos} peso(s), {datasets} conjunto(s), {sesiones} sesión(es) rápida(s)",
+    "exportButton": "Exportar respaldo (.json)",
+    "importButton": "Restaurar respaldo",
+    "exportedTitle": "Respaldo exportado",
+    "exportedBody": "Se descargó {nombre}. Guárdalo en un lugar seguro fuera de este equipo.",
+    "errorTitle": "Error",
+    "exportError": "No se pudo generar el respaldo.",
+    "errNotBackup": "El archivo no es un respaldo de Avimétrica Pro.",
+    "errNewerFormat": "El respaldo fue creado por una versión más nueva de la aplicación. Actualiza la aplicación e inténtalo de nuevo.",
+    "errCorrupt": "El archivo está incompleto o dañado y no se puede restaurar.",
+    "confirmTitle": "¿Restaurar este respaldo?",
+    "fileContains": "El archivo contiene:",
+    "exportedOn": "exportado el {fecha}",
+    "mergeExplain": "La restauración añade lo que falte y devuelve lo que exista al estado del respaldo. No borra nada que no esté en el archivo.",
+    "cancel": "Cancelar",
+    "confirmRestore": "Restaurar",
+    "restoredTitle": "Respaldo restaurado",
+    "restoredBody": "Los datos quedaron disponibles. La página se recargará.",
+    "restoreError": "No se pudo restaurar el respaldo."
+  },
   "cite": {
     "title": "Cómo citar",
     "intro": "Si esta aplicación le fue útil en docencia, investigación o producción, cítela así. Los datos coinciden con el archivo CITATION.cff del repositorio.",

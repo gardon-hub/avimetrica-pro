@@ -4,6 +4,7 @@ import { LogoHeader } from '@/components/uniformidad/logo-header';
 import { ModuleNav } from '@/components/shell/module-nav';
 import { Credits } from '@/components/uniformidad/credits';
 import { HowToCite } from '@/components/uniformidad/how-to-cite';
+import { BackupPanel } from '@/components/shell/backup-panel';
 import { VariableForm } from '@/components/dataset/variable-form';
 import { ValueInput } from '@/components/dataset/value-input';
 import { DescriptivePanel } from '@/components/dataset/descriptive-panel';
@@ -51,6 +52,7 @@ export default function EstadisticaPage() {
           onCambio={() => setToken((t) => t + 1)}
         />
         <DatasetComparison dominio="generico" refrescarToken={token} />
+        <BackupPanel />
         <HowToCite />
         <Credits />
       </main>

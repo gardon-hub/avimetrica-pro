@@ -63,6 +63,10 @@ en la Universidad Nacional de Agricultura, Honduras.
 - Modo académico local y determinista: explica qué se calculó, con qué fórmula,
   cómo se interpreta y qué errores comunes evitar
 
+**Respaldo**
+- Exportación de todos los datos (lotes, pesajes, muestreos y conjuntos) a un
+  archivo `.json`, y restauración en este u otro dispositivo
+
 ---
 
 ## Rigor estadístico
@@ -140,8 +144,10 @@ shadcn/ui · Zustand · Dexie (IndexedDB) · next-intl · Vitest · SheetJS
 
 Los datos se guardan en el navegador de cada usuario (IndexedDB) y **no se
 envían a ningún servidor**. Los cálculos estadísticos también son locales.
-Para conservar o trasladar los datos, usa la exportación a Excel de cada
-módulo.
+La sección **Respaldo de datos** (en las tres rutas) exporta todo —lotes,
+pesajes, muestreos y conjuntos— a un archivo `.json` y lo restaura en este
+u otro dispositivo; la exportación a Excel de cada módulo sirve como salida
+adicional para análisis externos.
 
 ---
 

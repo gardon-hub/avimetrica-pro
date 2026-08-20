@@ -1214,6 +1214,31 @@
   "footer": {
     "line": "Avimétrica Pro — Universidad Nacional de Agricultura, Honduras"
   },
+  "backup": {
+    "title": "Data backup",
+    "intro": "Your data lives only in this browser and on this device. Export a complete backup (flocks, weigh-ins, samplings and datasets) to a file, and restore it here or on another computer.",
+    "warning": "If you clear this site's browsing data without a backup, your records are lost. Export regularly.",
+    "currentData": "Stored in this browser:",
+    "summary": "{lotes} flock(s), {pesajes} weigh-in(s) with {pesos} weight(s), {datasets} dataset(s), {sesiones} quick session(s)",
+    "exportButton": "Export backup (.json)",
+    "importButton": "Restore backup",
+    "exportedTitle": "Backup exported",
+    "exportedBody": "{nombre} was downloaded. Keep it somewhere safe outside this computer.",
+    "errorTitle": "Error",
+    "exportError": "The backup could not be generated.",
+    "errNotBackup": "The file is not an Avimétrica Pro backup.",
+    "errNewerFormat": "The backup was created by a newer version of the application. Update the application and try again.",
+    "errCorrupt": "The file is incomplete or damaged and cannot be restored.",
+    "confirmTitle": "Restore this backup?",
+    "fileContains": "The file contains:",
+    "exportedOn": "exported on {fecha}",
+    "mergeExplain": "Restoring adds what is missing and returns what exists to the state in the backup. It does not delete anything that is not in the file.",
+    "cancel": "Cancel",
+    "confirmRestore": "Restore",
+    "restoredTitle": "Backup restored",
+    "restoredBody": "The data is now available. The page will reload.",
+    "restoreError": "The backup could not be restored."
+  },
   "cite": {
     "title": "How to cite",
     "intro": "If this application was useful in teaching, research or production, please cite it as follows. The data match the repository's CITATION.cff file.",

@@ -20,6 +20,7 @@ import { ReportPanel } from '@/components/uniformidad/report-panel';
 import { SessionManager } from '@/components/uniformidad/session-manager';
 import { Credits } from '@/components/uniformidad/credits';
 import { HowToCite } from '@/components/uniformidad/how-to-cite';
+import { BackupPanel } from '@/components/shell/backup-panel';
 import { useTranslations } from 'next-intl';
 
 export default function AvesPage() {
@@ -46,6 +47,7 @@ export default function AvesPage() {
         <SessionManager />
         <ReportPanel />
         <FuentesPanel />
+        <BackupPanel />
         <HowToCite />
         <Credits />
       </main>
