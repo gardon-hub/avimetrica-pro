@@ -1380,6 +1380,23 @@
       "unclassified": "Sin clasificar"
     }
   },
+  "privacy": {
+    "title": "Política de privacidad",
+    "updated": "Última actualización: 20 de agosto de 2026",
+    "summary": "Avimétrica Pro no recolecta, no transmite y no comparte ningún dato personal. Todos los datos que registras viven únicamente en tu dispositivo.",
+    "storageTitle": "Dónde viven tus datos",
+    "storageBody": "Los lotes, pesajes, muestreos y conjuntos que registras se guardan en el almacenamiento local de tu navegador o dispositivo (IndexedDB y localStorage). La aplicación funciona sin conexión y no envía esa información a ningún servidor: no existe servidor.",
+    "collectionTitle": "Qué recolectamos",
+    "collectionBody": "Nada. La aplicación no pide cuentas ni contraseñas, no usa herramientas de analítica ni publicidad, no instala rastreadores y no comparte información con terceros. El sitio se sirve como archivos estáticos desde GitHub Pages; GitHub puede registrar accesos técnicos (como cualquier servidor web) según su propia política.",
+    "permissionsTitle": "Permisos",
+    "permissionsBody": "La aplicación no solicita permisos del dispositivo: ni cámara, ni ubicación, ni contactos, ni micrófono.",
+    "backupsTitle": "Respaldos",
+    "backupsBody": "La sección «Respaldo de datos» exporta tus datos a un archivo en tu dispositivo, bajo tu control. Ese archivo no se sube a ningún lado; compartirlo o no es decisión tuya.",
+    "deletionTitle": "Eliminación de datos",
+    "deletionBody": "Puedes borrar tus datos en cualquier momento desde la propia aplicación, o eliminando los datos de navegación del sitio en tu navegador, o desinstalando la aplicación. No hay copia en servidores que borrar.",
+    "contactTitle": "Contacto",
+    "contactBody": "Gustavo Alonso Ardón · Universidad Nacional de Agricultura, Catacamas, Olancho, Honduras · gardon@unag.edu.hn"
+  },
   "credits": {
     "author": "Gustavo Alonso Ardón, MSc.",
     "qualification": "Candidato a Doctor",

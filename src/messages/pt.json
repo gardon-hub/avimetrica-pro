@@ -836,7 +836,7 @@
       "outliersTitleN": "Valores atípicos ({n})",
       "outliersNone": "Nenhuma observação marcada pelas regras 1,5×IQR, 3×IQR, |Z|>3 nem Z modificado (MAD).",
       "colBird": "Ave nº",
-    "colObservation": "Obs. nº",
+      "colObservation": "Obs. nº",
       "colWeight": "Peso (g)",
       "colVsMean": "vs. média (g)",
       "colMethods": "Métodos que o marcam",
@@ -1378,6 +1378,23 @@
       "noLimit": "sem limite",
       "unclassified": "Sem classificação"
     }
+  },
+  "privacy": {
+    "title": "Política de privacidade",
+    "updated": "Última atualização: 20 de agosto de 2026",
+    "summary": "O Avimétrica Pro não coleta, não transmite e não compartilha nenhum dado pessoal. Tudo o que você registra vive apenas no seu dispositivo.",
+    "storageTitle": "Onde vivem seus dados",
+    "storageBody": "Os lotes, pesagens, amostragens e conjuntos que você registra são guardados no armazenamento local do seu navegador ou dispositivo (IndexedDB e localStorage). O aplicativo funciona sem conexão e não envia essas informações a nenhum servidor: não existe servidor.",
+    "collectionTitle": "O que coletamos",
+    "collectionBody": "Nada. O aplicativo não pede contas nem senhas, não usa ferramentas de análise nem publicidade, não instala rastreadores e não compartilha informações com terceiros. O site é servido como arquivos estáticos pelo GitHub Pages; o GitHub pode registrar acessos técnicos (como qualquer servidor web) conforme sua própria política.",
+    "permissionsTitle": "Permissões",
+    "permissionsBody": "O aplicativo não solicita permissões do dispositivo: nem câmera, nem localização, nem contatos, nem microfone.",
+    "backupsTitle": "Backups",
+    "backupsBody": "A seção “Backup de dados” exporta seus dados para um arquivo no seu dispositivo, sob seu controle. Esse arquivo não é enviado a lugar nenhum; compartilhá-lo ou não é decisão sua.",
+    "deletionTitle": "Exclusão de dados",
+    "deletionBody": "Você pode apagar seus dados a qualquer momento no próprio aplicativo, limpando os dados de navegação do site no navegador, ou desinstalando o aplicativo. Não há cópia em servidores para apagar.",
+    "contactTitle": "Contato",
+    "contactBody": "Gustavo Alonso Ardón · Universidad Nacional de Agricultura, Catacamas, Olancho, Honduras · gardon@unag.edu.hn"
   },
   "credits": {
     "author": "Gustavo Alonso Ardón, MSc.",

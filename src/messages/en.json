@@ -836,7 +836,7 @@
       "outliersTitleN": "Outliers ({n})",
       "outliersNone": "No observation flagged by the 1.5×IQR, 3×IQR, |Z|>3 or modified-Z (MAD) rules.",
       "colBird": "Bird #",
-    "colObservation": "Obs. #",
+      "colObservation": "Obs. #",
       "colWeight": "Weight (g)",
       "colVsMean": "vs. mean (g)",
       "colMethods": "Flagging methods",
@@ -1378,6 +1378,23 @@
       "noLimit": "no limit",
       "unclassified": "Unclassified"
     }
+  },
+  "privacy": {
+    "title": "Privacy policy",
+    "updated": "Last updated: 20 August 2026",
+    "summary": "Avimétrica Pro does not collect, transmit or share any personal data. Everything you record lives only on your device.",
+    "storageTitle": "Where your data lives",
+    "storageBody": "The flocks, weigh-ins, samplings and datasets you record are stored in your browser's or device's local storage (IndexedDB and localStorage). The application works offline and sends none of that information to any server: there is no server.",
+    "collectionTitle": "What we collect",
+    "collectionBody": "Nothing. The application requires no accounts or passwords, uses no analytics or advertising tools, installs no trackers and shares no information with third parties. The site is served as static files from GitHub Pages; GitHub may log technical accesses (like any web server) under its own policy.",
+    "permissionsTitle": "Permissions",
+    "permissionsBody": "The application requests no device permissions: no camera, no location, no contacts, no microphone.",
+    "backupsTitle": "Backups",
+    "backupsBody": "The “Data backup” section exports your data to a file on your device, under your control. That file is not uploaded anywhere; sharing it or not is your decision.",
+    "deletionTitle": "Data deletion",
+    "deletionBody": "You can delete your data at any time from the application itself, by clearing the site's browsing data in your browser, or by uninstalling the application. There is no server copy to delete.",
+    "contactTitle": "Contact",
+    "contactBody": "Gustavo Alonso Ardón · Universidad Nacional de Agricultura, Catacamas, Olancho, Honduras · gardon@unag.edu.hn"
   },
   "credits": {
     "author": "Gustavo Alonso Ardón, MSc.",
