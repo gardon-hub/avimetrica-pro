@@ -945,9 +945,16 @@ const WEIGHT_REFERENCES: Record<string, WeightReference[]> = {
 
 // ─── Funciones auxiliares ─────────────────────────────────────────
 
-function getBirdType(lineaGenetica: string): BirdType {
+/**
+ * Las líneas del catálogo llevan el propósito en su prefijo («Broiler - …» /
+ * «Ponedora - …»). Para una línea escrita por el usuario no se adivina: se
+ * usa el propósito que él declaró (tipoAveManual), con postura por defecto
+ * — el comportamiento histórico.
+ */
+function getBirdType(lineaGenetica: string, tipoAveManual?: BirdType): BirdType {
   if (lineaGenetica.startsWith('Broiler')) return 'broiler';
-  return 'ponedora';
+  if (lineaGenetica.startsWith('Ponedora')) return 'ponedora';
+  return tipoAveManual ?? 'ponedora';
 }
 
 function getReferences(lineaGenetica: string): WeightReference[] | null {
@@ -1398,6 +1405,8 @@ function generateDidactico(
 
 export interface DiagnosticInput {
   lineaGenetica: string;
+  /** Propósito declarado por el usuario para una línea fuera del catálogo. */
+  tipoAveManual?: BirdType;
   edadSemanas: number;
   promedio: number;
   desvEst: number;
@@ -1424,7 +1433,7 @@ export function generateDiagnostic(input: DiagnosticInput): DiagnosticResult {
     totalAves,
   } = input;
 
-  const birdType = getBirdType(lineaGenetica);
+  const birdType = getBirdType(lineaGenetica, input.tipoAveManual);
   const level = getUniformityLevel(uniformidad);
   const { stage, label: stageLabel } = getProductiveStage(birdType, edadSemanas);
   const refs = edadSemanas > 0 ? getReferences(lineaGenetica) : null;

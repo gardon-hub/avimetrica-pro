@@ -6,6 +6,12 @@ import type { ReportContext } from '@/lib/report-data';
 interface UniformidadState {
   pesos: number[];
   lineaGenetica: string;
+  /**
+   * Propósito de una línea escrita por el usuario (fuera del catálogo): el
+   * diagnóstico lo usa en vez de adivinar. Para líneas del catálogo se
+   * ignora, porque el propósito va en el propio identificador.
+   */
+  tipoOtraLinea: 'broiler' | 'ponedora';
   edadSemanas: string;
   /** Criterio de uniformidad: media ± X% (10 = criterio tradicional) */
   uniformityPct: number;
@@ -20,6 +26,7 @@ interface UniformidadState {
   updatePeso: (index: number, nuevoPeso: number) => void;
   setPesos: (pesos: number[]) => void;
   setLineaGenetica: (linea: string) => void;
+  setTipoOtraLinea: (tipo: 'broiler' | 'ponedora') => void;
   setEdadSemanas: (edad: string) => void;
   setUniformityPct: (pct: number) => void;
   setReportContext: (ctx: Partial<ReportContext>) => void;
@@ -33,6 +40,7 @@ export const useUniformidadStore = create<UniformidadState>()(
     (set, get) => ({
       pesos: [],
       lineaGenetica: 'Broiler - Cobb',
+      tipoOtraLinea: 'ponedora',
       edadSemanas: '',
       uniformityPct: DEFAULT_UNIFORMITY_PCT,
       reportContext: {},
@@ -67,6 +75,10 @@ export const useUniformidadStore = create<UniformidadState>()(
 
       setLineaGenetica: (linea: string) => {
         set({ lineaGenetica: linea });
+      },
+
+      setTipoOtraLinea: (tipo: 'broiler' | 'ponedora') => {
+        set({ tipoOtraLinea: tipo });
       },
 
       setEdadSemanas: (edad: string) => {

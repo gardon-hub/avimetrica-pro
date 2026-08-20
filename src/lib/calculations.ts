@@ -127,19 +127,5 @@ export function getDiagnosticText(uniformidad: number, countDebajo: number, coun
   }
 }
 
-export const GENETIC_LINES = [
-  'Broiler - Cobb',
-  'Broiler - Ross',
-  'Broiler - Hubbard',
-  'Ponedora - Hy-Line Brown',
-  'Ponedora - Hy-Line W-36',
-  'Ponedora - Lohmann Brown',
-  'Ponedora - Lohmann LSL',
-  'Ponedora - Dekalb Brown',
-  'Ponedora - Dekalb White',
-  'Ponedora - Nick Brown',
-  'Ponedora - Super Nick',
-  'Otra',
-] as const;
-
-export type GeneticLine = (typeof GENETIC_LINES)[number];
+// El catálogo de líneas seleccionables vive en lib/lineas-geneticas.ts
+// (agrupado por propósito y con entrada libre); aquí ya no hay lista.

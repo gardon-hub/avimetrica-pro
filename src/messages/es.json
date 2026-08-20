@@ -68,7 +68,15 @@
     "line": "Línea Genética",
     "linePlaceholder": "Seleccionar línea",
     "age": "Edad (semanas)",
-    "agePlaceholder": "Ej: 22"
+    "agePlaceholder": "Ej: 22",
+    "groupBroilers": "Engorde (broilers)",
+    "groupLayers": "Postura (ponedoras)",
+    "groupOther": "Sin catálogo",
+    "otherLine": "Otra línea (escribir)…",
+    "otherLinePlaceholder": "Nombre de la línea, ej.: Sasso, criolla mejorada",
+    "purposeBroiler": "Engorde",
+    "purposeLayer": "Postura",
+    "otherLineHint": "Esta línea no tiene curva de referencia en la aplicación: no habrá comparación contra el peso objetivo ni prueba t contra la guía. El resto del análisis (uniformidad, CV, atípicos, normalidad, reportes) funciona igual."
   },
   "weightInput": {
     "placeholder": "Peso en gramos",

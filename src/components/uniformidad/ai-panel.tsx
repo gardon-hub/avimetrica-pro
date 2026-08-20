@@ -22,14 +22,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { GraduationCap } from 'lucide-react';
 
 export function AiPanel() {
-  const { pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext } = useUniformidadStore();
+  const { pesos, lineaGenetica, tipoOtraLinea, edadSemanas, uniformityPct, reportContext } = useUniformidadStore();
   const t = useTranslations('ai');
   const locale = useLocale();
 
   const data = useMemo(() => {
     if (pesos.length < 2) return null;
-    return buildReportData({ pesos, lineaGenetica, edadSemanas, criterioPct: uniformityPct, contexto: reportContext });
-  }, [pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext]);
+    return buildReportData({ pesos, lineaGenetica, tipoOtraLinea, edadSemanas, criterioPct: uniformityPct, contexto: reportContext });
+  }, [pesos, lineaGenetica, tipoOtraLinea, edadSemanas, uniformityPct, reportContext]);
 
   const sections = useMemo(() => (data ? buildAcademicSections(data) : []), [data]);
 

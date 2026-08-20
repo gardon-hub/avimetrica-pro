@@ -117,6 +117,8 @@ function buildLimitaciones(d: {
 export function buildReportData(input: {
   pesos: number[];
   lineaGenetica: string;
+  /** Propósito declarado para una línea fuera del catálogo (ver store). */
+  tipoOtraLinea?: 'broiler' | 'ponedora';
   edadSemanas: string;
   criterioPct: number;
   contexto: ReportContext;
@@ -139,6 +141,7 @@ export function buildReportData(input: {
 
   const diagnostic = generateDiagnostic({
     lineaGenetica,
+    tipoAveManual: input.tipoOtraLinea,
     edadSemanas: edadSemanas ?? 0,
     promedio: stats.promedio,
     desvEst: stats.desvEst,

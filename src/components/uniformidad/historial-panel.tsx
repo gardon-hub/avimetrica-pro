@@ -14,7 +14,7 @@ import {
   LoteResumen, PesajeFull, PesajeConLote, TIPO_AVE_KEYS, SEXO_KEYS, MUESTREO_KEYS,
   fetchLotes, fetchPesajes, fetchAllPesajes,
 } from '@/lib/lotes-api';
-import { GENETIC_LINES } from '@/lib/calculations';
+import { LineaGeneticaSelect } from '@/components/uniformidad/linea-genetica-select';
 import { calculateStats } from '@/lib/calculations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -436,14 +436,7 @@ export function HistorialPanel() {
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('lineLabel')}</Label>
-              <Select value={fLinea} onValueChange={setFLinea}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {GENETIC_LINES.map((l) => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <LineaGeneticaSelect value={fLinea} onChange={setFLinea} size="sm" />
             </div>
             <div className="flex flex-col gap-1">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('estimatedSize')}</Label>

@@ -67,7 +67,7 @@ function LevelBadge({ level }: { level: DiagnosticResult['level'] }) {
 }
 
 export function DiagnosticPanel() {
-  const { stats, lineaGenetica, edadSemanas } = useUniformidadStore();
+  const { stats, lineaGenetica, tipoOtraLinea, edadSemanas } = useUniformidadStore();
 
   if (stats.totalAves === 0) return null;
 
@@ -75,6 +75,7 @@ export function DiagnosticPanel() {
 
   const diagnostic = generateDiagnostic({
     lineaGenetica,
+    tipoAveManual: tipoOtraLinea,
     edadSemanas: edad,
     promedio: stats.promedio,
     desvEst: stats.desvEst,

@@ -68,7 +68,15 @@
     "line": "Genetic line",
     "linePlaceholder": "Select a line",
     "age": "Age (weeks)",
-    "agePlaceholder": "e.g. 22"
+    "agePlaceholder": "e.g. 22",
+    "groupBroilers": "Broilers (meat)",
+    "groupLayers": "Layers",
+    "groupOther": "Not in the catalogue",
+    "otherLine": "Other line (type it)…",
+    "otherLinePlaceholder": "Line name, e.g. Sasso, improved local breed",
+    "purposeBroiler": "Meat (broiler)",
+    "purposeLayer": "Layer",
+    "otherLineHint": "This line has no reference curve in the application: there will be no comparison against the target weight nor a t-test against the guide. Everything else (uniformity, CV, outliers, normality, reports) works the same."
   },
   "weightInput": {
     "placeholder": "Weight in grams",

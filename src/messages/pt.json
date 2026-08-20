@@ -68,7 +68,15 @@
     "line": "Linhagem genética",
     "linePlaceholder": "Selecionar linhagem",
     "age": "Idade (semanas)",
-    "agePlaceholder": "Ex.: 22"
+    "agePlaceholder": "Ex.: 22",
+    "groupBroilers": "Corte (frangos)",
+    "groupLayers": "Postura (poedeiras)",
+    "groupOther": "Fora do catálogo",
+    "otherLine": "Outra linhagem (digitar)…",
+    "otherLinePlaceholder": "Nome da linhagem, ex.: Sasso, caipira melhorada",
+    "purposeBroiler": "Corte",
+    "purposeLayer": "Postura",
+    "otherLineHint": "Esta linhagem não tem curva de referência no aplicativo: não haverá comparação com o peso-meta nem teste t contra a guia. Todo o resto (uniformidade, CV, atípicos, normalidade, relatórios) funciona igual."
   },
   "weightInput": {
     "placeholder": "Peso em gramas",

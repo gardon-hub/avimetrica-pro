@@ -732,3 +732,34 @@ suite('dominio genérico: Modo Estadística (Fase 10)', () => {
     }
   });
 });
+
+suite('línea genética fuera del catálogo', () => {
+  const base = {
+    edadSemanas: 5, promedio: 1850, desvEst: 70, cv: 3.78, uniformidad: 100,
+    limiteInf: 1665, limiteSup: 2035, countDebajo: 0, countEncima: 0,
+    countDentro: 3, totalAves: 3,
+  };
+
+  it('sin referencia de peso objetivo, pero con diagnóstico funcionando', async () => {
+    const { getTargetWeight, generateDiagnostic } = await import('../src/lib/diagnostic-engine');
+    expect(getTargetWeight('Criolla mejorada UNAG', 5)).toBeNull();
+    const d = generateDiagnostic({ lineaGenetica: 'Criolla mejorada UNAG', ...base });
+    expect(d.level).toBe('excellent');
+  });
+
+  it('el propósito declarado manda sobre la heurística; el catálogo manda sobre lo declarado', async () => {
+    const { generateDiagnostic } = await import('../src/lib/diagnostic-engine');
+    const conDeclarado = generateDiagnostic({
+      lineaGenetica: 'Criolla mejorada UNAG', tipoAveManual: 'broiler', ...base,
+    });
+    expect(conDeclarado.birdType).toBe('broiler');
+    // Sin declaración se conserva el comportamiento histórico (postura)
+    const sinDeclarar = generateDiagnostic({ lineaGenetica: 'Criolla mejorada UNAG', ...base });
+    expect(sinDeclarar.birdType).toBe('ponedora');
+    // Una línea del catálogo lleva el propósito en su prefijo: lo declarado no la cambia
+    const catalogo = generateDiagnostic({
+      lineaGenetica: 'Ponedora - Hy-Line Brown', tipoAveManual: 'broiler', ...base, edadSemanas: 22,
+    });
+    expect(catalogo.birdType).toBe('ponedora');
+  });
+});

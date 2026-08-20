@@ -21,7 +21,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { FileText, Printer, Sheet, ChevronDown } from 'lucide-react';
 
 export function ReportPanel() {
-  const { pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext, setReportContext } = useUniformidadStore();
+  const { pesos, lineaGenetica, tipoOtraLinea, edadSemanas, uniformityPct, reportContext, setReportContext } = useUniformidadStore();
   const tMuestreo = useTranslations('sampling');
   const tPanel = useTranslations('avesReportPanel');
   const tRep = useTranslations('reports.aves');
@@ -37,11 +37,12 @@ export function ReportPanel() {
     return buildReportData({
       pesos,
       lineaGenetica,
+      tipoOtraLinea,
       edadSemanas,
       criterioPct: uniformityPct,
       contexto: reportContext,
     });
-  }, [show, pesos, lineaGenetica, edadSemanas, uniformityPct, reportContext]);
+  }, [show, pesos, lineaGenetica, tipoOtraLinea, edadSemanas, uniformityPct, reportContext]);
 
   const html = useMemo(
     () => (data ? buildReportHtml(data, variant, { locale, t: tRaiz }) : ''),
