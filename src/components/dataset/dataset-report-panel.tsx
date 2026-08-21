@@ -85,10 +85,7 @@ export function DatasetReportPanel({ store, domain }: { store: DatasetStore; dom
             className="w-full h-[520px] border rounded-md bg-white"
             sandbox=""
           />
-          <p className="text-[10px] text-muted-foreground leading-snug">
-            {t('note')}
-            {locale !== 'es' && <> {t('spanishOnly')}</>}
-          </p>
+          <p className="text-[10px] text-muted-foreground leading-snug">{t('note')}</p>
         </div>
       )}
     </div>

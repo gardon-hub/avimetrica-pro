@@ -762,8 +762,7 @@
     "samplingMethod": "Método de amostragem",
     "generate": "Gerar",
     "print": "Imprimir / PDF",
-    "excel": "Baixar Excel",
-    "excelSpanishOnly": "O Excel é baixado por enquanto apenas em espanhol."
+    "excel": "Baixar Excel"
   },
   "datasetReport": {
     "title": "Relatório",
@@ -774,8 +773,7 @@
     "docTitle": "Relatório — {modulo}",
     "customCriterion": "Personalizado",
     "customCriterionSource": "Cortes definidos pelo usuário.",
-    "note": "A pré-visualização é o mesmo documento que se imprime. Para PDF: Imprimir → «Salvar como PDF». O Excel inclui abas de Resumo, Categorias e Dados.",
-    "spanishOnly": "O Excel é baixado por enquanto apenas em espanhol."
+    "note": "A pré-visualização é o mesmo documento que se imprime. Para PDF: Imprimir → «Salvar como PDF». O Excel inclui abas de Resumo, Categorias e Dados."
   },
   "comparisonCharts": {
     "categoriesAlt": "Gráfico de barras comparando a porcentagem por categoria entre {a} e {b}",

@@ -762,8 +762,7 @@
     "samplingMethod": "Sampling method",
     "generate": "Generate",
     "print": "Print / PDF",
-    "excel": "Download Excel",
-    "excelSpanishOnly": "The Excel file is downloaded in Spanish only for now."
+    "excel": "Download Excel"
   },
   "datasetReport": {
     "title": "Report",
@@ -774,8 +773,7 @@
     "docTitle": "Report — {modulo}",
     "customCriterion": "Custom",
     "customCriterionSource": "Cut-offs defined by the user.",
-    "note": "The preview is the same document that gets printed. For PDF: Print → \"Save as PDF\". The Excel file includes Summary, Categories and Data sheets.",
-    "spanishOnly": "The Excel file is downloaded in Spanish only for now."
+    "note": "The preview is the same document that gets printed. For PDF: Print → \"Save as PDF\". The Excel file includes Summary, Categories and Data sheets."
   },
   "comparisonCharts": {
     "categoriesAlt": "Bar chart comparing the percentage per category between {a} and {b}",

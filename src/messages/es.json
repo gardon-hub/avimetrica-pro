@@ -762,8 +762,7 @@
     "samplingMethod": "Método de muestreo",
     "generate": "Generar",
     "print": "Imprimir / PDF",
-    "excel": "Descargar Excel",
-    "excelSpanishOnly": "El Excel se descarga por ahora solo en español."
+    "excel": "Descargar Excel"
   },
   "datasetReport": {
     "title": "Reporte",
@@ -774,8 +773,7 @@
     "docTitle": "Reporte — {modulo}",
     "customCriterion": "Personalizado",
     "customCriterionSource": "Cortes definidos por el usuario.",
-    "note": "La vista previa es el mismo documento que se imprime. Para PDF: Imprimir → «Guardar como PDF». El Excel incluye hojas de Resumen, Categorías y Datos.",
-    "spanishOnly": "El Excel se descarga por ahora solo en español."
+    "note": "La vista previa es el mismo documento que se imprime. Para PDF: Imprimir → «Guardar como PDF». El Excel incluye hojas de Resumen, Categorías y Datos."
   },
   "comparisonCharts": {
     "categoriesAlt": "Gráfico de barras comparando el porcentaje por categoría entre {a} y {b}",
