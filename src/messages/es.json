@@ -147,6 +147,7 @@
     "ci95": "IC 95% para la media",
     "notEnough": "— (n<{min})",
     "bandsTitle": "Proporción de aves dentro de media ± X%",
+    "bandsTitleGeneric": "Proporción de valores dentro de media ± X%",
     "targetTitle": "Comparación con el objetivo de {linea} ({semanas} sem)",
     "targetWeight": "Peso objetivo: <b>{optimo} g</b> (rango guía {min}–{max} g)",
     "approximate": "⚠️ datos aproximados, sin guía oficial auditada",

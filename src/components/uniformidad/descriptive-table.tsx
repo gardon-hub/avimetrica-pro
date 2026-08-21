@@ -33,7 +33,7 @@ export function DescriptiveTable({
   nLabel: string;
   /** Solo aves: activa la comparación contra la guía de la línea. */
   objetivo?: { linea: string; semanas: string };
-  /** true = la casilla de censo habla de «población», no de «lote». */
+  /** true = rótulos sin jerga avícola: «población» en vez de «lote», «valores» en vez de «aves». */
   generico?: boolean;
 }) {
   const t = useTranslations('descriptive');
@@ -115,7 +115,7 @@ export function DescriptiveTable({
 
       <div>
         <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1.5">
-          {t('bandsTitle')}
+          {t(generico ? 'bandsTitleGeneric' : 'bandsTitle')}
         </div>
         <div className="grid grid-cols-4 gap-2 text-center">
           {bands.map(([label, value]) => (

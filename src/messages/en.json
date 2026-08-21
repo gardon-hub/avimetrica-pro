@@ -147,6 +147,7 @@
     "ci95": "95% CI for the mean",
     "notEnough": "— (n<{min})",
     "bandsTitle": "Proportion of birds within mean ± X%",
+    "bandsTitleGeneric": "Proportion of values within mean ± X%",
     "targetTitle": "Comparison against the {linea} target ({semanas} wk)",
     "targetWeight": "Target weight: <b>{optimo} g</b> (guide range {min}–{max} g)",
     "approximate": "⚠️ approximate data, no audited official guide",
