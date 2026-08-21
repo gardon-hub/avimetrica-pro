@@ -29,13 +29,13 @@ export function DatasetReportPanel({ store, domain }: { store: DatasetStore; dom
       valores,
       variable,
       scheme,
-      criterioLabel: preset?.label ?? t('customCriterion'),
-      criterioFuente: preset?.source ?? t('customCriterionSource'),
+      criterioLabel: preset ? tRaiz(`presets.${domain.id}.${preset.id}.label`) : t('customCriterion'),
+      criterioFuente: preset ? tRaiz(`presets.${domain.id}.${preset.id}.source`) : t('customCriterionSource'),
       criterioOficial: preset?.official ?? false,
       contexto,
       muHipotetica,
     };
-  }, [valores, variable, scheme, presetId, contexto, muHipotetica, domain, t, tNav]);
+  }, [valores, variable, scheme, presetId, contexto, muHipotetica, domain, t, tNav, tRaiz]);
 
   const html = useMemo(
     () => (mostrar && entrada ? buildDatasetReportHtml(entrada, { locale, t: tRaiz }) : ''),

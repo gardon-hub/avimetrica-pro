@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ClassificationScheme } from '@/lib/classification';
 import { classify } from '@/lib/classification';
+import { translateBinLabel } from '@/lib/domains/preset-i18n';
 import { describe } from '@/lib/statistics/descriptive';
 import { twoSampleTTest, pairedTTest, meanConfidenceInterval } from '@/lib/statistics/inference';
 import { fmtPFrase } from '@/lib/p-value';
@@ -135,13 +136,13 @@ export function DatasetComparison({
     const cA = classify(a.valores, a.scheme);
     const cB = classify(b.valores, a.scheme);
     return cA.bins.map((bin, i) => ({
-      label: bin.label,
+      label: translateBinLabel(bin.label, tRaiz),
       pctA: bin.pct,
       pctB: cB.bins[i]?.pct ?? 0,
       nA: bin.count,
       nB: cB.bins[i]?.count ?? 0,
     }));
-  }, [a, b]);
+  }, [a, b, tRaiz]);
 
   const imprimir = () => {
     if (!a || !b || !resultado || !design || design === 'ns') return;

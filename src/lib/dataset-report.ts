@@ -19,6 +19,7 @@ import { categoriasBarSvg } from '@/lib/dataset-report-charts';
 import { REPORT_CSS } from '@/lib/report-html';
 import { APP_VERSION } from '@/lib/report-data';
 import type { VariableDefinition } from '@/lib/domains/types';
+import { translateBinLabel } from '@/lib/domains/preset-i18n';
 import type { DatasetContext } from '@/lib/dataset-store';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
 import { logoUrl } from '@/lib/base-path';
@@ -81,11 +82,14 @@ export function buildDatasetReportHtml(
     ? oneSampleTTest(valores, input.muHipotetica, 'two-sided', 0.95)
     : null;
 
-  
+  const tBin = (label: string) => translateBinLabel(label, t);
+
   const hist = valores.length >= 5
     ? svgToDataUri(histogramSvg(valores, d.mean, d.sdSample, d.mean * 0.9, d.mean * 1.1, t))
     : '';
-  const graficoCat = svgToDataUri(categoriasBarSvg(cl.bins, cl.unclassified, cl.n, t));
+  const graficoCat = svgToDataUri(
+    categoriasBarSvg(cl.bins.map((b) => ({ ...b, label: tBin(b.label) })), cl.unclassified, cl.n, t),
+  );
 
   const meta: Array<[string, string]> = [
     [tr('metaVariable'), `${variable.label}${u ? ` (${u})` : ''}`],
@@ -129,7 +133,7 @@ export function buildDatasetReportHtml(
       : eb.min === null ? `&lt; ${f(eb.max!)}`
       : eb.max === null ? `≥ ${f(eb.min)}`
       : `${f(eb.min)} – &lt; ${f(eb.max)}`;
-    return `<tr><td>${esc(b.label)}</td><td class="num">${rango} ${esc(u)}</td><td class="num">${b.count}</td><td class="num">${b.pct.toFixed(1)}</td></tr>`;
+    return `<tr><td>${esc(tBin(b.label))}</td><td class="num">${rango} ${esc(u)}</td><td class="num">${b.count}</td><td class="num">${b.pct.toFixed(1)}</td></tr>`;
   }).join('');
 
   const lim = limitaciones(tr, d.n, sw?.pValue ?? null, out.flags.length, contexto.observaciones + contexto.origen);
@@ -156,7 +160,7 @@ ${graficoCat ? `<div class="chart"><img src="${graficoCat}" alt="${esc(tr('categ
   ${filasCat}
   ${cl.unclassified > 0 ? `<tr><td><b>${esc(tr('unclassified'))}</b></td><td class="num">${esc(tr('unclassifiedRange'))}</td><td class="num">${cl.unclassified}</td><td class="num">${((cl.unclassified / cl.n) * 100).toFixed(1)}</td></tr>` : ''}
 </table>
-${cl.modeLabel ? `<p>${esc(tr('predominantLabel'))} <b>${esc(cl.modeLabel)}</b>.</p>` : ''}
+${cl.modeLabel ? `<p>${esc(tr('predominantLabel'))} <b>${esc(tBin(cl.modeLabel))}</b>.</p>` : ''}
 
 <h2>${esc(tr('summaryTitle'))}</h2>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${col(descriptiva.slice(0, mitad))}${col(descriptiva.slice(mitad))}</div>

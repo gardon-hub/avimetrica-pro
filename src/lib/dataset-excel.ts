@@ -12,6 +12,7 @@ import { shapiroWilk } from '@/lib/statistics/shapiro-wilk';
 import { detectOutliers } from '@/lib/statistics/outliers';
 import { classify } from '@/lib/classification';
 import type { DatasetReportInput } from '@/lib/dataset-report';
+import { translateBinLabel } from '@/lib/domains/preset-i18n';
 import type { ReportI18n } from '@/lib/report-i18n';
 import { fmtPFrase } from '@/lib/p-value';
 
@@ -41,6 +42,7 @@ export function buildDatasetWorkbook(
   const out = detectOutliers(valores);
   const cl = classify(valores, scheme);
   const sinClasificar = tr('unclassified');
+  const tBin = (label: string) => translateBinLabel(label, t);
 
   const wb = XLSX.utils.book_new();
 
@@ -85,7 +87,7 @@ export function buildDatasetWorkbook(
   cl.bins.forEach((b, i) => {
     const eb = cl.effectiveBins[i];
     cats.push([
-      b.label,
+      tBin(b.label),
       eb.min === null ? tr('noLimit') : num(eb.min, dec),
       eb.max === null ? tr('noLimit') : num(eb.max, dec),
       b.count,
@@ -103,7 +105,7 @@ export function buildDatasetWorkbook(
   const datos: Row[] = [['#', `${variable.label}${u ? ` (${u})` : ''}`, tr('colCategory'), tr('colOutlier')]];
   valores.forEach((v, i) => {
     const bin = cl.bins.find((b) => b.indices.includes(i));
-    datos.push([i + 1, v, bin?.label ?? sinClasificar, flagIdx.has(i) ? tr('yes') : '']);
+    datos.push([i + 1, v, bin ? tBin(bin.label) : sinClasificar, flagIdx.has(i) ? tr('yes') : '']);
   });
   const wsD = XLSX.utils.aoa_to_sheet(datos);
   wsD['!cols'] = [{ wch: 6 }, { wch: 16 }, { wch: 28 }, { wch: 14 }];

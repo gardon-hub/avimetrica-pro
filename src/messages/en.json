@@ -690,11 +690,67 @@
     "deleteBin": "Delete the category {categoria}",
     "deleteBinTitle": "Delete category",
     "addBin": "Add category",
+    "newBinLabel": "Category {n}",
     "issueEmpty": "• Define at least one category.",
     "issueUnnamed": "• Category {n} has no name.",
     "issueInverted": "• In \"{categoria}\" the lower bound ({min}) is not smaller than the upper one ({max}).",
     "issueDuplicated": "• There are repeated category names: {lista}.",
     "issueOverlap": "• \"{a}\" and \"{b}\" overlap; each value will be counted only in \"{a}\"."
+  },
+  "presets": {
+    "binLabels": {
+      "allData": "All data",
+      "usdaPeewee": "Peewee",
+      "usdaSmall": "Small",
+      "usdaMedium": "Medium",
+      "usdaLarge": "Large",
+      "usdaXL": "Extra Large",
+      "usdaJumbo": "Jumbo",
+      "bandBelow10": "Below the mean −10 %",
+      "bandWithin10": "Within ±10 %",
+      "bandAbove10": "Above the mean +10 %",
+      "sizeSmall": "Small",
+      "sizeMedium": "Medium",
+      "sizeLarge": "Large",
+      "low": "Low",
+      "high": "High",
+      "defaultBelow": "Below",
+      "defaultWithin": "Within range",
+      "defaultAbove": "Above"
+    },
+    "huevos": {
+      "usda": {
+        "label": "USDA (United States)",
+        "source": "USDA size classes by minimum net weight per dozen (Jumbo 30 oz · XL 27 · L 24 · M 21 · S 18 · Peewee 15). Per-egg cut-offs are derived by dividing by 12 and converting to grams (1 oz = 28.349523125 g).",
+        "note": "Eggs below the Peewee minimum (≈35.4 g) have no USDA class and are reported as \"ungraded\"."
+      },
+      "banda-10": {
+        "label": "Uniformity (mean ±10 %)",
+        "source": "Dispersion criterion relative to the observed mean; it is not a size standard.",
+        "note": "Measures how even the egg batch is, regardless of its commercial size. Not to be confused with a confidence interval."
+      },
+      "personalizado": {
+        "label": "Custom",
+        "source": "Cut-offs defined by the user.",
+        "note": "An editable starting point to match the standard of a plant, a market or a classroom exercise."
+      }
+    },
+    "generico": {
+      "ninguna": {
+        "label": "No classification",
+        "source": "Statistical analysis only, without grouping into categories."
+      },
+      "banda-10": {
+        "label": "Relative band (mean ±10 %)",
+        "source": "Dispersion criterion relative to the observed mean.",
+        "note": "Useful for teaching the difference between a descriptive band and a confidence interval."
+      },
+      "personalizado": {
+        "label": "Custom categories",
+        "source": "Cut-offs defined by the user.",
+        "note": "Edit the cut-offs to fit the exercise; useful for practicing frequency distributions."
+      }
+    }
   },
   "avesReportPanel": {
     "title": "Reports",

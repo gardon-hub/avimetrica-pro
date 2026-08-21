@@ -12,6 +12,7 @@ import { useState } from 'react';
 import type { DatasetStore } from '@/lib/dataset-store';
 import type { Domain } from '@/lib/domains/types';
 import { findPreset } from '@/lib/domains/types';
+import { translateBinLabel } from '@/lib/domains/preset-i18n';
 import { validateBins, type Bin, type BinIssue } from '@/lib/classification';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -35,9 +36,12 @@ function fmtRango(bin: Bin, unidad: string, dec: number, todos: string): string 
 export function ClassificationPanel({ store, domain }: { store: DatasetStore; domain: Domain }) {
   const { valores, variable, presetId, scheme, clasificacion, setPreset, setScheme } = store();
   const t = useTranslations('classification');
+  const tPresets = useTranslations('presets');
+  const tRaiz = useTranslations();
   const [editorAbierto, setEditorAbierto] = useState(false);
 
   const preset = findPreset(domain, presetId);
+  const tBin = (label: string) => translateBinLabel(label, tRaiz);
 
   // Bins editables: solo tiene sentido para esquemas absolutos
   const binsEditables = scheme.type === 'absolute-bins' ? scheme.bins : null;
@@ -64,7 +68,7 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
       bins: [
         ...binsEditables,
         {
-          label: `Categoría ${binsEditables.length + 1}`,
+          label: t('newBinLabel', { n: binsEditables.length + 1 }),
           min: nuevoMin,
           max: null,
           color: PALETA[binsEditables.length % PALETA.length],
@@ -91,7 +95,9 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
           <SelectContent>
             {domain.classificationPresets.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.official ? t('officialSuffix', { label: p.label }) : p.label}
+                {p.official
+                  ? t('officialSuffix', { label: tPresets(`${domain.id}.${p.id}.label`) })
+                  : tPresets(`${domain.id}.${p.id}.label`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -102,8 +108,9 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
         <Alert className={preset.official ? 'border-green-200 bg-green-50 mb-3' : 'border-blue-200 bg-blue-50 mb-3'}>
           <Info className="h-4 w-4" />
           <AlertDescription className="text-[11px] leading-snug">
-            <b>{t(preset.official ? 'officialLabel' : 'nonNormativeLabel')}</b> {preset.source}
-            {preset.note && <div className="mt-1">{preset.note}</div>}
+            <b>{t(preset.official ? 'officialLabel' : 'nonNormativeLabel')}</b>{' '}
+            {tPresets(`${domain.id}.${preset.id}.source`)}
+            {preset.note && <div className="mt-1">{tPresets(`${domain.id}.${preset.id}.note`)}</div>}
           </AlertDescription>
         </Alert>
       )}
@@ -131,7 +138,7 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
                       style={{ backgroundColor: b.color ?? PALETA[i % PALETA.length] }}
                       aria-hidden="true"
                     />
-                    {b.label}
+                    {tBin(b.label)}
                   </td>
                   <td className="py-1.5 text-muted-foreground tabular-nums">
                     {fmtRango(clasificacion.effectiveBins[i], variable.unit, variable.decimals, t('allValues'))}
@@ -140,7 +147,7 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
                   <td className="py-1.5 text-right tabular-nums pr-3">{b.pct.toFixed(1)}</td>
                   <td className="py-1.5 pl-1">
                     <div className="bg-muted rounded-sm h-3 w-full overflow-hidden" role="img"
-                      aria-label={t('barAria', { categoria: b.label, pct: b.pct.toFixed(1) })}>
+                      aria-label={t('barAria', { categoria: tBin(b.label), pct: b.pct.toFixed(1) })}>
                       <div
                         className="h-full rounded-sm"
                         style={{
@@ -168,7 +175,7 @@ export function ClassificationPanel({ store, domain }: { store: DatasetStore; do
 
           {clasificacion.modeLabel && (
             <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
-              {t.rich('predominant', { categoria: clasificacion.modeLabel, b: (c) => <b>{c}</b> })}
+              {t.rich('predominant', { categoria: tBin(clasificacion.modeLabel), b: (c) => <b>{c}</b> })}
               {clasificacion.unclassified > 0 && (
                 <>{' '}{t.rich('predominantWithUnclassified', {
                   n: clasificacion.unclassified,

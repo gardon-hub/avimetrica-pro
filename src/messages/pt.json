@@ -690,11 +690,67 @@
     "deleteBin": "Excluir a categoria {categoria}",
     "deleteBinTitle": "Excluir categoria",
     "addBin": "Adicionar categoria",
+    "newBinLabel": "Categoria {n}",
     "issueEmpty": "• Defina pelo menos uma categoria.",
     "issueUnnamed": "• A categoria {n} não tem nome.",
     "issueInverted": "• Em «{categoria}» o limite inferior ({min}) não é menor que o superior ({max}).",
     "issueDuplicated": "• Há nomes de categoria repetidos: {lista}.",
     "issueOverlap": "• «{a}» e «{b}» se sobrepõem; cada valor será contado apenas em «{a}»."
+  },
+  "presets": {
+    "binLabels": {
+      "allData": "Todos os dados",
+      "usdaPeewee": "Peewee",
+      "usdaSmall": "Small (Pequeno)",
+      "usdaMedium": "Medium (Médio)",
+      "usdaLarge": "Large (Grande)",
+      "usdaXL": "Extra Large (Extragrande)",
+      "usdaJumbo": "Jumbo",
+      "bandBelow10": "Abaixo da média −10 %",
+      "bandWithin10": "Dentro de ±10 %",
+      "bandAbove10": "Acima da média +10 %",
+      "sizeSmall": "Pequeno",
+      "sizeMedium": "Médio",
+      "sizeLarge": "Grande",
+      "low": "Baixo",
+      "high": "Alto",
+      "defaultBelow": "Abaixo",
+      "defaultWithin": "Dentro da faixa",
+      "defaultAbove": "Acima"
+    },
+    "huevos": {
+      "usda": {
+        "label": "USDA (Estados Unidos)",
+        "source": "USDA, classes de tamanho por peso mínimo líquido por dúzia (Jumbo 30 oz · XL 27 · L 24 · M 21 · S 18 · Peewee 15). Os cortes por ovo derivam-se dividindo por 12 e convertendo a gramas (1 oz = 28.349523125 g).",
+        "note": "Ovos abaixo do mínimo de Peewee (≈35.4 g) não têm classe USDA e são reportados como «sem classificar»."
+      },
+      "banda-10": {
+        "label": "Uniformidade (média ±10 %)",
+        "source": "Critério de dispersão relativo à média observada; não é uma norma de tamanho.",
+        "note": "Mede o quão uniforme é o lote de ovos, independentemente do seu tamanho comercial. Não confundir com um intervalo de confiança."
+      },
+      "personalizado": {
+        "label": "Personalizado",
+        "source": "Cortes definidos pelo usuário.",
+        "note": "Ponto de partida editável para se adaptar à norma de uma planta, um mercado ou um exercício de aula."
+      }
+    },
+    "generico": {
+      "ninguna": {
+        "label": "Sem classificação",
+        "source": "Apenas análise estatística, sem agrupar em categorias."
+      },
+      "banda-10": {
+        "label": "Faixa relativa (média ±10 %)",
+        "source": "Critério de dispersão relativo à média observada.",
+        "note": "Útil para ensinar a diferença entre uma faixa descritiva e um intervalo de confiança."
+      },
+      "personalizado": {
+        "label": "Categorias personalizadas",
+        "source": "Cortes definidos pelo usuário.",
+        "note": "Edite os cortes conforme o exercício; serve para praticar distribuições de frequências."
+      }
+    }
   },
   "avesReportPanel": {
     "title": "Relatórios",
