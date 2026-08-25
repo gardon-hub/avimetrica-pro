@@ -58,29 +58,41 @@ export interface WeightReference {
   pesoMax: number;
 }
 
+/**
+ * Mensaje del diagnóstico SIN redactar: `key` es una clave del espacio
+ * `diagnosticEngine` del catálogo de idiomas y `params` sus valores ya
+ * formateados (cadenas con los decimales exactos). El motor decide QUÉ
+ * decir; la interfaz y los reportes deciden CÓMO suena en cada idioma —
+ * la misma división que report-data.ts usa para las limitaciones.
+ */
+export interface MensajeDiagnostico {
+  key: string;
+  params?: Record<string, string | number>;
+}
+
 export interface DiagnosticResult {
-  /** Título principal del diagnóstico */
-  title: string;
+  /** Título principal (sin la etapa: se compone con stageKey al mostrar) */
+  titulo: MensajeDiagnostico;
   /** Nivel global de uniformidad */
   level: UniformityLevel;
   /** Tipo de ave identificado */
   birdType: BirdType;
   /** Etapa productiva identificada */
   stage: ProductiveStage;
-  /** Nombre legible de la etapa */
-  stageLabel: string;
-  /** Interpretación técnica del resultado */
-  interpretacion: string;
-  /** Peso esperado vs peso real */
-  pesoComparacion: string;
+  /** Clave de catálogo del nombre legible de la etapa (diagnosticEngine.stage.*) */
+  stageKey: string;
+  /** Interpretación técnica: oraciones completas, en orden */
+  interpretacion: MensajeDiagnostico[];
+  /** Peso esperado vs peso real: oraciones completas, en orden */
+  pesoComparacion: MensajeDiagnostico[];
   /** Alertas si el peso no corresponde a la edad */
-  alertas: string[];
+  alertas: MensajeDiagnostico[];
   /** Posibles causas de baja uniformidad */
-  causas: string[];
+  causas: MensajeDiagnostico[];
   /** Recomendaciones prácticas de manejo */
-  recomendaciones: string[];
+  recomendaciones: MensajeDiagnostico[];
   /** Comentario didáctico sobre la importancia de la uniformidad */
-  didactico: string;
+  didactico: MensajeDiagnostico;
 }
 
 // ─── Función auxiliar para calcular rangos ────────────────────────
@@ -1009,20 +1021,20 @@ function getUniformityLevel(uniformidad: number): UniformityLevel {
   return 'poor';
 }
 
-function getProductiveStage(birdType: BirdType, semana: number): { stage: ProductiveStage; label: string } {
+function getProductiveStage(birdType: BirdType, semana: number): { stage: ProductiveStage; stageKey: string } {
   if (birdType === 'broiler') {
-    if (semana <= 1) return { stage: 'iniciacion', label: 'Inicio / Adaptación' };
-    if (semana <= 3) return { stage: 'crianza', label: 'Crianza (Crecimiento Inicial)' };
-    if (semana <= 5) return { stage: 'engorde', label: 'Engorde (Crecimiento Acelerado)' };
-    return { stage: 'engorde', label: 'Engorde Final / Sacrificio' };
+    if (semana <= 1) return { stage: 'iniciacion', stageKey: 'stage.inicio' };
+    if (semana <= 3) return { stage: 'crianza', stageKey: 'stage.crianzaBroiler' };
+    if (semana <= 5) return { stage: 'engorde', stageKey: 'stage.engorde' };
+    return { stage: 'engorde', stageKey: 'stage.engordeFinal' };
   }
 
   // Ponedora
-  if (semana <= 1) return { stage: 'iniciacion', label: 'Inicio / Adaptación' };
-  if (semana <= 6) return { stage: 'crianza', label: 'Crianza (Primeras Semanas)' };
-  if (semana <= 16) return { stage: 'levante', label: 'Levante (Desarrollo Óseo y Muscular)' };
-  if (semana <= 20) return { stage: 'prepostura', label: 'Pre-postura (Desarrollo Reproductivo)' };
-  return { stage: 'produccion', label: 'Producción (Puesta de Huevos)' };
+  if (semana <= 1) return { stage: 'iniciacion', stageKey: 'stage.inicio' };
+  if (semana <= 6) return { stage: 'crianza', stageKey: 'stage.crianzaPonedora' };
+  if (semana <= 16) return { stage: 'levante', stageKey: 'stage.levante' };
+  if (semana <= 20) return { stage: 'prepostura', stageKey: 'stage.prepostura' };
+  return { stage: 'produccion', stageKey: 'stage.produccion' };
 }
 
 // ─── Generadores de contenido por contexto ────────────────────────
@@ -1038,52 +1050,51 @@ function generateInterpretacion(
   countEncima: number,
   countDentro: number,
   totalAves: number,
-): string {
+): MensajeDiagnostico[] {
   const pctDebajo = ((countDebajo / totalAves) * 100).toFixed(1);
   const pctEncima = ((countEncima / totalAves) * 100).toFixed(1);
   const pctDentro = ((countDentro / totalAves) * 100).toFixed(1);
+  const unif = uniformidad.toFixed(1);
+  const cvTxt = cv.toFixed(2);
 
   if (level === 'excellent') {
-    let base = `Uniformidad ${uniformidad.toFixed(1)}%, CV ${cv.toFixed(2)}%: lote muy homogéneo. `;
-    base += `${pctDentro}% de las aves (${countDentro}/${totalAves}) dentro del rango ±10% (${promedio.toFixed(1)} g). `;
-    if (birdType === 'broiler') {
-      base += `El lote alcanzará peso de mercado de forma sincronizada, permitiendo despoble eficiente.`;
-    } else if (stage === 'produccion') {
-      base += `La mayoría de aves está en pico de postura simultáneamente, facilitando el manejo nutricional.`;
-    } else if (stage === 'prepostura') {
-      base += `Las aves madurarán sexualmente al mismo tiempo, sincronizando el inicio de producción.`;
-    } else {
-      base += `El crecimiento está bien controlado y las aves progresan de manera equilibrada.`;
-    }
-    return base;
+    const msgs: MensajeDiagnostico[] = [
+      { key: 'interp.excellentBase', params: { unif, cv: cvTxt } },
+      { key: 'interp.excellentDentro', params: { pctDentro, dentro: countDentro, total: totalAves, promedio: promedio.toFixed(1) } },
+    ];
+    if (birdType === 'broiler') msgs.push({ key: 'interp.excellentBroiler' });
+    else if (stage === 'produccion') msgs.push({ key: 'interp.excellentProduccion' });
+    else if (stage === 'prepostura') msgs.push({ key: 'interp.excellentPrepostura' });
+    else msgs.push({ key: 'interp.excellentCrecimiento' });
+    return msgs;
   }
 
+  const detalle: MensajeDiagnostico = {
+    key: 'interp.detalleFuera',
+    params: { pctDentro, debajo: countDebajo, pctDebajo, encima: countEncima, pctEncima },
+  };
+
   if (level === 'regular') {
-    let base = `Uniformidad ${uniformidad.toFixed(1)}%, CV ${cv.toFixed(2)}%: variabilidad moderada. `;
-    base += `${pctDentro}% en rango, ${countDebajo} aves por debajo (${pctDebajo}%) y ${countEncima} por encima (${pctEncima}%). `;
-    if (countDebajo > countEncima * 2) {
-      base += `Sesgo hacia pesos bajos: grupo significativo con consumo insuficiente o acceso limitado al comedero.`;
-    } else if (countEncima > countDebajo * 2) {
-      base += `Sesgo hacia pesos altos: posible sobrealimentación de un sector o competencia desigual.`;
-    } else {
-      base += `Distribución simétrica pero dispersa: variabilidad general en consumo y crecimiento.`;
-    }
-    return base;
+    const msgs: MensajeDiagnostico[] = [
+      { key: 'interp.regularBase', params: { unif, cv: cvTxt } },
+      detalle,
+    ];
+    if (countDebajo > countEncima * 2) msgs.push({ key: 'interp.regularSesgoBajo' });
+    else if (countEncima > countDebajo * 2) msgs.push({ key: 'interp.regularSesgoAlto' });
+    else msgs.push({ key: 'interp.regularSimetrica' });
+    return msgs;
   }
 
   // poor
-  let base = `Uniformidad ${uniformidad.toFixed(1)}%, CV ${cv.toFixed(2)}%: preocupante. Solo ${pctDentro}% en rango. `;
-  base += `${countDebajo} aves por debajo (${pctDebajo}%) y ${countEncima} por encima (${pctEncima}%). `;
-  if (birdType === 'broiler') {
-    base += `Las aves ligeras tendrán menor rendimiento y las pesadas pueden tener problemas locomotores y mortalidad.`;
-  } else if (stage === 'produccion') {
-    base += `Muchas aves no producen huevos mientras otras ponen de forma irregular, desperdiciando alimento.`;
-  } else if (stage === 'prepostura') {
-    base += `Las aves ligeras retrasarán su madurez sexual, creando producción escalonada e ineficiente.`;
-  } else {
-    base += `La desuniformidad tiende a agravarse si no se corrige. Las aves pequeñas no alcanzarán a las grandes sin intervención.`;
-  }
-  return base;
+  const msgs: MensajeDiagnostico[] = [
+    { key: 'interp.poorBase', params: { unif, cv: cvTxt, pctDentro } },
+    detalle,
+  ];
+  if (birdType === 'broiler') msgs.push({ key: 'interp.poorBroiler' });
+  else if (stage === 'produccion') msgs.push({ key: 'interp.poorProduccion' });
+  else if (stage === 'prepostura') msgs.push({ key: 'interp.poorPrepostura' });
+  else msgs.push({ key: 'interp.poorCrecimiento' });
+  return msgs;
 }
 
 function generatePesoComparacion(
@@ -1091,30 +1102,35 @@ function generatePesoComparacion(
   refs: { pesoMin: number; pesoOptimo: number; pesoMax: number } | null,
   edadSemanas: number,
   lineaGenetica: string,
-): string {
+): MensajeDiagnostico[] {
   if (!refs || !edadSemanas) {
-    return `Peso promedio medido: ${promedio.toFixed(1)} g. No se dispone de referencia para comparar.`;
+    return [{ key: 'peso.sinReferencia', params: { promedio: promedio.toFixed(1) } }];
   }
 
   const diff = promedio - refs.pesoOptimo;
   const pctDiff = ((diff / refs.pesoOptimo) * 100).toFixed(1);
-  const sign = diff >= 0 ? '+' : '';
+  const desv = `${diff >= 0 ? '+' : ''}${pctDiff}`;
 
-  let result = `Peso medido: ${promedio.toFixed(1)} g. Referencia ${lineaGenetica} a ${edadSemanas} sem: ${refs.pesoOptimo.toFixed(0)} g (${refs.pesoMin.toFixed(0)}–${refs.pesoMax.toFixed(0)} g). `;
+  const msgs: MensajeDiagnostico[] = [{
+    key: 'peso.medido',
+    params: {
+      promedio: promedio.toFixed(1),
+      // El nombre comercial de la línea es dato, no texto traducible
+      linea: lineaGenetica,
+      sem: edadSemanas,
+      optimo: refs.pesoOptimo.toFixed(0),
+      min: refs.pesoMin.toFixed(0),
+      max: refs.pesoMax.toFixed(0),
+    },
+  }];
 
-  if (promedio < refs.pesoMin) {
-    result += `Desviación: ${sign}${pctDiff}%. POR DEBAJO del rango mínimo.`;
-  } else if (promedio > refs.pesoMax) {
-    result += `Desviación: ${sign}${pctDiff}%. POR ENCIMA del rango máximo.`;
-  } else if (promedio < refs.pesoOptimo * 0.95) {
-    result += `Desviación: ${sign}${pctDiff}%. Dentro del rango pero por debajo del óptimo.`;
-  } else if (promedio > refs.pesoOptimo * 1.05) {
-    result += `Desviación: ${sign}${pctDiff}%. Dentro del rango pero por encima del óptimo.`;
-  } else {
-    result += `Desviación: ${sign}${pctDiff}%. Muy cerca del óptimo.`;
-  }
+  if (promedio < refs.pesoMin) msgs.push({ key: 'peso.debajoMinimo', params: { desv } });
+  else if (promedio > refs.pesoMax) msgs.push({ key: 'peso.encimaMaximo', params: { desv } });
+  else if (promedio < refs.pesoOptimo * 0.95) msgs.push({ key: 'peso.bajoOptimo', params: { desv } });
+  else if (promedio > refs.pesoOptimo * 1.05) msgs.push({ key: 'peso.sobreOptimo', params: { desv } });
+  else msgs.push({ key: 'peso.cercaOptimo', params: { desv } });
 
-  return result;
+  return msgs;
 }
 
 function generateAlertas(
@@ -1127,11 +1143,11 @@ function generateAlertas(
   countDebajo: number,
   countEncima: number,
   totalAves: number,
-): string[] {
-  const alertas: string[] = [];
+): MensajeDiagnostico[] {
+  const alertas: MensajeDiagnostico[] = [];
 
   if (!refs || !edadSemanas) {
-    alertas.push('No se especificó edad o línea genética sin referencia. Diagnóstico limitado.');
+    alertas.push({ key: 'alerta.sinReferencia' });
     return alertas;
   }
 
@@ -1139,54 +1155,43 @@ function generateAlertas(
   if (promedio < refs.pesoMin) {
     const deficit = refs.pesoOptimo - promedio;
     const pct = ((deficit / refs.pesoOptimo) * 100).toFixed(1);
-    alertas.push(
-      `Peso muy bajo: ${deficit.toFixed(0)} g (${pct}%) inferior al estándar. Verifique edad (${edadSemanas} sem) y revise alimentación.`
-    );
+    alertas.push({ key: 'alerta.pesoMuyBajo', params: { deficit: deficit.toFixed(0), pct, sem: edadSemanas } });
   } else if (promedio > refs.pesoMax) {
     const exceso = promedio - refs.pesoOptimo;
     const pct = ((exceso / refs.pesoOptimo) * 100).toFixed(1);
-    if (birdType === 'broiler') {
-      alertas.push(
-        `Sobrepeso: ${exceso.toFixed(0)} g (${pct}%) sobre el óptimo. Puede causar problemas locomotores, ascitis y mortalidad.`
-      );
-    } else {
-      alertas.push(
-        `Sobrepeso: ${exceso.toFixed(0)} g (${pct}%) sobre el óptimo. Reduce eficiencia de conversión y puede causar prolapso.`
-      );
-    }
+    alertas.push({
+      key: birdType === 'broiler' ? 'alerta.sobrepesoBroiler' : 'alerta.sobrepesoPonedora',
+      params: { exceso: exceso.toFixed(0), pct },
+    });
   }
 
   // CV alto
   if (cv > 15) {
-    alertas.push(
-      `CV ${cv.toFixed(2)}% extremadamente alto (>15%). Sugiere problemas graves de manejo, mezcla de edades o errores en datos.`
-    );
+    alertas.push({ key: 'alerta.cvExtremo', params: { cv: cv.toFixed(2) } });
   } else if (cv > 10 && birdType === 'ponedora') {
-    alertas.push(
-      `CV ${cv.toFixed(2)}% alto para ponedora (esperado <8%). Revise uniformidad del alimento y espacio de comedero.`
-    );
+    alertas.push({ key: 'alerta.cvAltoPonedora', params: { cv: cv.toFixed(2) } });
   }
 
   // Asimetría
   if (countDebajo > 0 && countEncima === 0 && uniformidad < 85) {
-    alertas.push(`Todas las aves fuera de rango están por debajo. Posible alimentación insuficiente o densidad excesiva.`);
+    alertas.push({ key: 'alerta.todasDebajo' });
   } else if (countEncima > 0 && countDebajo === 0 && uniformidad < 85) {
-    alertas.push(`Todas las aves fuera de rango están por encima. Posible sobrealimentación o edad incorrecta.`);
+    alertas.push({ key: 'alerta.todasEncima' });
   }
 
   // Pocas aves
   if (totalAves < 30) {
-    alertas.push(`Solo ${totalAves} aves pesadas. Mínimo recomendado: 30 aves (ideal 50-100) distribuidas en el galpón.`);
+    alertas.push({ key: 'alerta.pocasAves', params: { n: totalAves } });
   }
 
   // Ponedora en producción con baja uniformidad
   if (birdType === 'ponedora' && uniformidad < 75 && edadSemanas >= 20) {
-    alertas.push(`Baja uniformidad en producción: aves improductivas consumiendo alimento sin producir huevos. Pérdida directa.`);
+    alertas.push({ key: 'alerta.produccionBaja' });
   }
 
   // Broiler en engorde final
   if (birdType === 'broiler' && uniformidad < 75 && edadSemanas >= 5) {
-    alertas.push(`Baja uniformidad en engorde final: aves ligeras necesitarán más días, incrementando costo/kg producido.`);
+    alertas.push({ key: 'alerta.engordeFinalBajo' });
   }
 
   return alertas;
@@ -1201,68 +1206,57 @@ function generateCausas(
   cv: number,
   promedio: number,
   refs: { pesoMin: number; pesoOptimo: number; pesoMax: number } | null,
-): string[] {
-  const causas: string[] = [];
+): MensajeDiagnostico[] {
+  const k = (key: string): MensajeDiagnostico => ({ key: `causa.${key}` });
+  const causas: MensajeDiagnostico[] = [];
 
   if (level === 'excellent') {
-    causas.push('Manejo general adecuado.');
-    causas.push('Distribución de alimento y agua correcta.');
+    causas.push(k('manejoAdecuado'));
+    causas.push(k('distribucionCorrecta'));
     if (refs && promedio >= refs.pesoMin && promedio <= refs.pesoMax) {
-      causas.push('Programa nutricional bien calibrado para la línea y edad.');
+      causas.push(k('nutricionCalibrada'));
     }
     return causas;
   }
 
   // Causas comunes para regular y poor
-  causas.push('Competencia desigual por acceso a comedero y bebedero.');
+  causas.push(k('competenciaDesigual'));
 
   if (countDebajo > countEncima) {
-    causas.push('Subgrupo con consumo insuficiente (dominadas o enfermas).');
+    causas.push(k('consumoInsuficiente'));
     if (birdType === 'broiler') {
-      causas.push('Densidad excesiva impidiendo acceso uniforme al alimento.');
+      causas.push(k('densidadExcesiva'));
     }
   } else if (countEncima > countDebajo) {
-    causas.push('Subgrupo con consumo excesivo por posición ventajosa en el galpón.');
+    causas.push(k('consumoExcesivo'));
   } else {
-    causas.push('Variabilidad general sin sesgo claro.');
+    causas.push(k('variabilidadGeneral'));
   }
 
   if (cv > 10) {
-    causas.push('CV >10% sugiere factores múltiples actuando simultáneamente.');
+    causas.push(k('cvMultifactor'));
   }
 
   if (birdType === 'broiler') {
     if (stage === 'iniciacion' || stage === 'crianza') {
-      causas.push('Temperatura inadecuada en primeras semanas (estrés térmico).');
-      causas.push('Cama deficiente o humedad excesiva.');
-      causas.push('Uniformidad pobre del pollito al recibir (incubadora).');
+      causas.push(k('broilerTemperatura'), k('broilerCama'), k('broilerPollito'));
     } else {
-      causas.push('Transición de alimento inicial a crecimiento mal manejada.');
-      causas.push('Enfermedad subclínica (enteritis, coccidiosis).');
-      causas.push('Ventilación inadecuada con zonas de confort desiguales.');
+      causas.push(k('broilerTransicion'), k('broilerEnfermedad'), k('broilerVentilacion'));
     }
   } else {
     if (stage === 'crianza') {
-      causas.push('Microclimas por temperatura o ventilación inadecuada.');
-      causas.push('Alimento inconsistente o distribución irregular.');
-      causas.push('Bebederos con flujo irregular limitando consumo.');
+      causas.push(k('crianzaMicroclimas'), k('crianzaAlimento'), k('crianzaBebederos'));
     } else if (stage === 'levante') {
-      causas.push('Restricción alimentaria excesiva o mal calculada.');
-      causas.push('Parásitos internos que afectan absorción de nutrientes.');
-      causas.push('Cambios bruscos de iluminación alterando el consumo.');
+      causas.push(k('levanteRestriccion'), k('levanteParasitos'), k('levanteIluminacion'));
     } else if (stage === 'prepostura') {
-      causas.push('Transición tardía o prematura al alimento de pre-postura.');
-      causas.push('Desarrollo reproductivo asincrónico por diferencias de madurez.');
-      causas.push('Espacio de comedero insuficiente en transición crítica.');
+      causas.push(k('preposturaTransicion'), k('preposturaAsincronia'), k('preposturaComedero'));
     } else {
-      causas.push('Aves en diferentes fases del ciclo de postura.');
-      causas.push('Muda parcial no controlada creando grupos con pesos distintos.');
-      causas.push('Picaje que genera estrés y reduce consumo en aves victimizadas.');
+      causas.push(k('produccionFases'), k('produccionMuda'), k('produccionPicaje'));
     }
   }
 
   if (refs && promedio < refs.pesoMin) {
-    causas.push('Peso promedio bajo estándar, agrava la desuniformidad.');
+    causas.push(k('pesoBajoAgrava'));
   }
 
   return causas;
@@ -1278,68 +1272,57 @@ function generateRecomendaciones(
   promedio: number,
   refs: { pesoMin: number; pesoOptimo: number; pesoMax: number } | null,
   edadSemanas: number,
-): string[] {
-  const recs: string[] = [];
+): MensajeDiagnostico[] {
+  const k = (key: string): MensajeDiagnostico => ({ key: `rec.${key}` });
+  const recs: MensajeDiagnostico[] = [];
 
   if (level === 'excellent') {
-    recs.push('Mantener programa de manejo actual sin cambios bruscos.');
+    recs.push(k('mantenerPrograma'));
     if (birdType === 'ponedora' && stage === 'prepostura') {
-      recs.push('Preparar nidadas e iluminación para entrada en producción.');
+      recs.push(k('prepararNidadas'));
     }
     if (birdType === 'broiler') {
-      recs.push('Continuar monitoreo semanal de peso.');
+      recs.push(k('monitoreoSemanal'));
     }
-    recs.push('Realizar pesajes semanales para detectar desviaciones.');
+    recs.push(k('pesajesSemanales'));
     return recs;
   }
 
   // Acceso a alimento
   if (countDebajo > countEncima) {
-    recs.push('Aumentar espacio de comedero: mínimo 5 cm/ave (lineal) o 1 plato/60 aves (automático).');
-    recs.push('Verificar acceso simultáneo al alimento en las primeras horas de luz.');
+    recs.push(k('espacioComedero'), k('accesoSimultaneo'));
     if (level === 'poor') {
-      recs.push('Separar aves ligeras en corral con comedero/bebedero extra y alimento de refuerzo.');
+      recs.push(k('separarLigeras'));
     }
   } else if (countEncima > countDebajo) {
-    recs.push('Evaluar si el programa alimenticio está sobreestimado. Ajustar raciones.');
+    recs.push(k('ajustarRaciones'));
   }
 
-  recs.push('Verificar flujo y presión de bebederos: la restricción de agua reduce consumo de alimento.');
+  recs.push(k('verificarBebederos'));
 
   if (birdType === 'broiler') {
     if (stage === 'iniciacion' || stage === 'crianza') {
-      recs.push('Temperatura uniforme: 33-35°C sem 1, reduciendo 2-3°C/semana.');
-      recs.push('Revisar calidad de cama: humedad excesiva favorece infecciones.');
-      recs.push('Usar papel en cama los primeros 3-5 días para facilitar acceso al alimento.');
+      recs.push(k('broilerTemperatura'), k('broilerCama'), k('broilerPapel'));
     } else {
-      recs.push('Densidad: no superar 30-35 kg/m² en broilers pesados.');
-      recs.push('Iluminación intermitente (4L:2D) sincroniza comidas y mejora uniformidad.');
+      recs.push(k('broilerDensidad'), k('broilerIluminacion'));
       if (level === 'poor') {
-        recs.push('Revisar molturación del alimento: partículas muy finas o gruesas afectan consumo uniforme.');
+        recs.push(k('broilerMolturacion'));
       }
     }
   } else {
     if (stage === 'crianza') {
-      recs.push('Revisar temperatura: aves pequeñas se agrupan en zonas cálidas y no comen.');
-      recs.push('Mínimo 1 cm/ave de comedero en primeras semanas.');
-      recs.push('Eliminar corrientes de aire que crean microclimas.');
+      recs.push(k('crianzaTemperatura'), k('crianzaComedero'), k('crianzaCorrientes'));
     } else if (stage === 'levante') {
-      recs.push('Restricción alimentaria controlada sin comprometer aves más ligeras.');
-      recs.push('Iluminación estable (8-10 h) sin fluctuaciones.');
-      recs.push('Desparasitar si no se ha hecho en las últimas 4 semanas.');
+      recs.push(k('levanteRestriccion'), k('levanteIluminacion'), k('levanteDesparasitar'));
     } else if (stage === 'prepostura') {
-      recs.push('Incrementar calcio gradualmente (transición a pre-postura).');
-      recs.push('Aumentar espacio de comedero antes del inicio de postura.');
-      recs.push('Iluminación estimulante (+15-30 min/semana) uniforme para todo el lote.');
+      recs.push(k('preposturaCalcio'), k('preposturaComedero'), k('preposturaIluminacion'));
       if (level === 'poor') {
-        recs.push('URGENTE: Clasificar por peso y manejo diferenciado. Ligeras: alimento extra. Pesadas: restricción ligera.');
+        recs.push(k('preposturaClasificar'));
       }
     } else {
-      recs.push('Si uniformidad <75%, manejo por zonas con dietas específicas.');
-      recs.push('Monitorear producción individual: aves fuera de rango no producen eficientemente.');
-      recs.push('Iluminación 14-16 h sin interrupciones.');
+      recs.push(k('produccionZonas'), k('produccionMonitorear'), k('produccionIluminacion'));
       if (level === 'poor') {
-        recs.push('Evaluar muda forzada para re-sincronizar o descartar aves improductivas.');
+        recs.push(k('produccionMuda'));
       }
     }
   }
@@ -1347,15 +1330,15 @@ function generateRecomendaciones(
   // Peso fuera de referencia
   if (refs) {
     if (promedio < refs.pesoMin) {
-      recs.push(`Peso ${((refs.pesoOptimo - promedio) / refs.pesoOptimo * 100).toFixed(1)}% bajo estándar. Aumentar energía/proteína y descartar enfermedades subclínicas.`);
+      recs.push({ key: 'rec.pesoBajoEstandar', params: { pct: ((refs.pesoOptimo - promedio) / refs.pesoOptimo * 100).toFixed(1) } });
     } else if (promedio > refs.pesoMax) {
-      recs.push(`Peso ${((promedio - refs.pesoOptimo) / refs.pesoOptimo * 100).toFixed(1)}% sobre estándar. Reducir densidad nutricional o aplicar restricción controlada.`);
+      recs.push({ key: 'rec.pesoSobreEstandar', params: { pct: ((promedio - refs.pesoOptimo) / refs.pesoOptimo * 100).toFixed(1) } });
     }
   }
 
   // En este punto level ya está acotado a 'regular' | 'poor' (hubo retorno
   // temprano para 'excellent'), así que la recomendación aplica siempre.
-  recs.push('Repetir pesaje en 3-5 días para evaluar tendencia.');
+  recs.push(k('repetirPesaje'));
 
   // Avoid unused variable warning
   void _uniformidad;
@@ -1369,36 +1352,22 @@ function generateDidactico(
   stage: ProductiveStage,
   uniformidad: number,
   _edadSemanas: number,
-): string {
+): MensajeDiagnostico {
   if (birdType === 'broiler') {
-    if (stage === 'iniciacion') {
-      return `La uniformidad en la primera semana establece la base del crecimiento. Cada gramo ganado ahora se multiplica por 3-5× al final del ciclo. Calidad del pollito, temperatura y acceso a agua/alimento son los tres pilares de la uniformidad inicial.`;
-    }
-    if (stage === 'crianza') {
-      return `En semanas 2-3 el broiler crece al máximo ritmo. Las aves que no comen suficiente ahora nunca alcanzarán el peso de mercado a tiempo, desperdiciando alimento y días de alojamiento.`;
-    }
-    if (stage === 'engorde' && _edadSemanas <= 5) {
-      return `En engorde, la uniformidad determina la eficiencia económica. Un lote uniforme permite despoble en una sola fecha; uno desuniforme obliga tandas, incrementando costos fijos/kg producido.`;
-    }
-    return `En engorde final, la uniformidad es el mejor indicador de rentabilidad. Aves por debajo = kg no producidos; aves por encima = riesgo de ascitis y lesiones locomotoras. Meta: ≥85% de uniformidad.`;
+    if (stage === 'iniciacion') return { key: 'didactico.broilerInicio' };
+    if (stage === 'crianza') return { key: 'didactico.broilerCrianza' };
+    if (stage === 'engorde' && _edadSemanas <= 5) return { key: 'didactico.broilerEngorde' };
+    return { key: 'didactico.broilerEngordeFinal' };
   }
 
   // Ponedora
-  if (stage === 'iniciacion' || stage === 'crianza') {
-    return `La uniformidad en las primeras semanas predice el rendimiento futuro. Un lote con ≥85% a las 6 semanas tendrá un pico de producción más alto y sostenido. Aves que no alcanzan el peso tendrán desarrollo reproductivo retrasado.`;
-  }
-  if (stage === 'levante') {
-    return `El levante (sem 7-16) es donde la uniformidad más impacta el futuro. Se requiere ≥80% para que las aves maduren sexualmente al mismo tiempo. Aves ligeras = huevos pequeños y menos huevos; aves pesadas = sobrepeso y prolapso.`;
-  }
-  if (stage === 'prepostura') {
-    return `Pre-postura (sem 17-20) es la ventana crítica: el sistema reproductivo se activa y el peso debe estar en rango óptimo. Uniformidad ≥85% a las 20 sem = pico de producción concentrado y alto; desuniforme = pico bajo y prolongado.`;
-  }
+  if (stage === 'iniciacion' || stage === 'crianza') return { key: 'didactico.ponedoraInicial' };
+  if (stage === 'levante') return { key: 'didactico.levante' };
+  if (stage === 'prepostura') return { key: 'didactico.prepostura' };
 
   // producción
-  if (uniformidad >= 85) {
-    return `Uniformidad ≥85% en producción indica que la mayoría de aves sigue su curva de postura óptima, permitiendo ajustar dieta e iluminación con precisión para todo el lote.`;
-  }
-  return `Baja uniformidad en producción es muy costosa: aves ligeras consumen sin producir; aves pesadas producen huevos de calidad variable. Cada punto <80% puede significar 2-3 huevos menos por ave en el ciclo. Corrección temprana es esencial.`;
+  if (uniformidad >= 85) return { key: 'didactico.produccionAlta' };
+  return { key: 'didactico.produccionBaja' };
 }
 
 // ─── Función principal del motor de diagnóstico ───────────────────
@@ -1435,27 +1404,16 @@ export function generateDiagnostic(input: DiagnosticInput): DiagnosticResult {
 
   const birdType = getBirdType(lineaGenetica, input.tipoAveManual);
   const level = getUniformityLevel(uniformidad);
-  const { stage, label: stageLabel } = getProductiveStage(birdType, edadSemanas);
+  const { stage, stageKey } = getProductiveStage(birdType, edadSemanas);
   const refs = edadSemanas > 0 ? getReferences(lineaGenetica) : null;
   const interpolatedRefs = refs ? interpolateRef(refs, edadSemanas) : null;
 
-  // Título dinámico
-  let title = '';
-  if (level === 'excellent') {
-    title = `Excelente Uniformidad — ${uniformidad.toFixed(1)}%`;
-  } else if (level === 'regular') {
-    title = `Uniformidad Regular — ${uniformidad.toFixed(1)}%`;
-  } else {
-    title = `Uniformidad Pobre — ${uniformidad.toFixed(1)}%`;
-  }
-  title += ` | ${stageLabel}`;
-
   return {
-    title,
+    titulo: { key: `title.${level}`, params: { pct: uniformidad.toFixed(1) } },
     level,
     birdType,
     stage,
-    stageLabel,
+    stageKey,
     interpretacion: generateInterpretacion(
       level, uniformidad, cv, promedio, birdType, stage,
       countDebajo, countEncima, countDentro, totalAves,

@@ -190,27 +190,28 @@ function tTestHtml(d: ReportData, tf: ReportTranslator): string {
 }
 
 /**
- * Diagnóstico zootécnico. Su PROSA la redacta el motor (diagnostic-engine) y
- * sigue únicamente en español por el alcance acordado: solo se traducen los
- * rótulos que la enmarcan. Cuando el idioma no es español, buildReportHtml
- * añade un aviso visible para que no se lea como un descuido.
+ * Diagnóstico zootécnico. El motor devuelve mensajes {key, params} del
+ * espacio `diagnosticEngine` del catálogo (2026-08-25: antes redactaba la
+ * prosa en español) y aquí se componen en el idioma del documento.
  */
 function diagnosticoHtml(d: ReportData, full: boolean, t: ReportTranslator): string {
   const tr = scoped(t);
   const dg = d.diagnostic;
+  const msg = (m: import('@/lib/diagnostic-engine').MensajeDiagnostico) => t(`diagnosticEngine.${m.key}`, m.params);
+  const frase = (ms: import('@/lib/diagnostic-engine').MensajeDiagnostico[]) => ms.map(msg).join(' ');
   let html = `<h2>${esc(tr('diagnosisTitle'))}</h2>
-<p><b>${esc(dg.title)}</b> · ${esc(tr(dg.birdType === 'broiler' ? 'broiler' : 'layer'))} · ${esc(dg.stageLabel)}</p>
-<p><b>${esc(tr('interpretation'))}</b> ${esc(dg.interpretacion)}</p>
-<p><b>${esc(tr('weightVsReference'))}</b> ${esc(dg.pesoComparacion)}</p>`;
+<p><b>${esc(msg(dg.titulo))}</b> · ${esc(tr(dg.birdType === 'broiler' ? 'broiler' : 'layer'))} · ${esc(t(`diagnosticEngine.${dg.stageKey}`))}</p>
+<p><b>${esc(tr('interpretation'))}</b> ${esc(frase(dg.interpretacion))}</p>
+<p><b>${esc(tr('weightVsReference'))}</b> ${esc(frase(dg.pesoComparacion))}</p>`;
   if (dg.alertas.length > 0) {
-    html += `<div class="alert"><b>${esc(tr('alerts'))}</b><ul>${dg.alertas.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>`;
+    html += `<div class="alert"><b>${esc(tr('alerts'))}</b><ul>${dg.alertas.map((a) => `<li>${esc(msg(a))}</li>`).join('')}</ul></div>`;
   }
   if (full && dg.causas.length > 0) {
-    html += `<p><b>${esc(tr('causes'))}</b> ${esc(tr('causesNote'))}</p><ul>${dg.causas.map((c) => `<li>${esc(c)}</li>`).join('')}</ul>`;
+    html += `<p><b>${esc(tr('causes'))}</b> ${esc(tr('causesNote'))}</p><ul>${dg.causas.map((c) => `<li>${esc(msg(c))}</li>`).join('')}</ul>`;
   }
   const recs = full ? dg.recomendaciones : dg.recomendaciones.slice(0, 3);
   if (recs.length > 0) {
-    html += `<p><b>${esc(tr('recommendations'))}</b></p><ul>${recs.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`;
+    html += `<p><b>${esc(tr('recommendations'))}</b></p><ul>${recs.map((r) => `<li>${esc(msg(r))}</li>`).join('')}</ul>`;
   }
   return html;
 }
@@ -371,12 +372,12 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: Rep
       )
     : '';
 
-  // Aviso visible cuando el idioma no es español: el diagnóstico zootécnico y
-  // la metodología los redacta el motor y siguen sin traducir. Vale más
-  // decirlo que dejar que parezca un descuido del documento.
-  const avisoIdioma = locale === 'es'
-    ? ''
-    : `<p class="note"><b>${esc(tr('spanishOnlyNotice'))}</b></p>`;
+  // Aviso visible cuando el idioma no es español: desde 2026-08-25 el
+  // diagnóstico ya se traduce, así que el aviso queda SOLO para la variante
+  // académica, cuya sección de metodología sigue redactada en español.
+  const avisoIdioma = locale !== 'es' && variant === 'academico'
+    ? `<p class="note"><b>${esc(tr('spanishOnlyNotice'))}</b></p>`
+    : '';
 
   let body = headerHtml(d, variant, i18n) + metaHtml(d, t) + kpisHtml(d, t) + avisoIdioma;
 

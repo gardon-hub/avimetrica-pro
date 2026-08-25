@@ -92,7 +92,7 @@ describe('reporte de comparación de pesajes: idiomas', () => {
 });
 
 /** Cualquier clave del catálogo impresa tal cual, en cualquier espacio. */
-const CLAVE_SIN_RESOLVER = /\b(reports|excel|credits|sampling|outlierMethods)\.[a-zA-Z]+(\.[a-zA-Z]+)*/;
+const CLAVE_SIN_RESOLVER = /\b(reports|excel|credits|sampling|outlierMethods|diagnosticEngine)\.[a-zA-Z]+(\.[a-zA-Z]+)*/;
 
 describe('gráficos de los reportes: idiomas', () => {
   const bins = classify([1, 2, 3, 4, 5, 6], { type: 'relative-band', pct: 10 });
@@ -169,5 +169,31 @@ describe('libros de Excel: idiomas', () => {
       expect(texto).not.toMatch(/&(lt|gt|amp);/);
       expect(texto).not.toMatch(/= *[<≥>] *0/);
     });
+  }
+});
+
+describe('reporte de uniformidad de aves: idiomas (con diagnóstico traducido)', () => {
+  const pesos = Array.from({ length: 30 }, (_, i) => 2400 + (i % 10) * 12);
+
+  for (const [locale, messages] of CATALOGOS) {
+    for (const variante of ['resumido', 'tecnico'] as const) {
+      it(`variante ${variante} sale resuelta en ${locale}`, async () => {
+        const { buildReportHtml } = await import('../src/lib/report-html');
+        const t = createTranslator({ locale, messages: messages as never });
+        const d = buildReportData({
+          pesos, lineaGenetica: 'Broiler - Cobb', edadSemanas: '5', criterioPct: 10,
+          contexto: { lote: 'L-1', metodoMuestreo: 'aleatorio' },
+        })!;
+        const html = buildReportHtml(d, variante, { locale, t: t as never });
+        const texto = html
+          .replace(/<[^>]*>/g, ' ')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&amp;/g, '&');
+        expect(texto).not.toMatch(CLAVE_SIN_RESOLVER);
+        expect(texto).not.toMatch(/\{[a-zA-Z]+\}/); // parámetro sin interpolar
+        expect(texto).not.toMatch(/= *[<≥>] *0/);
+      });
+    }
   }
 });

@@ -1,8 +1,9 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { generateDiagnostic, REFERENCE_DATA_VERSION } from '@/lib/diagnostic-engine';
-import type { DiagnosticResult } from '@/lib/diagnostic-engine';
+import type { DiagnosticResult, MensajeDiagnostico } from '@/lib/diagnostic-engine';
 import {
   BookOpen,
   AlertTriangle,
@@ -52,22 +53,27 @@ function SectionBlock({
   );
 }
 
-function LevelBadge({ level }: { level: DiagnosticResult['level'] }) {
-  const config = {
-    excellent: { label: 'Excelente', className: 'bg-green-100 text-green-800 border-green-300' },
-    regular: { label: 'Regular', className: 'bg-amber-100 text-amber-800 border-amber-300' },
-    poor: { label: 'Pobre', className: 'bg-red-100 text-red-800 border-red-300' },
-  };
-  const c = config[level];
+function LevelBadge({ level, label }: { level: DiagnosticResult['level']; label: string }) {
+  const className = {
+    excellent: 'bg-green-100 text-green-800 border-green-300',
+    regular: 'bg-amber-100 text-amber-800 border-amber-300',
+    poor: 'bg-red-100 text-red-800 border-red-300',
+  }[level];
   return (
-    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.className}`}>
-      {c.label}
+    <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border ${className}`}>
+      {label}
     </span>
   );
 }
 
 export function DiagnosticPanel() {
   const { stats, lineaGenetica, tipoOtraLinea, edadSemanas } = useUniformidadStore();
+  // Todo el texto del diagnóstico —marco Y prosa del motor— sale del catálogo:
+  // el motor devuelve mensajes {key, params} y aquí se componen (ver
+  // MensajeDiagnostico en diagnostic-engine.ts).
+  const t = useTranslations('diagnosticEngine');
+  const msg = (m: MensajeDiagnostico) => t(m.key, m.params);
+  const frase = (ms: MensajeDiagnostico[]) => ms.map(msg).join(' ');
 
   if (stats.totalAves === 0) return null;
 
@@ -112,23 +118,25 @@ export function DiagnosticPanel() {
       {/* Header */}
       <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-bold mb-2">
         <BookOpen className="h-4 w-4" />
-        Diagnóstico Didáctico
-        <span className="ml-auto text-[9px] font-normal text-muted-foreground" title="Versión de datos de referencia">v{REFERENCE_DATA_VERSION}</span>
+        {t('panel.title')}
+        <span className="ml-auto text-[9px] font-normal text-muted-foreground" title={t('panel.refDataVersion')}>v{REFERENCE_DATA_VERSION}</span>
       </div>
 
       {/* Title + Badge */}
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <p className="font-bold text-foreground text-sm flex-1 min-w-0">{diagnostic.title}</p>
-        <LevelBadge level={diagnostic.level} />
+        <p className="font-bold text-foreground text-sm flex-1 min-w-0">
+          {msg(diagnostic.titulo)} | {t(diagnostic.stageKey)}
+        </p>
+        <LevelBadge level={diagnostic.level} label={t(`level.${diagnostic.level}`)} />
       </div>
 
       {/* Stage indicator */}
       <div className="flex items-center gap-1.5 mb-3 text-xs text-muted-foreground">
         <TrendingUp className="h-3.5 w-3.5" />
         <span>
-          Etapa: <strong className="text-muted-foreground">{diagnostic.stageLabel}</strong>
+          {t('panel.stage')} <strong className="text-muted-foreground">{t(diagnostic.stageKey)}</strong>
           {' · '}
-          Tipo: <strong className="text-muted-foreground">{diagnostic.birdType === 'broiler' ? 'Broiler (Engorde)' : 'Ponedora (Postura)'}</strong>
+          {t('panel.type')} <strong className="text-muted-foreground">{t(`birdType.${diagnostic.birdType}`)}</strong>
         </span>
       </div>
 
@@ -136,10 +144,10 @@ export function DiagnosticPanel() {
       <SectionBlock
         icon={<Search className="h-3.5 w-3.5" />}
         iconColor="text-blue-600"
-        title="Interpretación Técnica"
+        title={t('panel.interpretation')}
       >
         <p className="text-muted-foreground text-xs leading-relaxed">
-          {diagnostic.interpretacion}
+          {frase(diagnostic.interpretacion)}
         </p>
       </SectionBlock>
 
@@ -147,11 +155,11 @@ export function DiagnosticPanel() {
       <SectionBlock
         icon={<TrendingUp className="h-3.5 w-3.5" />}
         iconColor="text-purple-600"
-        title="Peso vs. Referencia"
+        title={t('panel.weightVsReference')}
         defaultOpen={!!edad}
       >
         <p className="text-muted-foreground text-xs leading-relaxed">
-          {diagnostic.pesoComparacion}
+          {frase(diagnostic.pesoComparacion)}
         </p>
       </SectionBlock>
 
@@ -160,13 +168,13 @@ export function DiagnosticPanel() {
         <SectionBlock
           icon={<AlertTriangle className="h-3.5 w-3.5" />}
           iconColor="text-amber-500"
-          title="Alertas"
+          title={t('panel.alerts')}
         >
           <ul className="space-y-1">
             {diagnostic.alertas.map((alerta, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-xs text-amber-800">
+              <li key={i} className="flex items-start gap-1.5 text-xs text-amber-800 dark:text-amber-300">
                 <AlertCircle className="h-3 w-3 mt-0.5 shrink-0 text-amber-500" />
-                <span className="leading-relaxed">{alerta}</span>
+                <span className="leading-relaxed">{msg(alerta)}</span>
               </li>
             ))}
           </ul>
@@ -177,14 +185,14 @@ export function DiagnosticPanel() {
       <SectionBlock
         icon={<AlertCircle className="h-3.5 w-3.5" />}
         iconColor="text-red-500"
-        title="Posibles Causas"
+        title={t('panel.causes')}
         defaultOpen={diagnostic.level !== 'excellent'}
       >
         <ul className="space-y-0.5">
           {diagnostic.causas.map((causa, i) => (
             <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <span className="text-red-400 mt-0.5 shrink-0">•</span>
-              <span className="leading-relaxed">{causa}</span>
+              <span className="leading-relaxed">{msg(causa)}</span>
             </li>
           ))}
         </ul>
@@ -194,13 +202,13 @@ export function DiagnosticPanel() {
       <SectionBlock
         icon={<Lightbulb className="h-3.5 w-3.5" />}
         iconColor="text-green-600"
-        title="Recomendaciones de Manejo"
+        title={t('panel.recommendations')}
       >
         <ul className="space-y-0.5">
           {diagnostic.recomendaciones.map((rec, i) => (
             <li key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
               <span className="text-green-500 mt-0.5 shrink-0">✓</span>
-              <span className="leading-relaxed">{rec}</span>
+              <span className="leading-relaxed">{msg(rec)}</span>
             </li>
           ))}
         </ul>
@@ -210,10 +218,10 @@ export function DiagnosticPanel() {
       <SectionBlock
         icon={<GraduationCap className="h-3.5 w-3.5" />}
         iconColor="text-indigo-600"
-        title="Nota Didáctica"
+        title={t('panel.didacticNote')}
       >
         <p className="text-muted-foreground text-xs leading-relaxed italic border-l-2 border-indigo-300 pl-2.5">
-          {diagnostic.didactico}
+          {msg(diagnostic.didactico)}
         </p>
       </SectionBlock>
     </div>
