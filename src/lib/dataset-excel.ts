@@ -12,7 +12,7 @@ import { shapiroWilk } from '@/lib/statistics/shapiro-wilk';
 import { detectOutliers } from '@/lib/statistics/outliers';
 import { classify } from '@/lib/classification';
 import type { DatasetReportInput } from '@/lib/dataset-report';
-import { translateBinLabel } from '@/lib/domains/preset-i18n';
+import { translateBinLabel, translateVariableLabel } from '@/lib/domains/preset-i18n';
 import type { ReportI18n } from '@/lib/report-i18n';
 import { fmtPFrase } from '@/lib/p-value';
 
@@ -50,7 +50,7 @@ export function buildDatasetWorkbook(
     [tr('docTitle', { modulo: input.tituloModulo })],
     [tr('generated'), new Date().toLocaleString(locale)],
     [],
-    [tr('variable'), `${variable.label}${u ? ` (${u})` : ''}`],
+    [tr('variable'), `${translateVariableLabel(variable.label, t)}${u ? ` (${u})` : ''}`],
     [tr('sampling'), contexto.nombre || '—'],
     [tr('origin'), contexto.origen || '—'],
     [tr('date'), contexto.fecha || '—'],
@@ -102,7 +102,7 @@ export function buildDatasetWorkbook(
   XLSX.utils.book_append_sheet(wb, wsC, tr('sheetCategories'));
 
   const flagIdx = new Set(out.flags.map((x) => x.index));
-  const datos: Row[] = [['#', `${variable.label}${u ? ` (${u})` : ''}`, tr('colCategory'), tr('colOutlier')]];
+  const datos: Row[] = [['#', `${translateVariableLabel(variable.label, t)}${u ? ` (${u})` : ''}`, tr('colCategory'), tr('colOutlier')]];
   valores.forEach((v, i) => {
     const bin = cl.bins.find((b) => b.indices.includes(i));
     datos.push([i + 1, v, bin ? tBin(bin.label) : sinClasificar, flagIdx.has(i) ? tr('yes') : '']);

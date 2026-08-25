@@ -19,7 +19,7 @@ import { categoriasBarSvg } from '@/lib/dataset-report-charts';
 import { REPORT_CSS } from '@/lib/report-html';
 import { APP_VERSION } from '@/lib/report-data';
 import type { VariableDefinition } from '@/lib/domains/types';
-import { translateBinLabel } from '@/lib/domains/preset-i18n';
+import { translateBinLabel, translateVariableLabel } from '@/lib/domains/preset-i18n';
 import type { DatasetContext } from '@/lib/dataset-store';
 import { reportFooterHtml, type ReportI18n } from '@/lib/report-i18n';
 import { logoUrl } from '@/lib/base-path';
@@ -92,7 +92,7 @@ export function buildDatasetReportHtml(
   );
 
   const meta: Array<[string, string]> = [
-    [tr('metaVariable'), `${variable.label}${u ? ` (${u})` : ''}`],
+    [tr('metaVariable'), `${translateVariableLabel(variable.label, t)}${u ? ` (${u})` : ''}`],
     [tr('metaSampling'), contexto.nombre || '—'],
     [tr('metaOrigin'), contexto.origen || '—'],
     [tr('metaDate'), contexto.fecha || '—'],

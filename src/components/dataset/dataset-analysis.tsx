@@ -11,6 +11,7 @@
  */
 
 import { useTranslations } from 'next-intl';
+import { translateVariableLabel } from '@/lib/domains/preset-i18n';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DescriptiveTable } from '@/components/uniformidad/descriptive-table';
 import { HistogramChart } from '@/components/uniformidad/histogram-chart';
@@ -28,11 +29,14 @@ export function DatasetAnalysis({
   const t = useTranslations('analysis');
   const tDescr = useTranslations('descriptive');
   const tDiag = useTranslations('diagnostics');
+  // Las etiquetas canónicas de variable se traducen al mostrar (preset-i18n).
+  const tRaiz = useTranslations();
 
   if (valores.length === 0) return null;
 
   const unidad = variable.unit;
-  const valorColLabel = unidad ? `${variable.label} (${unidad})` : variable.label;
+  const etiqueta = translateVariableLabel(variable.label, tRaiz);
+  const valorColLabel = unidad ? `${etiqueta} (${unidad})` : etiqueta;
 
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">

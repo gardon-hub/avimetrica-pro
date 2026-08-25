@@ -749,6 +749,11 @@
         "source": "Cortes definidos pelo usuário.",
         "note": "Edite os cortes conforme o exercício; serve para praticar distribuições de frequências."
       }
+    },
+    "variables": {
+      "generic": "Variável",
+      "eggWeight": "Peso do ovo",
+      "bodyWeight": "Peso corporal"
     }
   },
   "avesReportPanel": {

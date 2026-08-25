@@ -15,7 +15,7 @@
  */
 
 /** Rótulo canónico (es) → clave dentro de `presets.binLabels`. */
-const BIN_LABEL_KEYS: Record<string, string> = {
+export const BIN_LABEL_KEYS: Record<string, string> = {
   // Dominio genérico: preset "Sin clasificación"
   'Todos los datos': 'allData',
   // Clases USDA (huevos.ts)
@@ -51,4 +51,24 @@ type RootTranslator = (key: string) => string;
 export function translateBinLabel(label: string, t: RootTranslator): string {
   const key = BIN_LABEL_KEYS[label];
   return key ? t(`presets.binLabels.${key}`) : label;
+}
+
+/**
+ * Etiqueta canónica (es) de variable → clave dentro de `presets.variables`.
+ *
+ * Misma lógica que los rótulos de categoría: la etiqueta vive en datos
+ * persistidos (el store del dominio y los conjuntos guardados llevan
+ * variableLabel), así que se traduce AL MOSTRAR. Si el usuario la renombró
+ * —en estadística es un campo libre— su texto no está en el mapa y se
+ * muestra tal cual, en cualquier idioma.
+ */
+export const VARIABLE_LABEL_KEYS: Record<string, string> = {
+  'Variable': 'generic',
+  'Peso del huevo': 'eggWeight',
+  'Peso corporal': 'bodyWeight',
+};
+
+export function translateVariableLabel(label: string, t: RootTranslator): string {
+  const key = VARIABLE_LABEL_KEYS[label];
+  return key ? t(`presets.variables.${key}`) : label;
 }

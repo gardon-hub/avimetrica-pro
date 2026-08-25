@@ -8,6 +8,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { translateVariableLabel } from '@/lib/domains/preset-i18n';
 import type { DatasetStore } from '@/lib/dataset-store';
 import type { Domain } from '@/lib/domains/types';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,9 @@ function parseNumeros(texto: string): number[] {
 export function ValueInput({ store, domain }: { store: DatasetStore; domain: Domain }) {
   const { valores, variable, addValor, addValores, removeValor, updateValor, reset } = store();
   const t = useTranslations('valueInput');
+  // Etiqueta canónica de la variable traducida al mostrar (preset-i18n).
+  const tRaiz = useTranslations();
+  const etiqueta = translateVariableLabel(variable.label, tRaiz);
   const [entrada, setEntrada] = useState('');
   const [pegado, setPegado] = useState('');
   const [pegadoAbierto, setPegadoAbierto] = useState(false);
@@ -70,9 +74,9 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
           value={entrada}
           onChange={(e) => setEntrada(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && agregar()}
-          placeholder={t('placeholder', { variable: variable.label, unidad: variable.unit || t('unitsFallback') })}
+          placeholder={t('placeholder', { variable: etiqueta, unidad: variable.unit || t('unitsFallback') })}
           className="h-11 text-base"
-          aria-label={t('placeholder', { variable: variable.label, unidad: variable.unit || t('unitsFallback') })}
+          aria-label={t('placeholder', { variable: etiqueta, unidad: variable.unit || t('unitsFallback') })}
         />
         <Button onClick={agregar} aria-label={t('addAria')} className="h-11 px-5 bg-green-600 hover:bg-green-700 text-white shrink-0">
           <Plus className="h-5 w-5" />
@@ -128,7 +132,7 @@ export function ValueInput({ store, domain }: { store: DatasetStore; domain: Dom
               <AlertDescription className="text-[11px] text-amber-900">
                 {t('suspicious', {
                   n: sospechosos,
-                  variable: variable.label.toLowerCase(),
+                  variable: etiqueta.toLowerCase(),
                   min: variable.plausibleMin ?? '',
                   max: variable.plausibleMax ?? '',
                   unidad: variable.unit,

@@ -749,6 +749,11 @@
         "source": "Cut-offs defined by the user.",
         "note": "Edit the cut-offs to fit the exercise; useful for practicing frequency distributions."
       }
+    },
+    "variables": {
+      "generic": "Variable",
+      "eggWeight": "Egg weight",
+      "bodyWeight": "Body weight"
     }
   },
   "avesReportPanel": {

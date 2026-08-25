@@ -23,6 +23,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Library, Save, Upload, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { translateVariableLabel } from '@/lib/domains/preset-i18n';
 
 export interface DatasetListItem {
   id: string;
@@ -48,6 +49,8 @@ interface Props {
 export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
   const s = store();
   const t = useTranslations('library');
+  // Etiquetas canónicas de variable traducidas al mostrar (preset-i18n).
+  const tRaiz = useTranslations();
   const [lista, setLista] = useState<DatasetListItem[]>([]);
   const [guardarAbierto, setGuardarAbierto] = useState(false);
   const [nombre, setNombre] = useState('');
@@ -164,7 +167,7 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
         </h2>
         <Button
           size="sm"
-          onClick={() => { setNombre(s.contexto.nombre || s.variable.label); setGuardarAbierto(true); }}
+          onClick={() => { setNombre(s.contexto.nombre || translateVariableLabel(s.variable.label, tRaiz)); setGuardarAbierto(true); }}
           disabled={s.valores.length === 0}
           className="h-8 text-xs bg-green-600 hover:bg-green-700 text-white"
         >
@@ -192,7 +195,7 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
                     <div className="font-semibold">{item.nombre}</div>
                     {item.descripcion && <div className="text-muted-foreground">{item.descripcion}</div>}
                   </td>
-                  <td className="py-1.5">{item.variableLabel}{item.variableUnit && ` (${item.variableUnit})`}</td>
+                  <td className="py-1.5">{translateVariableLabel(item.variableLabel, tRaiz)}{item.variableUnit && ` (${item.variableUnit})`}</td>
                   <td className="py-1.5 text-muted-foreground">{new Date(item.updatedAt).toLocaleDateString()}</td>
                   <td className="py-1.5 text-right whitespace-nowrap">
                     <button
@@ -238,7 +241,7 @@ export function DatasetLibrary({ store, dominio, titulo, onCambio }: Props) {
             <p className="text-[11px] text-muted-foreground">
               {t.rich('willSave', {
                 n: s.valores.length,
-                variable: s.variable.label,
+                variable: translateVariableLabel(s.variable.label, tRaiz),
                 b: (c) => <b>{c}</b>,
               })}
             </p>

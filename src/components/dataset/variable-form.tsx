@@ -7,6 +7,7 @@
  */
 
 import { useTranslations } from 'next-intl';
+import { translateVariableLabel } from '@/lib/domains/preset-i18n';
 import type { DatasetStore } from '@/lib/dataset-store';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,9 @@ const EJEMPLOS = [
 export function VariableForm({ store }: { store: DatasetStore }) {
   const { variable, setVariable } = store();
   const t = useTranslations('variableForm');
+  // El valor por omisión es canónico (es): se muestra traducido; en cuanto
+  // el usuario escribe, su texto es dato y se guarda tal cual.
+  const tRaiz = useTranslations();
 
   return (
     <div className="bg-card rounded-lg border shadow-sm p-3 sm:p-4 mb-4">
@@ -36,7 +40,7 @@ export function VariableForm({ store }: { store: DatasetStore }) {
         <div className="flex flex-col gap-1 sm:col-span-2">
           <Label className="text-[10px] uppercase font-bold text-muted-foreground">{t('name')}</Label>
           <Input
-            value={variable.label}
+            value={translateVariableLabel(variable.label, tRaiz)}
             onChange={(e) => setVariable({ label: e.target.value })}
             placeholder={t('namePlaceholder')}
             className="h-9 text-sm"
