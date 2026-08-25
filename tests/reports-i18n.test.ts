@@ -92,7 +92,7 @@ describe('reporte de comparación de pesajes: idiomas', () => {
 });
 
 /** Cualquier clave del catálogo impresa tal cual, en cualquier espacio. */
-const CLAVE_SIN_RESOLVER = /\b(reports|excel|credits|sampling|outlierMethods|diagnosticEngine)\.[a-zA-Z]+(\.[a-zA-Z]+)*/;
+const CLAVE_SIN_RESOLVER = /\b(reports|excel|credits|sampling|outlierMethods|diagnosticEngine|academic)\.[a-zA-Z]+(\.[a-zA-Z]+)*/;
 
 describe('gráficos de los reportes: idiomas', () => {
   const bins = classify([1, 2, 3, 4, 5, 6], { type: 'relative-band', pct: 10 });
@@ -172,11 +172,11 @@ describe('libros de Excel: idiomas', () => {
   }
 });
 
-describe('reporte de uniformidad de aves: idiomas (con diagnóstico traducido)', () => {
+describe('reporte de uniformidad de aves: idiomas (diagnóstico y metodología traducidos)', () => {
   const pesos = Array.from({ length: 30 }, (_, i) => 2400 + (i % 10) * 12);
 
   for (const [locale, messages] of CATALOGOS) {
-    for (const variante of ['resumido', 'tecnico'] as const) {
+    for (const variante of ['resumido', 'tecnico', 'academico'] as const) {
       it(`variante ${variante} sale resuelta en ${locale}`, async () => {
         const { buildReportHtml } = await import('../src/lib/report-html');
         const t = createTranslator({ locale, messages: messages as never });

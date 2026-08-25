@@ -14,17 +14,20 @@
  */
 
 import { useMemo } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useUniformidadStore } from '@/lib/store';
 import { buildReportData } from '@/lib/report-data';
-import { buildAcademicSections } from '@/lib/academic-mode';
+import { buildAcademicSections, type MensajeAcademico } from '@/lib/academic-mode';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { GraduationCap } from 'lucide-react';
 
 export function AiPanel() {
   const { pesos, lineaGenetica, tipoOtraLinea, edadSemanas, uniformityPct, reportContext } = useUniformidadStore();
   const t = useTranslations('ai');
-  const locale = useLocale();
+  // Las secciones llegan como mensajes {key, params} del espacio `academic`
+  // (ver academic-mode.ts) y aquí se componen en el idioma activo.
+  const ta = useTranslations('academic');
+  const msg = (mm: MensajeAcademico) => ta(mm.key, mm.params);
 
   const data = useMemo(() => {
     if (pesos.length < 2) return null;
@@ -43,26 +46,20 @@ export function AiPanel() {
       <p className="text-[11px] text-muted-foreground mb-2 leading-snug">
         {t('localIntro')}
       </p>
-      {/* El texto explicativo lo produce lib/academic-mode.ts, que sigue en
-          español por decisión de alcance: se avisa en vez de mezclar
-          idiomas en silencio. */}
-      {locale !== 'es' && (
-        <p className="text-[11px] text-amber-700 mb-2 leading-snug">⚠️ {t('onlySpanish')}</p>
-      )}
       <Accordion type="multiple" className="w-full">
         {sections.map((s, i) => (
           <AccordionItem key={i} value={`sec-${i}`}>
-            <AccordionTrigger className="text-xs font-semibold py-2.5">{s.titulo}</AccordionTrigger>
+            <AccordionTrigger className="text-xs font-semibold py-2.5">{msg(s.titulo)}</AccordionTrigger>
             <AccordionContent className="text-[11px] space-y-1.5 leading-relaxed">
-              <p><b>{t('whatWasComputed')}</b> {s.queSeCalculo}</p>
-              <p className="font-mono bg-muted/60 rounded px-2 py-1">{s.formula}</p>
-              <p><b>{t('result')}</b> {s.resultado}</p>
-              <p><b>{t('howToRead')}</b> {s.interpretacion}</p>
+              <p><b>{t('whatWasComputed')}</b> {msg(s.queSeCalculo)}</p>
+              <p className="font-mono bg-muted/60 rounded px-2 py-1">{msg(s.formula)}</p>
+              <p><b>{t('result')}</b> {s.resultado.map(msg).join(' ')}</p>
+              <p><b>{t('howToRead')}</b> {msg(s.interpretacion)}</p>
               <div>
                 <b>{t('commonErrors')}</b>
                 <ul className="list-disc pl-4 mt-0.5">
                   {s.erroresComunes.map((e, j) => (
-                    <li key={j}>{e}</li>
+                    <li key={j}>{msg(e)}</li>
                   ))}
                 </ul>
               </div>

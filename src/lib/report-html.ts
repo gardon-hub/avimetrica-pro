@@ -250,9 +250,9 @@ function pesosTablaHtml(d: ReportData, t: ReportTranslator): string {
 }
 
 /**
- * La prosa de esta sección sigue en español por decisión del usuario; los
- * gráficos, en cambio, se rotulan desde el catálogo, así que recibe el
- * traductor de la raíz para pasárselo a los generadores.
+ * Metodología y fórmulas del modo académico. Desde 2026-08-25 el texto
+ * completo —fórmulas incluidas, que llevan rótulos como gl o EEM— sale del
+ * catálogo (claves metodo* de reports.aves).
  */
 function metodologiaHtml(d: ReportData, t: ReportTranslator): string {
   // Gráficos didácticos: dan imagen a los conceptos que esta sección explica.
@@ -277,52 +277,39 @@ function metodologiaHtml(d: ReportData, t: ReportTranslator): string {
       ? svgToDataUri(qqPlotSvg(qqPoints(d.pesos, d.descr.mean, d.descr.sdSample), 'g', 0, t))
       : '';
 
-  return `<h2 class="pagebreak">Metodología y fórmulas (modo académico)</h2>
-<p>Todos los cálculos se realizan en gramos con precisión doble; el redondeo ocurre solo en la presentación.</p>
-<div class="formula">Media: x̄ = (Σxᵢ) / n</div>
-<div class="formula">Varianza muestral: s² = Σ(xᵢ − x̄)² / (n − 1) &nbsp;·&nbsp; SD: s = √s²</div>
-<p class="note">Se usa n−1 (corrección de Bessel) porque el pesaje es una muestra del lote; la versión poblacional (÷n) solo corresponde cuando se pesa el lote completo.</p>
-<div class="formula">Coeficiente de variación: CV = (s / x̄) × 100</div>
-<div class="formula">Error estándar de la media: EEM = s / √n</div>
-<div class="formula">IC 95% para la media: x̄ ± t₍₀.₉₇₅, n−1₎ · EEM</div>
-<div class="formula">Uniformidad (±${d.criterioPct}%): % de aves con peso en [x̄·(1−${(d.criterioPct / 100).toFixed(3)}), x̄·(1+${(d.criterioPct / 100).toFixed(3)})]</div>
-<p class="note">La banda de uniformidad describe la dispersión alrededor de la media observada; NO es un intervalo de confianza (error conceptual frecuente).</p>
-${graficoBandaIc ? `<div class="chart"><img src="${graficoBandaIc}" alt="Comparación en la misma escala entre la banda de uniformidad y el intervalo de confianza de la media"/></div>
-<p class="note">
-  Los dos rangos, en el mismo eje y con los datos de este lote. Responden a preguntas distintas:
-  la <b>banda ±${d.criterioPct}%</b> dice entre qué pesos está la mayoría de las <i>aves</i>;
-  el <b>IC 95%</b> dice entre qué valores es plausible que esté la <i>media verdadera</i> del lote.
-  Por eso el IC es mucho más estrecho, y se estrecha aún más al aumentar n, mientras que la banda no:
-  la banda depende de lo dispares que sean las aves, no de cuántas se pesaron.
-</p>` : ''}
-<div class="formula">Prueba t de una muestra: t = (x̄ − μ₀) / EEM, con gl = n − 1</div>
-<p class="note">Interpretación del valor p: probabilidad de observar una diferencia al menos tan grande como la vista, si H₀ fuera cierta. p ≥ α no "acepta" H₀; solo indica evidencia insuficiente.</p>
-<div class="formula">Percentiles: interpolación lineal tipo R-7 (Hyndman &amp; Fan, 1996)</div>
-<div class="formula">Asimetría G1 y curtosis G2: estimadores ajustados (Joanes &amp; Gill, 1998) — los de Minitab/SPSS</div>
-<div class="formula">Atípicos: cercos de Tukey (1.5×IQR y 3×IQR), |Z| &gt; 3 y Z modificada con MAD &gt; 3.5 (Iglewicz &amp; Hoaglin, 1993)</div>
-<div class="chart"><img src="${graficoCaja}" alt="Diagrama de caja con los cuartiles, los cercos de Tukey y los valores atípicos"/></div>
-<p class="note">
-  El diagrama de caja hace visibles los estadísticos de posición ya tabulados: la caja abarca el
-  50% central (Q1 a Q3), la línea interior es la mediana y los bigotes llegan hasta el dato más
-  extremo dentro de 1.5×IQR. Los círculos son las observaciones marcadas como atípicas — se
-  señalan, nunca se eliminan de forma automática.
-</p>
-<div class="formula">Normalidad: Shapiro-Wilk (AS R94, Royston 1995) y prueba ómnibus K² de D'Agostino-Pearson (D'Agostino 1970; Anscombe &amp; Glynn 1983)</div>
-${graficoQQ ? `<div class="chart"><img src="${graficoQQ}" alt="Gráfico Q-Q de los cuantiles observados frente a los teóricos de una distribución normal"/></div>
-<p class="note">
-  Cada punto es una observación: su posición en el eje horizontal es el peso que cabría esperar
-  bajo normalidad y en el vertical el peso realmente medido. Si los datos fueran perfectamente
-  normales, todos caerían sobre la línea discontinua. Las desviaciones en los extremos indican
-  colas más pesadas o ligeras; una curvatura sistemática, asimetría. Esta inspección es la que
-  ninguna prueba de normalidad sustituye.
-</p>` : ''}
-<p><b>Errores comunes que este reporte evita:</b></p>
+  // Todo el texto sale del catálogo (claves metodo* de reports.aves); las
+  // fórmulas también, porque llevan rótulos que cambian de idioma (gl, EEM…).
+  const tr = scoped(t);
+  const pct = d.criterioPct;
+  return `<h2 class="pagebreak">${esc(tr('metodoTitle'))}</h2>
+<p>${esc(tr('metodoIntro'))}</p>
+<div class="formula">${esc(tr('metodoFMedia'))}</div>
+<div class="formula">${esc(tr('metodoFVarianza'))}</div>
+<p class="note">${esc(tr('metodoBesselNote'))}</p>
+<div class="formula">${esc(tr('metodoFCv'))}</div>
+<div class="formula">${esc(tr('metodoFEem'))}</div>
+<div class="formula">${esc(tr('metodoFIc'))}</div>
+<div class="formula">${esc(tr('metodoFUnif', { pct, low: (1 - pct / 100).toFixed(3), high: (1 + pct / 100).toFixed(3) }))}</div>
+<p class="note">${esc(tr('metodoBandNote'))}</p>
+${graficoBandaIc ? `<div class="chart"><img src="${graficoBandaIc}" alt="${esc(tr('metodoBandaIcAlt'))}"/></div>
+<p class="note">${esc(tr('metodoBandaIcNote', { pct }))}</p>` : ''}
+<div class="formula">${esc(tr('metodoFTtest'))}</div>
+<p class="note">${esc(tr('metodoPNote'))}</p>
+<div class="formula">${esc(tr('metodoFPercentiles'))}</div>
+<div class="formula">${esc(tr('metodoFSkewKurt'))}</div>
+<div class="formula">${esc(tr('metodoFOutliers'))}</div>
+<div class="chart"><img src="${graficoCaja}" alt="${esc(tr('metodoBoxplotAlt'))}"/></div>
+<p class="note">${esc(tr('metodoBoxplotNote'))}</p>
+<div class="formula">${esc(tr('metodoFNormalidad'))}</div>
+${graficoQQ ? `<div class="chart"><img src="${graficoQQ}" alt="${esc(tr('metodoQqAlt'))}"/></div>
+<p class="note">${esc(tr('metodoQqNote'))}</p>` : ''}
+<p><b>${esc(tr('metodoErroresTitle'))}</b></p>
 <ul>
-<li>Confundir la banda de uniformidad ±${d.criterioPct}% con un intervalo de confianza.</li>
-<li>Usar la SD poblacional (÷n) con datos de una muestra.</li>
-<li>Concluir "las medias son iguales" cuando p ≥ α.</li>
-<li>Eliminar valores atípicos sin verificar si son errores de medición o aves reales.</li>
-<li>Confiar en una prueba de normalidad sin inspeccionar el histograma y el Q-Q.</li>
+<li>${esc(tr('metodoErr1', { pct }))}</li>
+<li>${esc(tr('metodoErr2'))}</li>
+<li>${esc(tr('metodoErr3'))}</li>
+<li>${esc(tr('metodoErr4'))}</li>
+<li>${esc(tr('metodoErr5'))}</li>
 </ul>`;
 }
 
@@ -372,14 +359,9 @@ export function buildReportHtml(d: ReportData, variant: ReportVariant, i18n: Rep
       )
     : '';
 
-  // Aviso visible cuando el idioma no es español: desde 2026-08-25 el
-  // diagnóstico ya se traduce, así que el aviso queda SOLO para la variante
-  // académica, cuya sección de metodología sigue redactada en español.
-  const avisoIdioma = locale !== 'es' && variant === 'academico'
-    ? `<p class="note"><b>${esc(tr('spanishOnlyNotice'))}</b></p>`
-    : '';
-
-  let body = headerHtml(d, variant, i18n) + metaHtml(d, t) + kpisHtml(d, t) + avisoIdioma;
+  // Desde 2026-08-25 el documento completo —diagnóstico y metodología
+  // incluidos— sale en el idioma elegido: ya no hay aviso de idioma.
+  let body = headerHtml(d, variant, i18n) + metaHtml(d, t) + kpisHtml(d, t);
 
   const bloqueBanda = `
 <h2>${esc(tr('bandTitle'))}</h2>

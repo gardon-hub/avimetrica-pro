@@ -350,7 +350,6 @@
     "tabLocal": "Modo académico (local)",
     "tabAi": "Asistente IA (opcional)",
     "localIntro": "Explicación paso a paso generada localmente a partir de los resultados calculados — funciona siempre, sin servicios externos.",
-    "onlySpanish": "El contenido explicativo del modo académico está disponible únicamente en español.",
     "whatWasComputed": "Qué se calculó:",
     "result": "Resultado:",
     "howToRead": "Cómo se interpreta:",
@@ -923,7 +922,6 @@
       "targetAlt": "Gráfico de barras del peso promedio del lote con su intervalo de confianza, frente a la línea del peso objetivo",
       "targetNote": "La barra de error es el IC 95 % de la media observada. El objetivo se traza como línea de referencia porque es un valor de guía genética, no una medición con incertidumbre propia. Si la línea queda fuera del intervalo, la diferencia respecto al objetivo es estadísticamente apreciable; la prueba t siguiente lo cuantifica. La escala no arranca en cero.",
       "diagnosisTitle": "Diagnóstico zootécnico",
-      "spanishOnlyNotice": "La sección de metodología se emite únicamente en español: es un texto técnico redactado por el motor de la aplicación, todavía sin traducir. El resto del documento está en el idioma elegido.",
       "broiler": "Broiler (engorde)",
       "layer": "Ponedora (postura)",
       "interpretation": "Interpretación:",
@@ -951,7 +949,35 @@
       "limNoAge": "No se indicó la edad del lote: no fue posible comparar contra el peso objetivo de la línea genética.",
       "limNormality": "Los pesos se desvían de la distribución normal: las probabilidades teóricas y la prueba t deben interpretarse con cautela (ver histograma y Q-Q).",
       "limOutliers": "Se detectaron {n} posible(s) valor(es) atípico(s) que influyen en media, SD y CV. Verificar si son errores de medición o aves reales.",
-      "limProfessional": "Este reporte describe el pesaje analizado; no sustituye el criterio del profesional a cargo del lote."
+      "limProfessional": "Este reporte describe el pesaje analizado; no sustituye el criterio del profesional a cargo del lote.",
+      "metodoTitle": "Metodología y fórmulas (modo académico)",
+      "metodoIntro": "Todos los cálculos se realizan en gramos con precisión doble; el redondeo ocurre solo en la presentación.",
+      "metodoFMedia": "Media: x̄ = (Σxᵢ) / n",
+      "metodoFVarianza": "Varianza muestral: s² = Σ(xᵢ − x̄)² / (n − 1) · SD: s = √s²",
+      "metodoBesselNote": "Se usa n−1 (corrección de Bessel) porque el pesaje es una muestra del lote; la versión poblacional (÷n) solo corresponde cuando se pesa el lote completo.",
+      "metodoFCv": "Coeficiente de variación: CV = (s / x̄) × 100",
+      "metodoFEem": "Error estándar de la media: EEM = s / √n",
+      "metodoFIc": "IC 95% para la media: x̄ ± t₍₀.₉₇₅, n−1₎ · EEM",
+      "metodoFUnif": "Uniformidad (±{pct}%): % de aves con peso en [x̄·(1−{low}), x̄·(1+{high})]",
+      "metodoBandNote": "La banda de uniformidad describe la dispersión alrededor de la media observada; NO es un intervalo de confianza (error conceptual frecuente).",
+      "metodoBandaIcAlt": "Comparación en la misma escala entre la banda de uniformidad y el intervalo de confianza de la media",
+      "metodoBandaIcNote": "Los dos rangos, en el mismo eje y con los datos de este lote, responden a preguntas distintas: la banda ±{pct}% dice entre qué pesos está la mayoría de las aves; el IC 95% dice entre qué valores es plausible que esté la media verdadera del lote. Por eso el IC es mucho más estrecho, y se estrecha aún más al aumentar n, mientras que la banda no: la banda depende de lo dispares que sean las aves, no de cuántas se pesaron.",
+      "metodoFTtest": "Prueba t de una muestra: t = (x̄ − μ₀) / EEM, con gl = n − 1",
+      "metodoPNote": "Interpretación del valor p: probabilidad de observar una diferencia al menos tan grande como la vista, si H₀ fuera cierta. p ≥ α no \"acepta\" H₀; solo indica evidencia insuficiente.",
+      "metodoFPercentiles": "Percentiles: interpolación lineal tipo R-7 (Hyndman & Fan, 1996)",
+      "metodoFSkewKurt": "Asimetría G1 y curtosis G2: estimadores ajustados (Joanes & Gill, 1998) — los de Minitab/SPSS",
+      "metodoFOutliers": "Atípicos: cercos de Tukey (1.5×IQR y 3×IQR), |Z| > 3 y Z modificada con MAD > 3.5 (Iglewicz & Hoaglin, 1993)",
+      "metodoBoxplotAlt": "Diagrama de caja con los cuartiles, los cercos de Tukey y los valores atípicos",
+      "metodoBoxplotNote": "El diagrama de caja hace visibles los estadísticos de posición ya tabulados: la caja abarca el 50% central (Q1 a Q3), la línea interior es la mediana y los bigotes llegan hasta el dato más extremo dentro de 1.5×IQR. Los círculos son las observaciones marcadas como atípicas — se señalan, nunca se eliminan de forma automática.",
+      "metodoFNormalidad": "Normalidad: Shapiro-Wilk (AS R94, Royston 1995) y prueba ómnibus K² de D'Agostino-Pearson (D'Agostino 1970; Anscombe & Glynn 1983)",
+      "metodoQqAlt": "Gráfico Q-Q de los cuantiles observados frente a los teóricos de una distribución normal",
+      "metodoQqNote": "Cada punto es una observación: su posición en el eje horizontal es el peso que cabría esperar bajo normalidad y en el vertical el peso realmente medido. Si los datos fueran perfectamente normales, todos caerían sobre la línea discontinua. Las desviaciones en los extremos indican colas más pesadas o ligeras; una curvatura sistemática, asimetría. Esta inspección es la que ninguna prueba de normalidad sustituye.",
+      "metodoErroresTitle": "Errores comunes que este reporte evita:",
+      "metodoErr1": "Confundir la banda de uniformidad ±{pct}% con un intervalo de confianza.",
+      "metodoErr2": "Usar la SD poblacional (÷n) con datos de una muestra.",
+      "metodoErr3": "Concluir \"las medias son iguales\" cuando p ≥ α.",
+      "metodoErr4": "Eliminar valores atípicos sin verificar si son errores de medición o aves reales.",
+      "metodoErr5": "Confiar en una prueba de normalidad sin inspeccionar el histograma y el Q-Q."
     },
     "charts": {
       "unclassified": "Sin clasificar",
@@ -1612,6 +1638,76 @@
       "prepostura": "Pre-postura (sem 17-20) es la ventana crítica: el sistema reproductivo se activa y el peso debe estar en rango óptimo. Uniformidad ≥85% a las 20 sem = pico de producción concentrado y alto; desuniforme = pico bajo y prolongado.",
       "produccionAlta": "Uniformidad ≥85% en producción indica que la mayoría de aves sigue su curva de postura óptima, permitiendo ajustar dieta e iluminación con precisión para todo el lote.",
       "produccionBaja": "Baja uniformidad en producción es muy costosa: aves ligeras consumen sin producir; aves pesadas producen huevos de calidad variable. Cada punto <80% puede significar 2-3 huevos menos por ave en el ciclo. Corrección temprana es esencial."
+    }
+  },
+  "academic": {
+    "media": {
+      "titulo": "Media y desviación estándar",
+      "que": "El peso promedio de las {n} aves pesadas y cuánto se alejan los pesos de ese promedio.",
+      "formula": "x̄ = Σxᵢ / n · s = √[ Σ(xᵢ − x̄)² / (n − 1) ]",
+      "resultado": "x̄ = {mean} g; s = {sd} g.",
+      "interp": "En promedio las aves pesan {mean} g y un ave \"típica\" se aleja unos {sd0} g de ese promedio. Se divide entre n−1 ({nm1}) y no entre n porque se pesó una muestra, no todo el lote: sin esa corrección la dispersión se subestimaría.",
+      "err1": "Usar la fórmula poblacional (÷n) con datos de una muestra.",
+      "err2": "Comparar desviaciones estándar de lotes con pesos promedio muy distintos sin pasar por el CV."
+    },
+    "cv": {
+      "titulo": "Coeficiente de variación (CV)",
+      "que": "La dispersión expresada como porcentaje de la media, para poder comparar lotes de distinto peso.",
+      "formula": "CV = (s / x̄) × 100",
+      "resultado": "CV = ({sd} / {mean}) × 100 = {cv} %.",
+      "interp": "{cv}% significa que la dispersión equivale a un {cv}% del peso promedio. En avicultura, CV bajo (≈8% o menos en muchas etapas) indica lote parejo; el umbral exacto depende de especie, línea y edad.",
+      "err1": "Interpretar el CV sin considerar la edad: en la primera semana el CV natural es más alto.",
+      "err2": "Confundir CV (relativo) con la SD (absoluta, en gramos)."
+    },
+    "unif": {
+      "titulo": "Uniformidad (media ±{pct}%)",
+      "que": "El porcentaje de aves cuyo peso cae dentro de la banda [x̄ − {pct}%, x̄ + {pct}%].",
+      "formula": "banda = [x̄·{fLow}, x̄·{fHigh}] = [{limInf}, {limSup}] g",
+      "resultado": "{dentro} de {total} aves dentro de la banda → uniformidad = {unif}%.",
+      "interp": "Mide qué proporción del lote está \"cerca\" del promedio. El criterio tradicional avícola usa ±10%, y ≥85% se considera excelente en muchas guías; el criterio elegido siempre debe declararse junto al resultado.",
+      "err1": "Confundir la banda de uniformidad con un intervalo de confianza: la banda describe las aves; el IC describe la incertidumbre sobre la media.",
+      "err2": "Comparar uniformidades calculadas con criterios distintos (±5% vs. ±10%)."
+    },
+    "ic": {
+      "titulo": "Intervalo de confianza (95%) para la media",
+      "que": "El rango de valores plausibles para el peso promedio REAL de todo el lote, dado que solo se pesó una muestra.",
+      "formula": "IC = x̄ ± t₍₀.₉₇₅, n−1₎ · (s / √n)",
+      "resultado": "IC 95% = [{lower}, {upper}] g (error estándar = {sem} g).",
+      "interp": "Con 95% de confianza, el procedimiento captura la media verdadera del lote: si se repitiera el muestreo muchas veces, el 95% de los intervalos así construidos la contendría. No significa que el 95% de las aves pese entre esos valores.",
+      "err1": "Leer el IC como rango de pesos individuales (ese papel lo cumplen los percentiles).",
+      "err2": "Afirmar que \"hay 95% de probabilidad de que la media esté en este intervalo específico\" — la confianza es del procedimiento, no de un intervalo concreto."
+    },
+    "ttest": {
+      "titulo": "Prueba t de una muestra contra el objetivo",
+      "que": "Si la diferencia entre el promedio observado ({mean} g) y el objetivo de la línea ({mu0} g) puede explicarse por azar de muestreo.",
+      "formula": "t = (x̄ − μ₀) / (s/√n), con gl = n − 1",
+      "resultado": "t = {t} con {df} gl → valor p {p}.",
+      "interpReject": "Como p < 0.05, la diferencia observada sería muy improbable si el lote realmente promediara {mu0} g: hay evidencia de que el peso promedio difiere del objetivo.",
+      "interpNotReject": "Como p ≥ 0.05, los datos no permiten descartar que el promedio real sea {mu0} g. Ojo: esto NO demuestra que sean iguales; puede faltar potencia (muestra pequeña).",
+      "err1": "Decir \"se acepta H₀\" o \"las medias son iguales\" cuando p ≥ α.",
+      "err2": "Ignorar los supuestos: independencia de las observaciones y normalidad aproximada (crítica con n pequeño).",
+      "err3": "Confundir significancia estadística con relevancia zootécnica: con n grande, una diferencia de pocos gramos puede dar p pequeño sin importancia práctica."
+    },
+    "normal": {
+      "titulo": "Evaluación de normalidad",
+      "que": "Si la forma de la distribución de pesos es compatible con una campana normal.",
+      "formula": "Shapiro-Wilk: W = (Σaᵢ·x₍ᵢ₎)² / Σ(xᵢ − x̄)² · D'Agostino-Pearson: K² = Z(g1)² + Z(g2)² ~ χ²(2)",
+      "resShapiro": "Shapiro-Wilk: W = {w}, p {p}.",
+      "resDagostino": "D'Agostino-Pearson: K² = {k}, p {p}.",
+      "interpOk": "No se rechaza la normalidad: los cálculos que la asumen (probabilidades teóricas, prueba t) son razonables para estos datos.",
+      "interpRejected": "Se rechaza la normalidad: revisar histograma y Q-Q para ver si hay asimetría, colas pesadas o posibles subpoblaciones antes de confiar en cálculos que asumen normalidad.",
+      "err1": "Usar solo la prueba sin mirar el histograma y el Q-Q.",
+      "err2": "Con muestras grandes, desviaciones triviales dan p significativo; con muestras chicas, desviaciones grandes pasan inadvertidas.",
+      "err3": "Shapiro-Wilk es potente en muestras pequeñas-medianas; con n muy grande casi siempre rechaza — combinar con la magnitud de la desviación, no solo el p."
+    },
+    "outliers": {
+      "titulo": "Valores atípicos",
+      "que": "Observaciones inusualmente alejadas del resto ({n} marcadas), por cercos de Tukey, |Z|>3 y Z modificada con MAD.",
+      "formula": "cercos: [Q1 − 1.5·IQR, Q3 + 1.5·IQR] · Z = (x − x̄)/s · Mᵢ = 0.6745(x − mediana)/MAD",
+      "resultadoAve": "Ave #{num}: {peso} g.",
+      "interp": "Un atípico puede ser un error de digitación/báscula o un ave genuinamente distinta (enferma, dominante). La decisión de excluir es del profesional y debe documentarse; excluir sin justificar sesga los resultados.",
+      "err1": "Eliminar atípicos automáticamente para \"mejorar\" el CV.",
+      "err2": "Ignorar que media, SD y CV son sensibles a un solo valor extremo (la mediana y el IQR no lo son)."
     }
   }
 }

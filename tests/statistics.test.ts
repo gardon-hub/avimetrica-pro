@@ -411,9 +411,9 @@ suite('plantillas de reporte', () => {
     expect(resumido).not.toContain('reports.aves.summaryTitle'); // sin descriptiva completa
     expect(tecnico).toContain('reports.aves.summaryTitle');
     expect(tecnico).toContain('reports.aves.sourcesTitle');
-    expect(tecnico).not.toContain('Metodología y fórmulas');
-    expect(academico).toContain('Metodología y fórmulas');
-    expect(academico).toContain('corrección de Bessel');
+    expect(tecnico).not.toContain('reports.aves.metodoTitle');
+    expect(academico).toContain('reports.aves.metodoTitle');
+    expect(academico).toContain('reports.aves.metodoBesselNote');
     // La banda de uniformidad nunca debe llamarse intervalo de confianza: la
     // salvedad se declara en la clave del criterio, que debe estar presente.
     expect(tecnico).toContain('reports.aves.criterionValue');
