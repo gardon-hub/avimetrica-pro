@@ -1712,6 +1712,18 @@
       "interp": "Um atípico pode ser um erro de digitação/balança ou uma ave genuinamente diferente (doente, dominante). A decisão de excluir é do profissional e deve ser documentada; excluir sem justificativa enviesa os resultados.",
       "err1": "Eliminar atípicos automaticamente para \"melhorar\" o CV.",
       "err2": "Ignorar que média, DP e CV são sensíveis a um único valor extremo (a mediana e o IQR não são)."
+    },
+    "converg": {
+      "titulo": "Convergência: uniformidade observada vs. modelo normal",
+      "que": "Comparar a contagem real de aves dentro da faixa ({unif}%) com a área que a normal ajustada (μ={mean}, σ={sd}) prevê entre os mesmos limites ({area}%). Mesmos limites, perguntas diferentes: o que aconteceu vs. o que aconteceria sob o modelo.",
+      "formula": "EP(p̂) = √[p(1−p)/n] · discrepância esperável (95%): ±1,96·EP · aves para acordo ±ε: n ≈ p(1−p)·(1,96/ε)²",
+      "res1": "Observado {unif}% vs. teórico {area}%: diferença de {brecha} pontos.",
+      "res2": "Com n = {n}, a discrepância esperável por acaso é ±{margen} pontos, e a uniformidade só pode se mover em saltos de {salto} pontos (1/n).",
+      "interpCompatible": "A diferença cai dentro da margem de amostragem: o modelo normal descreve bem este lote. Para um acordo de ±3 pontos seriam necessárias ≈{nPara3} aves. Regra de ouro: com poucas aves uma diferença grande não prova nada; com muitas aves, uma diferença pequena confirma tudo.",
+      "interpDesvio": "A diferença supera a margem de amostragem (±{margen} pontos): não se explica pelo acaso — a distribuição se desvia do modelo normal. Revisar histograma, Q-Q e testes de normalidade; suspeitar de assimetria, atípicos ou subpopulações (p. ex., sexos misturados).",
+      "err1": "Esperar coincidência exata com amostras pequenas: a uniformidade é discreta (saltos de 100/n) e o acaso de amostragem pesa.",
+      "err2": "Acreditar que aumentar n fecha a diferença se o lote não é normal: com dados não normais ela se torna sistemática — e isso é diagnóstico, não defeito.",
+      "err3": "Confundir os dois números: a uniformidade conta aves reais; a área sob a curva é uma previsão do modelo."
     }
   }
 }

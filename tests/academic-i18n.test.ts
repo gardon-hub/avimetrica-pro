@@ -74,4 +74,11 @@ describe('modo académico: claves de catálogo', () => {
     expect(claves).toContain('normal.interpRejected');
     expect(claves).toContain('outliers.titulo');
   });
+
+  it('la convergencia cubre sus dos ramas: azar y desviación sistemática', () => {
+    const claves = [...porClave.keys()];
+    expect(claves).toContain('converg.res1');
+    expect(claves).toContain('converg.interpCompatible');
+    expect(claves).toContain('converg.interpDesvio');
+  });
 });

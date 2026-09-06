@@ -13,6 +13,7 @@
 
 import { ReportData } from '@/lib/report-data';
 import { fmtPFrase } from '@/lib/p-value';
+import { normalCdf } from '@/lib/statistics/distributions';
 
 /** Mensaje sin redactar: clave del espacio `academic` + parámetros. */
 export interface MensajeAcademico {
@@ -71,6 +72,38 @@ export function buildAcademicSections(d: ReportData): AcademicSection[] {
     interpretacion: m('unif.interp'),
     erroresComunes: [m('unif.err1'), m('unif.err2')],
   });
+
+  // Convergencia entre la uniformidad observada (conteo empírico) y el área
+  // que el modelo normal ajustado predice entre los mismos límites. Nació de
+  // una pregunta real del usuario (2026-08-25): ¿por qué 89.47% ≠ 87.48% con
+  // los mismos límites? La brecha se contrasta con el margen binomial de
+  // muestreo: dentro del margen = azar; fuera = desviación de la normal.
+  if (s.sdSample > 0 && d.stats.totalAves >= 2 && Number.isFinite(d.stats.limiteInf)) {
+    const n = d.stats.totalAves;
+    const pTeorica =
+      normalCdf(d.stats.limiteSup, s.mean, s.sdSample) -
+      normalCdf(d.stats.limiteInf, s.mean, s.sdSample);
+    const areaPct = pTeorica * 100;
+    const brecha = Math.abs(d.stats.uniformidad - areaPct);
+    const margen95 = 1.96 * Math.sqrt((pTeorica * (1 - pTeorica)) / n) * 100;
+    // Aves necesarias para que la brecha esperable por azar baje a ±3 puntos.
+    const nPara3 = Math.ceil(pTeorica * (1 - pTeorica) * (1.96 / 0.03) ** 2);
+    out.push({
+      titulo: m('converg.titulo'),
+      queSeCalculo: m('converg.que', {
+        unif: f(d.stats.uniformidad, 1), mean: f(s.mean, 1), sd: f(s.sdSample), area: f(areaPct, 1),
+      }),
+      formula: m('converg.formula'),
+      resultado: [
+        m('converg.res1', { unif: f(d.stats.uniformidad, 1), area: f(areaPct, 1), brecha: f(brecha, 1) }),
+        m('converg.res2', { n, margen: f(margen95, 1), salto: f(100 / n, 1) }),
+      ],
+      interpretacion: brecha <= margen95
+        ? m('converg.interpCompatible', { nPara3 })
+        : m('converg.interpDesvio', { margen: f(margen95, 1) }),
+      erroresComunes: [m('converg.err1'), m('converg.err2'), m('converg.err3')],
+    });
+  }
 
   if (d.ci95) {
     out.push({

@@ -1712,6 +1712,18 @@
       "interp": "An outlier may be a typing/scale error or a genuinely different bird (sick, dominant). The decision to exclude belongs to the professional and must be documented; excluding without justification biases the results.",
       "err1": "Removing outliers automatically to \"improve\" the CV.",
       "err2": "Ignoring that the mean, SD and CV are sensitive to a single extreme value (the median and IQR are not)."
+    },
+    "converg": {
+      "titulo": "Convergence: observed uniformity vs. normal model",
+      "que": "Compare the actual count of birds inside the band ({unif}%) with the area the fitted normal (μ={mean}, σ={sd}) predicts between the same limits ({area}%). Same limits, different questions: what happened vs. what would happen under the model.",
+      "formula": "SE(p̂) = √[p(1−p)/n] · expected discrepancy (95%): ±1.96·SE · birds for ±ε agreement: n ≈ p(1−p)·(1.96/ε)²",
+      "res1": "Observed {unif}% vs. theoretical {area}%: a gap of {brecha} points.",
+      "res2": "With n = {n}, the discrepancy expected by chance is ±{margen} points, and uniformity can only move in steps of {salto} points (1/n).",
+      "interpCompatible": "The gap falls within the sampling margin: the normal model describes this flock well. For ±3-point agreement you would need ≈{nPara3} birds. Rule of thumb: with few birds a large gap proves nothing; with many birds, a small gap confirms everything.",
+      "interpDesvio": "The gap exceeds the sampling margin (±{margen} points): the difference is not explained by chance — the distribution deviates from the normal model. Review the histogram, Q-Q plot and normality tests; suspect skewness, outliers or subpopulations (e.g., mixed sexes).",
+      "err1": "Expecting exact agreement with small samples: uniformity is discrete (steps of 100/n) and sampling chance matters.",
+      "err2": "Believing that increasing n closes the gap if the flock is not normal: with non-normal data the gap becomes systematic — and that is a diagnosis, not a defect.",
+      "err3": "Confusing the two numbers: uniformity counts real birds; the area under the curve is a model prediction."
     }
   }
 }
