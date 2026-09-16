@@ -15,7 +15,7 @@ import {
   REFERENCE_DATA_VERSION,
 } from '@/lib/diagnostic-engine';
 
-export const APP_VERSION = '0.7.1';
+export const APP_VERSION = '0.7.2';
 
 export type ReportVariant = 'resumido' | 'tecnico' | 'academico';
 
